@@ -1,0 +1,108 @@
+`timescale 1ns / 1ps
+
+module top (
+    input  wire        i_clk_50m,
+    input  wire        i_rst,
+    input  wire [2:0]  pl_key_i,      
+    input  wire [11:0] i_ad_data,
+    output wire        o_ad_clk,
+    output wire [13:0] o_da_data,
+    output wire        o_da_wrt,
+    output wire        o_da_clk,
+    output wire [13:0] o_da_data_b,
+    output wire        o_da_wrt_b,
+    output wire        o_da_clk_b,
+    inout  wire [14:0] DDR_addr,
+    inout  wire [2:0]  DDR_ba,
+    inout  wire        DDR_cas_n,
+    inout  wire        DDR_ck_n,
+    inout  wire        DDR_ck_p,
+    inout  wire        DDR_cke,
+    inout  wire        DDR_cs_n,
+    inout  wire [3:0]  DDR_dm,
+    inout  wire [31:0] DDR_dq,
+    inout  wire [3:0]  DDR_dqs_n,
+    inout  wire [3:0]  DDR_dqs_p,
+    inout  wire        DDR_odt,
+    inout  wire        DDR_ras_n,
+    inout  wire        DDR_reset_n,
+    inout  wire        DDR_we_n,
+    inout  wire        FIXED_IO_ddr_vrn,
+    inout  wire        FIXED_IO_ddr_vrp,
+    inout  wire [53:0] FIXED_IO_mio,
+    inout  wire        FIXED_IO_ps_clk,
+    inout  wire        FIXED_IO_ps_porb,
+    inout  wire        FIXED_IO_ps_srstb
+);
+    wire        clk_dac;
+    wire        fclk;
+    wire [15:0] adc_tdata;
+    wire        adc_tvalid;
+    wire        adc_tready;
+    wire        adc_tlast;
+    wire [31:0] bram_addr;
+    wire [31:0] bram_dout;
+    wire        bram_en;
+    wire [3:0]  bram_we;
+
+    H_top u_h_top (
+        .i_clk_50m     (i_clk_50m),
+        .i_clk_100m    (fclk),
+        .i_clk_dac     (clk_dac),
+        .i_rst         (i_rst),
+        .i_ad_data     (i_ad_data),
+        .o_ad_clk      (o_ad_clk),
+        .o_da_data     (o_da_data),
+        .o_da_wrt      (o_da_wrt),
+        .o_da_clk      (o_da_clk),
+        .o_da_data_b   (o_da_data_b),
+        .o_da_wrt_b    (o_da_wrt_b),
+        .o_da_clk_b    (o_da_clk_b),
+        .m_axis_tdata  (adc_tdata),
+        .m_axis_tvalid (adc_tvalid),
+        .m_axis_tready (adc_tready),
+        .m_axis_tlast  (adc_tlast),
+        .bram_addr     (bram_addr),
+        .bram_en       (bram_en),
+        .bram_we       (bram_we),
+        .bram_dout     (bram_dout)
+    );
+
+    system_wrapper u_system (
+        .ADC_STREAM_IN_tdata  (adc_tdata),
+        .ADC_STREAM_IN_tlast  (adc_tlast),
+        .ADC_STREAM_IN_tready (adc_tready),
+        .ADC_STREAM_IN_tvalid (adc_tvalid),
+        .BRAM_DATA_addr       (bram_addr),
+        .BRAM_DATA_clk        (clk_dac),
+        .BRAM_DATA_din        (32'd0),
+        .BRAM_DATA_dout       (bram_dout),
+        .BRAM_DATA_en         (bram_en),
+        .BRAM_DATA_rst        (~i_rst),
+        .BRAM_DATA_we         (bram_we),
+        .DDR_addr             (DDR_addr),
+        .DDR_ba               (DDR_ba),
+        .DDR_cas_n            (DDR_cas_n),
+        .DDR_ck_n             (DDR_ck_n),
+        .DDR_ck_p             (DDR_ck_p),
+        .DDR_cke              (DDR_cke),
+        .DDR_cs_n             (DDR_cs_n),
+        .DDR_dm               (DDR_dm),
+        .DDR_dq               (DDR_dq),
+        .DDR_dqs_n            (DDR_dqs_n),
+        .DDR_dqs_p            (DDR_dqs_p),
+        .DDR_odt              (DDR_odt),
+        .DDR_ras_n            (DDR_ras_n),
+        .DDR_reset_n          (DDR_reset_n),
+        .DDR_we_n             (DDR_we_n),
+        .FCLK_CLK0_0          (fclk),
+        .FIXED_IO_ddr_vrn     (FIXED_IO_ddr_vrn),
+        .FIXED_IO_ddr_vrp     (FIXED_IO_ddr_vrp),
+        .FIXED_IO_mio         (FIXED_IO_mio),
+        .FIXED_IO_ps_clk      (FIXED_IO_ps_clk),
+        .FIXED_IO_ps_porb     (FIXED_IO_ps_porb),
+        .FIXED_IO_ps_srstb    (FIXED_IO_ps_srstb),
+        .clk_dac              (clk_dac),
+        .pl_key_i             (pl_key_i)
+    );
+endmodule

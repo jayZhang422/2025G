@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_H_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tb_H_top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="89000001fs"></ZoomEndTime>
+      <Cursor1Time time="0fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="217"></NameColumnWidth>
+      <ValueColumnWidth column_width="103"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="24" />
+   <wvobject fp_name="/tb_H_top/i_clk_50m" type="logic">
+      <obj_property name="ElementShortName">i_clk_50m</obj_property>
+      <obj_property name="ObjectShortName">i_clk_50m</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/i_clk_100m" type="logic">
+      <obj_property name="ElementShortName">i_clk_100m</obj_property>
+      <obj_property name="ObjectShortName">i_clk_100m</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/i_rst" type="logic">
+      <obj_property name="ElementShortName">i_rst</obj_property>
+      <obj_property name="ObjectShortName">i_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/i_ad_data" type="array">
+      <obj_property name="ElementShortName">i_ad_data[11:0]</obj_property>
+      <obj_property name="ObjectShortName">i_ad_data[11:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/o_ad_clk" type="logic">
+      <obj_property name="ElementShortName">o_ad_clk</obj_property>
+      <obj_property name="ObjectShortName">o_ad_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/o_da_data" type="array">
+      <obj_property name="ElementShortName">o_da_data[13:0]</obj_property>
+      <obj_property name="ObjectShortName">o_da_data[13:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/o_da_wrt" type="logic">
+      <obj_property name="ElementShortName">o_da_wrt</obj_property>
+      <obj_property name="ObjectShortName">o_da_wrt</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/o_da_clk" type="logic">
+      <obj_property name="ElementShortName">o_da_clk</obj_property>
+      <obj_property name="ObjectShortName">o_da_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/u_dut/w_pll_locked" type="logic">
+      <obj_property name="ElementShortName">w_pll_locked</obj_property>
+      <obj_property name="ObjectShortName">w_pll_locked</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/u_dut/u_ad9226/stable" type="logic">
+      <obj_property name="ElementShortName">stable</obj_property>
+      <obj_property name="ObjectShortName">stable</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/u_dut/w_ad_data_vld" type="logic">
+      <obj_property name="ElementShortName">w_ad_data_vld</obj_property>
+      <obj_property name="ObjectShortName">w_ad_data_vld</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/u_dut/w_rst_safe" type="logic">
+      <obj_property name="ElementShortName">w_rst_safe</obj_property>
+      <obj_property name="ObjectShortName">w_rst_safe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/u_dut/w_fifo_empty" type="logic">
+      <obj_property name="ElementShortName">w_fifo_empty</obj_property>
+      <obj_property name="ObjectShortName">w_fifo_empty</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/u_dut/w_tlast_cnt" type="array">
+      <obj_property name="ElementShortName">w_tlast_cnt[11:0]</obj_property>
+      <obj_property name="ObjectShortName">w_tlast_cnt[11:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/m_axis_tdata" type="array">
+      <obj_property name="ElementShortName">m_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/m_axis_tready" type="logic">
+      <obj_property name="ElementShortName">m_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/m_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/s_axis_tdata" type="array">
+      <obj_property name="ElementShortName">s_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/s_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/s_axis_tready" type="logic">
+      <obj_property name="ElementShortName">s_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/t" type="other">
+      <obj_property name="ElementShortName">t</obj_property>
+      <obj_property name="ObjectShortName">t</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/k" type="array">
+      <obj_property name="ElementShortName">k[31:0]</obj_property>
+      <obj_property name="ObjectShortName">k[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_H_top/beat_count" type="array">
+      <obj_property name="ElementShortName">beat_count[31:0]</obj_property>
+      <obj_property name="ObjectShortName">beat_count[31:0]</obj_property>
+   </wvobject>
+</wave_config>
