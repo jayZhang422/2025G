@@ -140,7 +140,7 @@ module tb_H_top;
             for (timeout = 0; timeout < 40; timeout = timeout + 1) begin
                 @(posedge i_clk_dac);
                 #1;
-                if (uut.u_ad9767.last_commit_seq === expected_seq)
+                if (uut.u_dac_dds.inst.last_commit_seq === expected_seq)
                     disable wait_loop;
             end
             $fatal(1, "ERROR: Timeout waiting for COMMIT_SEQ=%0d", expected_seq);
@@ -155,11 +155,11 @@ module tb_H_top;
         begin : wait_loop
             for (timeout = 0; timeout < 40; timeout = timeout + 1) begin
                 @(negedge i_clk_dac);
-                phase_before_a = uut.u_ad9767.phase_acc_a;
-                phase_before_b = uut.u_ad9767.phase_acc_b;
+                phase_before_a = uut.u_dac_dds.inst.phase_acc_a;
+                phase_before_b = uut.u_dac_dds.inst.phase_acc_b;
                 @(posedge i_clk_dac);
                 #1;
-                if (uut.u_ad9767.last_commit_seq === expected_seq)
+                if (uut.u_dac_dds.inst.last_commit_seq === expected_seq)
                     disable wait_loop;
             end
             $fatal(1, "ERROR: Timeout waiting for COMMIT_SEQ=%0d with phase sampling", expected_seq);
@@ -184,8 +184,8 @@ module tb_H_top;
         #60 i_rst = 1'b1; // Release Reset
         repeat (2) @(posedge i_clk_dac);
         #1;
-        if (uut.u_ad9767.run_enabled !== 1'b0 ||
-            uut.u_ad9767.shadow_commit_seq !== 32'd0 ||
+        if (uut.u_dac_dds.inst.run_enabled !== 1'b0 ||
+            uut.u_dac_dds.inst.shadow_commit_seq !== 32'd0 ||
             o_da_data !== 14'd8192 || o_da_data_b !== 14'd8192)
             $fatal(1, "ERROR: DDS or DAC midscale state uncertain after reset.");
 
@@ -207,8 +207,8 @@ module tb_H_top;
         repeat (12) @(posedge i_clk_dac);
         #1;
         $display("  --> Testing shadow register isolation... (run_step_a should be 0)");
-        if (uut.u_ad9767.run_enabled !== 1'b0 ||
-            uut.u_ad9767.run_step_a !== 32'd0 ||
+        if (uut.u_dac_dds.inst.run_enabled !== 1'b0 ||
+            uut.u_dac_dds.inst.run_step_a !== 32'd0 ||
             o_da_data !== 14'd8192 || o_da_data_b !== 14'd8192)
             $fatal(1, "ERROR: Atomic commit not triggered, but running registers or DAC outputs changed!");
 
@@ -216,13 +216,13 @@ module tb_H_top;
         ps_write(4'd9, 32'd1); 
         
         wait_for_commit(32'd1);
-        if (uut.u_ad9767.run_step_a !== PS_STEP_A) $fatal(1, "ERROR: Atomic commit failed, run_step_a not updated!");
-        if (uut.u_ad9767.run_step_b !== PS_STEP_B ||
-            uut.u_ad9767.run_wave_b !== PS_WAVE_B[0] ||
-            uut.u_ad9767.run_amp_b !== PS_AMP_B[13:0])
+        if (uut.u_dac_dds.inst.run_step_a !== PS_STEP_A) $fatal(1, "ERROR: Atomic commit failed, run_step_a not updated!");
+        if (uut.u_dac_dds.inst.run_step_b !== PS_STEP_B ||
+            uut.u_dac_dds.inst.run_wave_b !== PS_WAVE_B[0] ||
+            uut.u_dac_dds.inst.run_amp_b !== PS_AMP_B[13:0])
             $fatal(1, "ERROR: Channel B parameters not atomically updated!");
-        if (uut.u_ad9767.phase_acc_a !== PS_PHASE_A) $fatal(1, "ERROR: Initial start failed to force phase_acc_a!");
-        if (uut.u_ad9767.phase_acc_b !== PS_PHASE_B) $fatal(1, "ERROR: Initial start failed to force phase_acc_b!");
+        if (uut.u_dac_dds.inst.phase_acc_a !== PS_PHASE_A) $fatal(1, "ERROR: Initial start failed to force phase_acc_a!");
+        if (uut.u_dac_dds.inst.phase_acc_b !== PS_PHASE_B) $fatal(1, "ERROR: Initial start failed to force phase_acc_b!");
         $display("  --> STAGE 1 PASSED! Dual-channel parameters synchronized instantly, initial phases forced perfectly.");
 
 
@@ -230,22 +230,22 @@ module tb_H_top;
         $display(" STAGE 2: Frequency Tracking Verification (Waveform Continuity Check)");
         $display("=======================================================");
         #1;
-        previous_phase_a = uut.u_ad9767.phase_acc_a;
-        previous_phase_b = uut.u_ad9767.phase_acc_b;
+        previous_phase_a = uut.u_dac_dds.inst.phase_acc_a;
+        previous_phase_b = uut.u_dac_dds.inst.phase_acc_b;
         previous_dac_a   = o_da_data;
         dac_step = 0;
         for (phase_check_index = 0; phase_check_index < 32; phase_check_index = phase_check_index + 1) begin
             @(posedge i_clk_dac);
             #1;
-            if (uut.u_ad9767.phase_acc_a !== previous_phase_a + uut.u_ad9767.run_step_a) begin
+            if (uut.u_dac_dds.inst.phase_acc_a !== previous_phase_a + uut.u_dac_dds.inst.run_step_a) begin
                 $fatal(1, "ERROR: DDS accumulator stalled during normal run! Sample: %0d", phase_check_index);
             end
-            if (uut.u_ad9767.phase_acc_b !== previous_phase_b + uut.u_ad9767.run_step_b)
+            if (uut.u_dac_dds.inst.phase_acc_b !== previous_phase_b + uut.u_dac_dds.inst.run_step_b)
                 $fatal(1, "ERROR: Channel B accumulator stalled during normal run! Sample: %0d", phase_check_index);
             if (o_da_data !== o_da_data_b)
                 dac_step = 1;
-            previous_phase_a = uut.u_ad9767.phase_acc_a;
-            previous_phase_b = uut.u_ad9767.phase_acc_b;
+            previous_phase_a = uut.u_dac_dds.inst.phase_acc_a;
+            previous_phase_b = uut.u_dac_dds.inst.phase_acc_b;
             previous_dac_a = o_da_data;
         end
         if (dac_step == 0)
@@ -258,7 +258,7 @@ module tb_H_top;
         ps_write(4'd8, 32'd0);
         repeat (12) @(posedge i_clk_dac);
         #1;
-        if (uut.u_ad9767.run_enabled !== 1'b1)
+        if (uut.u_dac_dds.inst.run_enabled !== 1'b1)
             $fatal(1, "ERROR: Uncommitted RUN shadow value stopped DDS prematurely!");
 
         ps_write(4'd1, TRACKING_STEP_A); 
@@ -269,9 +269,9 @@ module tb_H_top;
 
         wait_for_commit_with_phase(32'd2, previous_phase_a, previous_phase_b);
 
-        if (uut.u_ad9767.run_step_a !== TRACKING_STEP_A) $fatal(1, "ERROR: Frequency tracking step update failed!");
-        if (uut.u_ad9767.phase_acc_a !== previous_phase_a + TRACKING_STEP_A ||
-            uut.u_ad9767.phase_acc_b !== previous_phase_b + PS_STEP_B)
+        if (uut.u_dac_dds.inst.run_step_a !== TRACKING_STEP_A) $fatal(1, "ERROR: Frequency tracking step update failed!");
+        if (uut.u_dac_dds.inst.phase_acc_a !== previous_phase_a + TRACKING_STEP_A ||
+            uut.u_dac_dds.inst.phase_acc_b !== previous_phase_b + PS_STEP_B)
             $fatal(1, "FATAL ERROR: Tracking commit did not maintain phase continuity for both channels!");
         
         $display("  --> STAGE 3 PASSED! Parameter updated successfully without interrupting accumulators.");
@@ -294,10 +294,10 @@ module tb_H_top;
             ps_write(4'd6, phase_word);
             ps_write(4'd9, 32'd3 + (phase_deg / 5));
             wait_for_commit(32'd3 + (phase_deg / 5));
-            if (uut.u_ad9767.run_wave_a !== 1'b0 ||
-                uut.u_ad9767.run_wave_b !== 1'b0 ||
-                uut.u_ad9767.phase_acc_a !== 32'd0 ||
-                uut.u_ad9767.phase_acc_b !== phase_word)
+            if (uut.u_dac_dds.inst.run_wave_a !== 1'b0 ||
+                uut.u_dac_dds.inst.run_wave_b !== 1'b0 ||
+                uut.u_dac_dds.inst.phase_acc_a !== 32'd0 ||
+                uut.u_dac_dds.inst.phase_acc_b !== phase_word)
                 $fatal(1, "ERROR: Initial phase commit error at %0d degrees", phase_deg);
         end
         $display("  --> STAGE 4 PASSED! 0 to 180 degree, 5-degree steps loaded on common commit edge.");
@@ -311,8 +311,8 @@ module tb_H_top;
         ps_write(4'd8, 32'd5); // RUN=1, B phase delta=1
         ps_write(4'd9, 32'd40);
         wait_for_commit_with_phase(32'd40, previous_phase_a, previous_phase_b);
-        if (uut.u_ad9767.phase_acc_a !== previous_phase_a + PS_STEP_B ||
-            uut.u_ad9767.phase_acc_b !== previous_phase_b + PS_STEP_A + phase_word)
+        if (uut.u_dac_dds.inst.phase_acc_a !== previous_phase_a + PS_STEP_B ||
+            uut.u_dac_dds.inst.phase_acc_b !== previous_phase_b + PS_STEP_A + phase_word)
             $fatal(1, "ERROR: Live B phase adjustment changed A or missed B delta!");
         $display("  --> STAGE 5 PASSED! A stayed continuous and B advanced by 5 degrees.");
 
@@ -325,9 +325,9 @@ module tb_H_top;
         wait_for_commit(32'd41);
         repeat (3) @(posedge i_clk_dac);
         #1;
-        if (uut.u_ad9767.run_enabled !== 1'b0 ||
-            uut.u_ad9767.phase_acc_a !== 32'd0 ||
-            uut.u_ad9767.phase_acc_b !== 32'd0 ||
+        if (uut.u_dac_dds.inst.run_enabled !== 1'b0 ||
+            uut.u_dac_dds.inst.phase_acc_a !== 32'd0 ||
+            uut.u_dac_dds.inst.phase_acc_b !== 32'd0 ||
             o_da_data !== 14'd8192 || o_da_data_b !== 14'd8192)
             $fatal(1, "ERROR: DDS or DAC midscale state incorrect after RUN=0 commit!");
         $display("  --> STAGE 5 PASSED! Stop commit acknowledged, both DACs maintained midscale.");

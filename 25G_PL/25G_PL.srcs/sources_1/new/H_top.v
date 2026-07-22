@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-// PL acquisition logic plus BRAM-controlled AD9767 output.
+// PL acquisition logic plus BRAM-controlled DDS/DAC output IP.
 // This file intentionally uses Verilog-2001 syntax because its extension is .v.
 module H_top (
     input  wire        i_clk_50m,
@@ -30,22 +30,24 @@ module H_top (
 
     wire        w_ad_clk;
     wire        w_ad_phase;
-    wire        w_ad_valid;
-    wire [11:0] w_ad_data;
     wire        w_fifo_empty;
     wire        w_fifo_rd_en;
     wire [15:0] w_fifo_data;
-    wire        w_rst_safe;
     wire        w_dac_clk_a_forwarded;
     wire        w_dac_clk_b_forwarded;
     wire        w_dac_wrt_a_forwarded;
     wire        w_dac_wrt_b_forwarded;
-    wire        w_dac_wrt_a_unused;
-    wire        w_dac_wrt_b_unused;
+    wire [11:0] w_sine_addr_a;
+    wire [11:0] w_sine_addr_b;
+    wire [11:0] w_triangle_addr_a;
+    wire [11:0] w_triangle_addr_b;
+    wire [13:0] w_sine_data_a;
+    wire [13:0] w_sine_data_b;
+    wire [13:0] w_triangle_data_a;
+    wire [13:0] w_triangle_data_b;
     reg  [11:0] w_tlast_cnt;
 
-    assign w_rst_safe = i_rst & w_ad_valid;
-    assign o_ad_clk   = w_ad_clk;
+    assign o_ad_clk = w_ad_clk;
 
     // Forward CLK and WRT through ODDR output resources so their pin delay
     // matches the falling-edge DAC data registers.
@@ -70,21 +72,21 @@ module H_top (
     assign o_da_clk_b = w_dac_clk_b_forwarded;
     assign o_da_wrt_b = w_dac_wrt_b_forwarded;
 
-    ad9226 u_ad9226 (
-        .clk           (i_clk_50m),
-        .rst_ad        (i_rst),
-        .din           (i_ad_data),
-        .clk_ad        (w_ad_clk),
-        .dout          (w_ad_data),
-        .ad_out_valid  (w_ad_valid),
-        .clk_ad_deg    (w_ad_phase)
+    // The AD/FIFO IP no longer owns the clock wizard. Keep the dedicated
+    // 0-degree output on the ADC pin and use the phase-shifted output for
+    // capture and the FIFO write clock.
+    PLL_AD ad_clk (
+        .clk_pll_ad    (w_ad_clk),
+        .clk_pll_phase (w_ad_phase),
+        .resetn        (i_rst),
+        .locked        (),
+        .clk_sys       (i_clk_50m)
     );
 
-    fifo u_adc_fifo (
-        .rst       (w_rst_safe),
-        .wr_clk    (w_ad_phase),
-        .wr_en     (w_ad_valid),
-        .din       (w_ad_data),
+    ad_fifo_output u_ad_fifo (
+        .rst_n     (i_rst),
+        .clk_phase (w_ad_phase),
+        .adc_din   (i_ad_data),
         .rd_clk    (i_clk_100m),
         .rd_en     (w_fifo_rd_en),
         .dout      (w_fifo_data),
@@ -103,21 +105,50 @@ module H_top (
             w_tlast_cnt <= (w_tlast_cnt == 12'd4095) ? 12'd0 : w_tlast_cnt + 1'b1;
     end
 
-    assign m_axis_tlast = (w_tlast_cnt == 12'd4095) &&
-                          m_axis_tvalid ;
+    assign m_axis_tlast = (w_tlast_cnt == 12'd4095) && m_axis_tvalid;
 
-    ad9767 u_ad9767 (
-        .clk       (i_clk_dac),
-        .rst_n     (i_rst),
-        .bram_addr (bram_addr),
-        .bram_dout (bram_dout),
-        .bram_en   (bram_en),
-        .bram_we   (bram_we),
-        .da_data_a (o_da_data),
-        .da_data_b (o_da_data_b),
-        .da_wrt_a  (w_dac_wrt_a_unused),
-        .da_wrt_b  (w_dac_wrt_b_unused)
+    // DDS_DAC keeps the waveform memories external. These four instances
+    // preserve the prior independent A/B sine and triangle ROM topology.
+    blk_rom_sine sine_a (
+        .clka  (i_clk_dac), .ena(1'b1),
+        .addra (w_sine_addr_a), .douta (w_sine_data_a)
+    );
+    blk_rom_triangle triangle_a (
+        .clka  (i_clk_dac), .ena(1'b1),
+        .addra (w_triangle_addr_a), .douta (w_triangle_data_a)
+    );
+    blk_rom_sine sine_b (
+        .clka  (i_clk_dac), .ena(1'b1),
+        .addra (w_sine_addr_b), .douta (w_sine_data_b)
+    );
+    blk_rom_triangle triangle_b (
+        .clka  (i_clk_dac), .ena(1'b1),
+        .addra (w_triangle_addr_b), .douta (w_triangle_data_b)
     );
 
+    DDS_DAC u_dac_dds (
+        .clk             (i_clk_dac),
+        .rst_n           (i_rst),
+        .bram_addr       (bram_addr),
+        .bram_dout       (bram_dout),
+        .bram_en         (bram_en),
+        .bram_we         (bram_we),
+        .sine_addr_a     (w_sine_addr_a),
+        .sine_data_a     (w_sine_data_a),
+        .sine_addr_b     (w_sine_addr_b),
+        .sine_data_b     (w_sine_data_b),
+        .triangle_addr_a (w_triangle_addr_a),
+        .triangle_data_a (w_triangle_data_a),
+        .triangle_addr_b (w_triangle_addr_b),
+        .triangle_data_b (w_triangle_data_b),
+        .arb_addr_a      (),
+        .arb_data_a      (14'd8192),
+        .arb_addr_b      (),
+        .arb_data_b      (14'd8192),
+        .da_data_a       (o_da_data),
+        .da_data_b       (o_da_data_b),
+        .da_wrt_a        (),
+        .da_wrt_b        ()
+    );
 
 endmodule

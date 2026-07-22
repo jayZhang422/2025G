@@ -1381,8 +1381,8 @@ create_clock -period 20.000 -name i_clk_50m [get_ports i_clk_50m]
 
 # False path between ADC clock domain (5.12MHz) and PS clock domain (100MHz)
 # These are handled by the async FIFO, no need for strict timing check
-set_false_path -from [get_clocks clk_pll_deg_PLL_AD] -to [get_clocks clk_fpga_0]
-set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks clk_pll_deg_PLL_AD]
+set_false_path -from [get_clocks clk_pll_phase_PLL_AD] -to [get_clocks clk_fpga_0]
+set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks clk_pll_phase_PLL_AD]
 
 #############################################################################
 # DUAL CHANNEL DAC (rev 0.09/0.04): CHB constraints (DB0-13, BCLK, WR2)
@@ -1444,8 +1444,8 @@ create_generated_clock -name dac_clk_a_forwarded -source [get_pins u_h_top/dac_c
 create_generated_clock -name dac_wrt_a_forwarded -source [get_pins u_h_top/dac_wrt_a_forward/C] -divide_by 1 [get_ports o_da_wrt]
 create_generated_clock -name dac_clk_b_forwarded -source [get_pins u_h_top/dac_clk_b_forward/C] -divide_by 1 [get_ports o_da_clk_b]
 create_generated_clock -name dac_wrt_b_forwarded -source [get_pins u_h_top/dac_wrt_b_forward/C] -divide_by 1 [get_ports o_da_wrt_b]
-set_property IOB TRUE [get_cells -hierarchical -regexp {.*u_ad9767/da_data_a_reg\[[0-9]+\]$}]
-set_property IOB TRUE [get_cells -hierarchical -regexp {.*u_ad9767/da_data_b_reg\[[0-9]+\]$}]
+set_property IOB TRUE [get_cells -hierarchical -regexp {.*u_dac_dds(/.*)?/da_data_a_reg\[[0-9]+\]$}]
+set_property IOB TRUE [get_cells -hierarchical -regexp {.*u_dac_dds(/.*)?/da_data_b_reg\[[0-9]+\]$}]
 set_output_delay -clock dac_clk_a_forwarded -max 2.000 [get_ports {o_da_data[*]}]
 set_output_delay -clock dac_clk_a_forwarded -min -1.500 [get_ports {o_da_data[*]}]
 set_output_delay -clock dac_wrt_a_forwarded -max -add_delay 2.000 [get_ports {o_da_data[*]}]

@@ -1,5 +1,50 @@
 # Change Log
 
+## 2026-07-22 - Top-Level Custom-IP Integration
+
+### Changed
+
+- Replaced the direct `ad9226` plus `fifo` hierarchy in `H_top.v` with the
+  added `ad_fifo_output` IP. `PLL_AD` remains at top level because the AD IP
+  no longer owns the clock wizard: its 0-degree output still drives
+  `o_ad_clk`, and its phase-shifted output still clocks ADC capture/FIFO
+  writes.
+- Replaced the direct `ad9767` hierarchy with the added `DDS_DAC` IP. The
+  existing four independent sine/triangle ROM instances remain at top level
+  and are connected to the new IP address/data ports on `i_clk_dac`.
+- Preserved the 16-bit AXIS data path, 4096-beat TLAST counter, ten-word BRAM
+  map, atomic COMMIT_SEQ behavior, ODDR-forwarded DAC CLK/WRT pins, and
+  falling-edge DAC data registration. The new arbitrary-waveform ports are
+  held at midscale because the existing PS contract selects only sine or
+  triangle.
+- Updated the active testbench's backdoor observation paths from the old
+  `u_ad9767` instance to `u_dac_dds.inst`; test stimulus and assertions are
+  unchanged.
+- No PACKAGE_PIN or IOSTANDARD assignment changed. The XDC now references the
+  renamed phase clock (`clk_pll_phase_PLL_AD`) and the new DDS IP hierarchy for
+  DAC output-register IOB placement.
+
+### Verification
+
+- Vivado 2020.2 generated the added IP simulation targets successfully.
+- The existing `tb_H_top` behavioral regression passed all seven stages in
+  XSim and finished normally at 35246 ns. It covered atomic DDS commits,
+  independent A/B output, tracking continuity, B phase adjustment, STOP
+  midscale, and AXIS TLAST under backpressure.
+- The same design compiled with the configured Questa flow without HDL errors;
+  execution could not start because the installed ModelSim ASE lacks `vopt`.
+- No synthesis, implementation, or bitstream generation was run.
+
+### Required Follow-Up
+
+- `PLL_AD` now produces 5.12006 MHz, while the prior design and PS sampling
+  contract use 5.12080 MHz. Reconfigure the clock wizard to restore 5.12080
+  MHz before hardware deployment, or update the PS sampling constant in a
+  coordinated change.
+- `DDS_DAC.xci` declares its `clk` interface as 100 MHz, but `H_top` connects
+  it to the 125 MHz DAC clock. Repackage/configure the custom IP metadata as
+  125 MHz before timing closure. This is not a physical-pin constraint change.
+
 ## 2026-07-19 - AD9767 Source-Synchronous Output Timing
 
 ### Changed
