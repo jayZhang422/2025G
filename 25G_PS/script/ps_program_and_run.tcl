@@ -26,11 +26,11 @@ proc require_optimized_makefile {build_dir} {
 
 set script_dir [file dirname [file normalize [info script]]]
 set workspace [file normalize [file join $script_dir ..]]
-set app_debug_dir [file join $workspace Signal_separation_app Debug]
-set bit_file [file join $workspace Signal_separation_app _ide bitstream top.bit]
-set xsa_file [file join $workspace Signal_separation_platform export Signal_separation_platform hw top.xsa]
-set ps7_init_file [file join $workspace Signal_separation_app _ide psinit ps7_init.tcl]
-set elf_file [file join $workspace Signal_separation_app Debug Signal_separation_app.elf]
+set app_debug_dir [file join $workspace Identification_Processing_System Debug]
+set bit_file [file join $workspace Identification_Processing_System _ide bitstream top.bit]
+set xsa_file [file join $workspace Identification_platform export Identification_platform hw top.xsa]
+set ps7_init_file [file join $workspace Identification_Processing_System _ide psinit ps7_init.tcl]
+set elf_file [file join $workspace Identification_Processing_System Debug Identification_Processing_System.elf]
 
 progress "checking programming artifacts"
 require_optimized_makefile $app_debug_dir

@@ -30,9 +30,9 @@ proc build_application {build_dir} {
 
 set script_dir [file dirname [file normalize [info script]]]
 set workspace [file normalize [file join $script_dir ..]]
-set system_name Signal_separation_app_system
-set app_debug_dir [file join $workspace Signal_separation_app Debug]
-set elf_file [file join $app_debug_dir Signal_separation_app.elf]
+set system_name Identification_Processing_System_system
+set app_debug_dir [file join $workspace Identification_Processing_System Debug]
+set elf_file [file join $app_debug_dir Identification_Processing_System.elf]
 
 progress "opening workspace $workspace"
 setws $workspace
