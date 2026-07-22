@@ -26,10 +26,10 @@ proc open_target_project {project_file project_dir} {
 
     set current_dir [file normalize [get_property DIRECTORY $current]]
     if {$current_dir ne $project_dir} {
-        error "Another project is open: $current_dir\nClose it or open 2023H_pl before running this script."
+        error "Another project is open: $current_dir\nClose it or open 25G_PL before running this script."
     }
 
-    progress "using the already-open project 2023H_pl"
+    progress "using the already-open project 25G_PL"
     return 0
 }
 
@@ -63,10 +63,10 @@ proc ask_current_bitstream_action {} {
 }
 
 set script_dir [file dirname [file normalize [info script]]]
-set project_dir [file normalize [file join $script_dir .. 2023H_pl]]
-set project_file [file join $project_dir 2023H_pl.xpr]
+set project_dir [file normalize [file join $script_dir ..]]
+set project_file [file join $project_dir 25G_PL.xpr]
 set xsa_file [file join $project_dir top.xsa]
-set bit_file [file join $project_dir 2023H_pl.runs impl_1 top.bit]
+set bit_file [file join $project_dir 25G_PL.runs impl_1 top.bit]
 set threads 24
 set thread_arg [lsearch -exact $argv "--threads"]
 if {$thread_arg >= 0} {
@@ -90,11 +90,11 @@ require_file $project_file "Vivado project"
 set opened_by_script [open_target_project $project_file $project_dir]
 if {[get_runs -quiet impl_1] eq ""} {
     close_if_opened_by_script $opened_by_script
-    error "Implementation run impl_1 does not exist in project 2023H_pl"
+    error "Implementation run impl_1 does not exist in project 25G_PL"
 }
 if {[get_runs -quiet synth_1] eq ""} {
     close_if_opened_by_script $opened_by_script
-    error "Synthesis run synth_1 does not exist in project 2023H_pl"
+    error "Synthesis run synth_1 does not exist in project 25G_PL"
 }
 
 # Validate the requested concurrency against this Vivado version even in check mode.
@@ -103,7 +103,7 @@ if {[lsearch -exact $argv "--check"] >= 0} {
     progress "checking existing bitstream and hardware export"
     require_file $bit_file "Existing bitstream"
     require_file $xsa_file "Existing hardware export"
-    progress "CHECK PASSED: 2023H_pl and implementation run impl_1 are available"
+    progress "CHECK PASSED: 25G_PL and implementation run impl_1 are available"
     close_if_opened_by_script $opened_by_script
     return
 }

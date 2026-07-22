@@ -30,11 +30,11 @@ proc build_application {build_dir} {
 
 set script_dir [file dirname [file normalize [info script]]]
 set workspace [file normalize [file join $script_dir ..]]
-set xsa_file [file normalize [file join $workspace .. 2023H_PL 2023H_pl top.xsa]]
-set platform_name Signal_separation_platform
-set system_name Signal_separation_app_system
-set app_debug_dir [file join $workspace Signal_separation_app Debug]
-set elf_file [file join $app_debug_dir Signal_separation_app.elf]
+set xsa_file [file normalize [file join $workspace .. 25G_PL top.xsa]]
+set platform_name Identification_platform
+set system_name Identification_Processing_System_system
+set app_debug_dir [file join $workspace Identification_Processing_System Debug]
+set elf_file [file join $app_debug_dir Identification_Processing_System.elf]
 
 progress "checking latest PL XSA"
 require_file $xsa_file "Latest PL XSA"

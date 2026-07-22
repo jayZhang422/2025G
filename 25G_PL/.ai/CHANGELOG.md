@@ -1,5 +1,21 @@
 # Change Log
 
+## 2026-07-22 - 2025G reusable handoff and packaged-IP regression
+
+### Changed
+
+- Added repository-root CODEX_START.md as the single reusable Codex session entry.
+- Corrected PL/PS automation paths to current 25G_PL and Identification project names.
+- Corrected the Vivado user IP repository to $PPRDIR/ip_core.
+- Added bounded packaged-IP regression script ../script/pl_test_packaged_ips.tcl and testbench ../sim/ip/tb_packaged_ips.sv.
+
+### Verification
+
+- Vivado 2020.2 project/BD path check passed and loaded the local user IP repository.
+- Vivado/XSim compiled both packaged IP paths and FIFO Generator 13.2.
+- Behavioral regression printed PACKAGED_IP_REGRESSION_PASSED and finished at 2506 ns.
+- Packaged IPs remain unintegrated; no top-level, synthesis, timing, XSA, Vitis, or board pass is claimed.
+
 ## 2026-07-19 - AD9767 Source-Synchronous Output Timing
 
 ### Changed
