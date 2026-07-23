@@ -7,7 +7,7 @@
 #ifndef USER_INCLUDE_DDS_CONTROL_H_
 #define USER_INCLUDE_DDS_CONTROL_H_
 
-#include "signal_processing.h"
+#include "../algorithms/two_channel_signal_analyzer.h"
 #include "xil_types.h"
 
 typedef struct {

@@ -1,12 +1,12 @@
 /******************************************************************************
- * signal_analysis.c
+ * two_channel_signal_analyzer.c
  *
  * The FFT supplies candidate frequencies. A joint time-domain residual then
  * selects the independent A/B waveform types from the four valid combinations.
  ******************************************************************************/
 
 #include "../include/app_config.h"
-#include "../include/signal_processing.h"
+#include "two_channel_signal_analyzer.h"
 
 #include <math.h>
 
@@ -396,7 +396,7 @@ int signal_analyze_frame(const u16 *raw_samples,
                          float32_t *fft_spectrum,
                          float32_t *fft_magnitude,
                          float32_t *model_workspace,
-                         signal_analysis_result_t *result)
+                         two_channel_signal_analyzer_result_t *result)
 {
     signal_peak_t peaks[APP_PEAK_CANDIDATE_COUNT];
     signal_frequency_candidate_t
@@ -484,8 +484,8 @@ int signal_analyze_frame(const u16 *raw_samples,
     return XST_SUCCESS;
 }
 
-void signal_track_result(signal_analysis_result_t *tracked,
-                         const signal_analysis_result_t *measurement,
+void signal_track_result(two_channel_signal_analyzer_result_t *tracked,
+                         const two_channel_signal_analyzer_result_t *measurement,
                          float32_t frequency_alpha)
 {
     signal_component_t *tracked_channels[2];
@@ -558,7 +558,7 @@ static int signal_run_test_case(signal_waveform_t waveform_a,
     arm_rfft_fast_instance_f32 fft_instance;
     signal_component_t channel_a;
     signal_component_t channel_b;
-    signal_analysis_result_t result;
+    two_channel_signal_analyzer_result_t result;
 
     if (arm_rfft_fast_init_f32(&fft_instance, APP_FFT_LEN) !=
         ARM_MATH_SUCCESS) {

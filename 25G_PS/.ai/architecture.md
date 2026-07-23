@@ -11,16 +11,16 @@ app_state
 |- board_buttons / display_ui
 |- dma_capture
 |- dds_control / wave_ram
-|- calibration / known_model
+|- dac_vpp_calibration / transfer_function_model
 |- rlc_learning
-`- waveform_inference
+`- response_waveform_generator
 ```
 
 Hardware access stays in drivers. Algorithms receive typed data and never raw PL addresses.
 
 Data products:
 
-- `calibration_t`: DAC amplitude and ADC gain/offset calibration.
+- `dac_vpp_calibration_t`: DAC amplitude and ADC gain/offset dac_vpp_calibration.
 - `complex_response_t`: learned frequency, gain and phase points.
 - `rlc_model_t`: filter class and optional fitted coefficients.
 - `wave_table_t`: 4096 unsigned 14-bit samples plus replay frequency.
@@ -38,12 +38,12 @@ Use repository-root CODEX_START.md as the only new-session entry. Both packaged 
 
 ### 服务与数据流
 
-- known_model：保存已知 RLC 模型参数，计算 H(j2πf) 并与扫频结果比较。
-- calibration：保存 DAC 幅度码到实际 Vpp 的离线标定关系；基本 3/4 按 Vin,pp = Vout,target,pp / |H(j2πf)| 开环计算 DDS 幅度。
-- basic_service：执行基本 1–4 的参数检查、一次性 DDS 设置和结果输出；运行期间不启用 ADC/PID 反馈。纯软件开环计划器已实现并通过主机自检。
-- coherent_measure：用 I=(2/N)Σy[n]cos(2πfn/fs)、Q=-(2/N)Σy[n]sin(2πfn/fs) 得到 Y=I+jQ，再除以输入参考 X 得到复数 H。
-- rlc_learning / filter_classifier：管理未知 RLC 扫频、复响应缓存及低通/高通/带通/带阻分类。
-- frequency_estimator / waveform_inference：捕获未知输入、估计基频、用学习到的响应系数生成 4096 点重放波表。
+- transfer_function_model：保存已知 RLC 模型参数，计算 H(j2πf) 并与扫频结果比较。
+- dac_vpp_calibration：保存 DAC 幅度码到实际 Vpp 的离线标定关系；基本 3/4 按 Vin,pp = Vout,target,pp / |H(j2πf)| 开环计算 DDS 幅度。
+- open_loop_output_planner：执行基本 1–4 的参数检查、一次性 DDS 设置和结果输出；运行期间不启用 ADC/PID 反馈。纯软件开环计划器已实现并通过主机自检。
+- coherent_transfer_measurement：用 I=(2/N)Σy[n]cos(2πfn/fs)、Q=-(2/N)Σy[n]sin(2πfn/fs) 得到 Y=I+jQ，再除以输入参考 X 得到复数 H。
+- rlc_learning / rlc_filter_classifier：管理未知 RLC 扫频、复响应缓存及低通/高通/带通/带阻分类。
+- fundamental_frequency_estimator / response_waveform_generator：捕获未知输入、估计基频、用学习到的响应系数生成 4096 点重放波表。
 - wave_ram：仅在新 XSA 生成并确认对应 XPAR 后实现；PS 写表时 DDS 停止，完成后一次性提交并启动，避免播放中更新半表。
 
 ### 学习与重放状态
@@ -63,10 +63,10 @@ BOOT → MENU → BASIC
 
 ## 2026-07-23 实施状态
 
-- 已加入 known_model、calibration、coherent_measure、filter_classifier 纯软件层，均不访问硬件寄存器。
+- 已加入 transfer_function_model、dac_vpp_calibration、coherent_transfer_measurement、rlc_filter_classifier 纯软件层，均不访问硬件寄存器。
 - tests/test_transfer_algorithms.c 已用 GCC 严格告警编译并运行通过，覆盖模型幅相、标定正逆插值、I/Q 复频响及基础分类。
 - 波表 HAL、DMA 采集闭环和 FreeRTOS 菜单尚未接入；它们必须等新 XSA 导出并核对 XPAR_* 后再实现。
 
 ## 2026-07-23 发挥 2 算法状态
 
-frequency_estimator 和 waveform_inference 已实现为不访问硬件的纯软件层，并通过严格 GCC 主机自检。当前波表生成接受已学习的复响应系数，输出归一化 14-bit 表；实际 PS BRAM 写入仍等待新 XSA/BSP 的 XPAR 证据。
+fundamental_frequency_estimator 和 response_waveform_generator 已实现为不访问硬件的纯软件层，并通过严格 GCC 主机自检。当前波表生成接受已学习的复响应系数，输出归一化 14-bit 表；实际 PS BRAM 写入仍等待新 XSA/BSP 的 XPAR 证据。

@@ -1,4 +1,4 @@
-#include "waveform_inference.h"
+#include "response_waveform_generator.h"
 
 #include <math.h>
 #include <stddef.h>
@@ -14,28 +14,28 @@ static float clamp_unit(float value)
     return value;
 }
 
-int waveform_inference_build_table(const float *input_samples,
+int response_waveform_generate_table(const float *input_samples,
                                    size_t sample_count,
                                    float sample_rate_hz,
                                    float fundamental_hz,
-                                   const waveform_response_bin_t *responses,
+                                   const response_waveform_bin_t *responses,
                                    size_t response_count,
                                    uint16_t *table,
                                    size_t table_count)
 {
     const float two_pi = 6.28318530717958647692f;
     float input_mean = 0.0f;
-    float input_real[WAVEFORM_INFERENCE_MAX_BINS];
-    float input_imag[WAVEFORM_INFERENCE_MAX_BINS];
-    float output_real[WAVEFORM_INFERENCE_MAX_BINS];
-    float output_imag[WAVEFORM_INFERENCE_MAX_BINS];
+    float input_real[RESPONSE_WAVEFORM_MAX_BINS];
+    float input_imag[RESPONSE_WAVEFORM_MAX_BINS];
+    float output_real[RESPONSE_WAVEFORM_MAX_BINS];
+    float output_imag[RESPONSE_WAVEFORM_MAX_BINS];
     size_t n;
     size_t k;
     size_t m;
 
     if (input_samples == NULL || responses == NULL || table == NULL ||
         sample_count < 4U || response_count == 0U ||
-        response_count > WAVEFORM_INFERENCE_MAX_BINS ||
+        response_count > RESPONSE_WAVEFORM_MAX_BINS ||
         table_count == 0U || !isfinite(sample_rate_hz) ||
         !isfinite(fundamental_hz) || sample_rate_hz <= 0.0f ||
         fundamental_hz <= 0.0f ||
@@ -87,7 +87,7 @@ int waveform_inference_build_table(const float *input_samples,
         }
         value = clamp_unit(value);
         table[m] = (uint16_t)lroundf((value + 1.0f) *
-                                     (0.5f * (float)WAVEFORM_INFERENCE_DAC_MAX));
+                                     (0.5f * (float)RESPONSE_WAVEFORM_DAC_MAX));
     }
     return 0;
 }

@@ -1,11 +1,11 @@
 /******************************************************************************
- * signal_processing.h
+ * two_channel_signal_analyzer.h
  *
  * Two-component signal identification for the AD9226 DMA frame.
  ******************************************************************************/
 
-#ifndef USER_INCLUDE_SIGNAL_PROCESSING_H_
-#define USER_INCLUDE_SIGNAL_PROCESSING_H_
+#ifndef USER_ALGORITHMS_TWO_CHANNEL_SIGNAL_ANALYZER_H_
+#define USER_ALGORITHMS_TWO_CHANNEL_SIGNAL_ANALYZER_H_
 
 #include "arm_math.h"
 #include "xstatus.h"
@@ -27,7 +27,10 @@ typedef struct {
     signal_component_t channel_a;
     signal_component_t channel_b;
     float32_t normalized_residual;
-} signal_analysis_result_t;
+} two_channel_signal_analyzer_result_t;
+
+/* Compatibility alias: existing diagnostics/DDS callers keep their interface. */
+typedef two_channel_signal_analyzer_result_t signal_analysis_result_t;
 
 /*
  * Convert ADC codes, perform a windowed FFT coarse search, then select the
@@ -40,11 +43,11 @@ int signal_analyze_frame(const u16 *raw_samples,
                          float32_t *fft_spectrum,
                          float32_t *fft_magnitude,
                          float32_t *model_workspace,
-                         signal_analysis_result_t *result);
+                         two_channel_signal_analyzer_result_t *result);
 
 /* Low-pass only the values safe to update during phase-continuous tracking. */
-void signal_track_result(signal_analysis_result_t *tracked,
-                         const signal_analysis_result_t *measurement,
+void signal_track_result(two_channel_signal_analyzer_result_t *tracked,
+                         const two_channel_signal_analyzer_result_t *measurement,
                          float32_t frequency_alpha);
 
 const char *signal_waveform_name(signal_waveform_t waveform);
@@ -52,4 +55,4 @@ const char *signal_waveform_name(signal_waveform_t waveform);
 /* Algorithm-only regression; it does not access DMA or the DDS control BRAM. */
 int signal_run_self_tests(void);
 
-#endif /* USER_INCLUDE_SIGNAL_PROCESSING_H_ */
+#endif /* USER_ALGORITHMS_TWO_CHANNEL_SIGNAL_ANALYZER_H_ */

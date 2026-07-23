@@ -1,15 +1,15 @@
-#include "frequency_estimator.h"
+#include "fundamental_frequency_estimator.h"
 
 #include <math.h>
 #include <stddef.h>
 
-#define FREQUENCY_ESTIMATOR_MAX_BINS 1000000U
+#define FUNDAMENTAL_FREQUENCY_ESTIMATOR_MAX_BINS 1000000U
 
-int frequency_estimator_estimate(const float *samples,
+int fundamental_frequency_estimate(const float *samples,
                                  size_t sample_count,
                                  float sample_rate_hz,
-                                 const frequency_estimator_config_t *config,
-                                 frequency_estimate_t *estimate)
+                                 const fundamental_frequency_search_config_t *config,
+                                 fundamental_frequency_estimate_t *estimate)
 {
     const float two_pi = 6.28318530717958647692f;
     float mean = 0.0f;
@@ -33,7 +33,7 @@ int frequency_estimator_estimate(const float *samples,
     bin_count = (size_t)floorf((config->max_frequency_hz -
                                 config->min_frequency_hz) /
                                config->step_hz) + 1U;
-    if (bin_count == 0U || bin_count > FREQUENCY_ESTIMATOR_MAX_BINS) {
+    if (bin_count == 0U || bin_count > FUNDAMENTAL_FREQUENCY_ESTIMATOR_MAX_BINS) {
         return -1;
     }
 

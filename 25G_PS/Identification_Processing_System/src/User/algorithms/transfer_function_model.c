@@ -1,11 +1,11 @@
-#include "known_model.h"
+#include "transfer_function_model.h"
 
 #include <math.h>
 #include <stddef.h>
 
-int known_model_eval(const known_model_coeffs_t *coeffs,
+int transfer_function_model_eval(const transfer_function_model_coeffs_t *coeffs,
                      float frequency_hz,
-                     known_model_response_t *response)
+                     transfer_function_response_t *response)
 {
     const float two_pi = 6.28318530717958647692f;
     float omega;

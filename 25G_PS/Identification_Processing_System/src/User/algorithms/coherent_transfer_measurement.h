@@ -1,5 +1,5 @@
-#ifndef COHERENT_MEASURE_H
-#define COHERENT_MEASURE_H
+#ifndef COHERENT_TRANSFER_MEASUREMENT_H
+#define COHERENT_TRANSFER_MEASUREMENT_H
 
 #include <stddef.h>
 
@@ -12,18 +12,18 @@ typedef struct {
     float imag;
     float magnitude;
     float phase_rad;
-} coherent_response_t;
+} coherent_transfer_response_t;
 
 /*
  * Calculates H(f) = Y(f) / X(f) using the synchronous I/Q equations.
  * Samples are centered, equally spaced, and represented as floating point.
  */
-int coherent_measure_transfer(const float *input,
+int coherent_transfer_measure(const float *input,
                               const float *output,
                               size_t sample_count,
                               float sample_rate_hz,
                               float frequency_hz,
-                              coherent_response_t *response);
+                              coherent_transfer_response_t *response);
 
 #ifdef __cplusplus
 }

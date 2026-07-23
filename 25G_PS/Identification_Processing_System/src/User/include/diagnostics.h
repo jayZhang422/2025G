@@ -9,7 +9,7 @@
 #define USER_INCLUDE_DIAGNOSTICS_H_
 
 #include "dds_control.h"
-#include "signal_processing.h"
+#include "../algorithms/two_channel_signal_analyzer.h"
 #include "xil_types.h"
 
 int diagnostics_should_report(u32 attempt);

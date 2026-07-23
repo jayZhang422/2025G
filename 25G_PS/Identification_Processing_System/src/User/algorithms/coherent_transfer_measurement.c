@@ -1,4 +1,4 @@
-#include "coherent_measure.h"
+#include "coherent_transfer_measurement.h"
 
 #include <math.h>
 
@@ -24,12 +24,12 @@ static void accumulate_iq(const float *samples,
     *q_value = scale * q_sum;
 }
 
-int coherent_measure_transfer(const float *input,
+int coherent_transfer_measure(const float *input,
                               const float *output,
                               size_t sample_count,
                               float sample_rate_hz,
                               float frequency_hz,
-                              coherent_response_t *response)
+                              coherent_transfer_response_t *response)
 {
     float input_i;
     float input_q;

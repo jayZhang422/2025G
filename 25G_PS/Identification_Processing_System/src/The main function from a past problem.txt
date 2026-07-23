@@ -13,7 +13,7 @@
 #include "User/include/diagnostics.h"
 #include "User/include/dds_control.h"
 #include "User/include/dma_utils.h"
-#include "User/include/signal_processing.h"
+#include "User/algorithms/two_channel_signal_analyzer.h"
 
 #include <math.h>
 

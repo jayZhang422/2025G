@@ -1,4 +1,4 @@
-#include "filter_classifier.h"
+#include "rlc_filter_classifier.h"
 
 #include <math.h>
 
@@ -12,10 +12,10 @@ static float mean_range(const float *values, size_t first, size_t last)
     return sum / (float)(last - first);
 }
 
-int filter_classifier_classify(const float *frequency_hz,
+int rlc_filter_classify(const float *frequency_hz,
                                const float *magnitude,
                                size_t count,
-                               filter_class_t *result)
+                               rlc_filter_class_t *result)
 {
     size_t edge_count;
     size_t i;
@@ -59,15 +59,15 @@ int filter_classifier_classify(const float *frequency_hz,
         }
     }
 
-    *result = FILTER_CLASS_UNKNOWN;
+    *result = RLC_FILTER_CLASS_UNKNOWN;
     if (low_edge >= high_edge * 2.0f && low_edge > interior_min * 1.5f) {
-        *result = FILTER_CLASS_LOW_PASS;
+        *result = RLC_FILTER_CLASS_LOW_PASS;
     } else if (high_edge >= low_edge * 2.0f && high_edge > interior_min * 1.5f) {
-        *result = FILTER_CLASS_HIGH_PASS;
+        *result = RLC_FILTER_CLASS_HIGH_PASS;
     } else if (edge_min > 0.0f && interior_max >= edge_max * 1.5f) {
-        *result = FILTER_CLASS_BAND_PASS;
+        *result = RLC_FILTER_CLASS_BAND_PASS;
     } else if (interior_min <= edge_min * 0.5f && edge_max <= edge_min * 2.0f) {
-        *result = FILTER_CLASS_BAND_STOP;
+        *result = RLC_FILTER_CLASS_BAND_STOP;
     }
     return 0;
 }
