@@ -70,3 +70,7 @@ BOOT → MENU → BASIC
 ## 2026-07-23 发挥 2 算法状态
 
 fundamental_frequency_estimator 和 response_waveform_generator 已实现为不访问硬件的纯软件层，并通过严格 GCC 主机自检。当前波表生成接受已学习的复响应系数，输出归一化 14-bit 表；实际 PS BRAM 写入仍等待新 XSA/BSP 的 XPAR 证据。
+
+## 2026-07-23 应用状态机状态
+
+app_state_machine 已实现为硬件无关的流程骨架：BOOT → MENU，并可进入 BASIC、LEARN、INFER；运行错误进入 ERROR，复位回到 BOOT。它只负责状态转移，DMA、DDS、按键和波表 HAL 仍由外部服务接入。
