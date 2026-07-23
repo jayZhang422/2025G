@@ -16,7 +16,7 @@
 /* The PL emits one 4096-sample, 16-bit AXIS frame per TLAST. */
 #define APP_FFT_LEN                 4096
 #define APP_SPEC_LEN                (APP_FFT_LEN / 2)
-#define APP_SAMPLE_RATE_HZ          5120800.0f
+#define APP_SAMPLE_RATE_HZ          5120060.0f
 #define APP_BIN_WIDTH_HZ            (APP_SAMPLE_RATE_HZ / APP_FFT_LEN)
 #define APP_RX_FRAME_BYTES          (APP_FFT_LEN * sizeof(u16))
 
@@ -73,6 +73,12 @@
 #define APP_DDS_CONTROL_PHASE_LOAD  0x02U
 #define APP_DDS_CONTROL_B_PHASE_ADJUST 0x04U
 
+/* PL IQ detector: all peripheral addresses come from the generated BSP. */
+#define APP_IQ_BASEADDR             XPAR_IQ_DEMODULATOR_0_BASEADDR
+#define APP_IQ_ADC_CLOCK_HZ         APP_SAMPLE_RATE_HZ
+#define APP_IQ_WINDOW_SAMPLES       4096U
+#define APP_IQ_RESULT_TIMEOUT_MS    100U
+
 /* B' initial phase is an intentional user setting, not the measured input phase. */
 #define APP_B_TO_A_PHASE_DEGREES    0.0f
 #define APP_PHASE_STEP_DEGREES       5.0f
@@ -94,7 +100,7 @@
  * Board bring-up diagnostics. Keep DDS test mode at zero for normal use.
  * Setting it to one proves the BRAM -> DDS -> DAC path without ADC or DMA.
  */
-#define APP_DIAG_BUILD_TAG           "BTN_LOCK_DIAG_O2_20260721"
+#define APP_DIAG_BUILD_TAG           "FREERTOS_IQ_DMAFFT_20260723"
 #define APP_DIAG_FIRST_ATTEMPTS      4U
 #define APP_DIAG_REPORT_PERIOD       16U
 #define APP_DIAG_FORCE_DDS_TEST      0   //0: normal 1:force

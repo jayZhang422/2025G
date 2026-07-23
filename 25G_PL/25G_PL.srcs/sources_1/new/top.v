@@ -40,6 +40,9 @@ module top (
     wire        adc_tvalid;
     wire        adc_tready;
     wire        adc_tlast;
+    wire        iq_clk_adc;
+    wire [11:0] iq_adc_raw;
+    wire        iq_sample_valid;
     wire [31:0] bram_addr;
     wire [31:0] bram_dout;
     wire        bram_en;
@@ -62,6 +65,9 @@ module top (
         .m_axis_tvalid (adc_tvalid),
         .m_axis_tready (adc_tready),
         .m_axis_tlast  (adc_tlast),
+        .iq_clk_adc    (iq_clk_adc),
+        .iq_adc_raw    (iq_adc_raw),
+        .iq_sample_valid (iq_sample_valid),
         .bram_addr     (bram_addr),
         .bram_en       (bram_en),
         .bram_we       (bram_we),
@@ -102,7 +108,11 @@ module top (
         .FIXED_IO_ps_clk      (FIXED_IO_ps_clk),
         .FIXED_IO_ps_porb     (FIXED_IO_ps_porb),
         .FIXED_IO_ps_srstb    (FIXED_IO_ps_srstb),
+        .clk_adc_in           (iq_clk_adc),
         .clk_dac              (clk_dac),
-        .pl_key_i             (pl_key_i)
+        .i_adc_raw_0          (iq_adc_raw),
+        .i_sample_valid_0     (iq_sample_valid),
+        .pl_key_i             (pl_key_i),
+        .rst_n_0              (i_rst)
     );
 endmodule

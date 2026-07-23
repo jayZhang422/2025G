@@ -11,6 +11,7 @@
 #include "xil_printf.h"
 #include "xtime_l.h"
 
+/** 读取并打印 S2MM 控制、状态、目的地址和剩余长度寄存器。 */
 void dma_dump_s2mm_regs(const char *tag, XAxiDma *dma)
 {
     u32 cr = XAxiDma_ReadReg(dma->RegBase + XAXIDMA_RX_OFFSET,
@@ -36,6 +37,7 @@ void dma_dump_s2mm_regs(const char *tag, XAxiDma *dma)
                (unsigned int)destination, (unsigned int)remaining);
 }
 
+/** 初始化并复位只支持 simple-mode S2MM 的 ADC DMA，关闭其所有中断。 */
 int dma_init_s2mm(XAxiDma *dma, u16 device_id)
 {
     XAxiDma_Config *config;
@@ -78,6 +80,7 @@ int dma_init_s2mm(XAxiDma *dma, u16 device_id)
     return XST_SUCCESS;
 }
 
+/** 在传输启动失败或超时时打印现场并重新初始化 S2MM DMA。 */
 static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
 {
     dma_dump_s2mm_regs("S2MM before reset:", dma);
@@ -89,6 +92,7 @@ static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
     return XST_SUCCESS;
 }
 
+/** 启动一帧 ADC S2MM 传输并轮询完成；失败或超时后尝试恢复 DMA。 */
 int dma_capture_frame(XAxiDma *dma, u16 device_id, u16 *buffer,
                       u32 length_bytes)
 {

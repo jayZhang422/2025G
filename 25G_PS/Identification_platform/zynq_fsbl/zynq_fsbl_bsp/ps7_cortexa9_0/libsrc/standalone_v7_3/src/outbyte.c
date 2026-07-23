@@ -1,6 +1,4 @@
 #include "xparameters.h"
-#include "xuartps_hw.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,6 +8,9 @@ void outbyte(char c);
 }
 #endif 
 
-void outbyte(char c) {
-	 XUartPs_SendByte(STDOUT_BASEADDRESS, c);
+#ifndef VERSAL_PLM
+void outbyte(char c)
+{
+    (void) c;
 }
+#endif

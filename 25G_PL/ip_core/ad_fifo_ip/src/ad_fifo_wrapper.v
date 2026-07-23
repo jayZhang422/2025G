@@ -11,7 +11,13 @@ module ad_fifo_warpper(
     input  wire        rd_clk,       // 读侧时钟 (100MHz PS FCLK)
     input  wire        rd_en,        // 读使能
     output wire [15:0] dout,         // 16位高位对齐/低位补零输出数据
-    output wire        empty         // FIFO 空标志
+    output wire        empty,        // FIFO 空标志
+
+    // ADC-clock-domain observation path for the IQ demodulator. These are
+    // the same registered sample and validity flag that feed the FIFO write
+    // port; they do not add a second capture path.
+    output wire [11:0] adc_raw,
+    output wire        sample_valid
     //需在顶层写一个0度时钟给ADC引脚约束使用
 );
 
@@ -39,6 +45,9 @@ module ad_fifo_warpper(
         .dout         (dout),        // 16-bit 输出
         .empty        (empty)        // 空标志
     );
+
+    assign adc_raw      = ad_dout;
+    assign sample_valid = ad_valid;
 
 
 

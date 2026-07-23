@@ -8,7 +8,7 @@
 #include "../include/dds_control.h"
 
 #include "xil_io.h"
-/*frequency to phase step Func      Step = f*(2^32)/f_s; */
+/** 按 125 MHz DDS 时钟将目标频率换算为 32 位相位步进，并执行饱和。 */
 static u32 dds_phase_step_from_frequency(float32_t frequency_hz)
 {
     double step = ((double)frequency_hz * 4294967296.0) /
@@ -23,7 +23,7 @@ static u32 dds_phase_step_from_frequency(float32_t frequency_hz)
     return (u32)(step + 0.5);
 }
 
-/* Word = θ *(2^32)/360; */
+/** 将任意角度归一化到一个周期，并换算为无符号 32 位绝对相位字。 */
 static u32 dds_phase_word_from_degrees(float32_t phase_degrees)
 {
     double phase_word;
@@ -39,6 +39,7 @@ static u32 dds_phase_word_from_degrees(float32_t phase_degrees)
     return (u32)(phase_word + 0.5);
 }
 
+/** 将带符号角度增量编码为 DDS B 通道相位微调使用的补码相位字。 */
 static u32 dds_phase_delta_from_degrees(float32_t phase_delta_degrees)
 {
     double phase_word = ((double)phase_delta_degrees * 4294967296.0) / 360.0;
@@ -47,12 +48,14 @@ static u32 dds_phase_delta_from_degrees(float32_t phase_delta_degrees)
                       (phase_word + 0.5) : (phase_word - 0.5));
 }
 
+/** 初始化 DDS BRAM 控制对象，并设置首个有效原子提交序号。 */
 void dds_control_init(dds_control_t *control)
 {
     control->base_address = (UINTPTR)APP_DDS_BRAM_BASEADDR;
     control->next_commit_sequence = 1U;
 }
 
+/** 将已识别的信号分量转换为 PL DDS 所需的波形、步进、相位和幅度配置。 */
 void dds_control_from_component(const signal_component_t *component,
                                 float32_t initial_phase_degrees,
                                 dds_channel_config_t *config)
@@ -63,6 +66,10 @@ void dds_control_from_component(const signal_component_t *component,
     config->amplitude_code = APP_DDS_UNITY_AMPLITUDE;
 }
 
+/**
+ * 写入完整 A/B DDS shadow 配置，最后写 COMMIT_SEQ 触发 PL 原子应用。
+ * phase_reload 控制绝对初相装载，run 为零时请求 DAC 回到中点。
+ */
 int dds_control_commit(dds_control_t *control,
                        const dds_channel_config_t *channel_a,
                        const dds_channel_config_t *channel_b,
@@ -108,6 +115,7 @@ int dds_control_commit(dds_control_t *control,
     return XST_SUCCESS;
 }
 
+/** 在保持 A/B 当前频率配置的前提下，以原子提交方式调整 B 相位增量。 */
 int dds_control_adjust_b_phase(dds_control_t *control,
                                const dds_channel_config_t *channel_a,
                                const dds_channel_config_t *channel_b,

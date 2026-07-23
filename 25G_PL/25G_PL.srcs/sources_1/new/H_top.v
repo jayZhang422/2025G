@@ -22,6 +22,10 @@ module H_top (
     input  wire        m_axis_tready,
     output wire        m_axis_tlast,
 
+    output wire        iq_clk_adc,
+    output wire [11:0] iq_adc_raw,
+    output wire        iq_sample_valid,
+
     output wire [31:0] bram_addr,
     output wire        bram_en,
     output wire [3:0]  bram_we,
@@ -48,6 +52,7 @@ module H_top (
     reg  [11:0] w_tlast_cnt;
 
     assign o_ad_clk = w_ad_clk;
+    assign iq_clk_adc = w_ad_phase;
 
     // Forward CLK and WRT through ODDR output resources so their pin delay
     // matches the falling-edge DAC data registers.
@@ -90,7 +95,9 @@ module H_top (
         .rd_clk    (i_clk_100m),
         .rd_en     (w_fifo_rd_en),
         .dout      (w_fifo_data),
-        .empty     (w_fifo_empty)
+        .empty     (w_fifo_empty),
+        .adc_raw   (iq_adc_raw),
+        .sample_valid (iq_sample_valid)
     );
 
     assign w_fifo_rd_en  = ~w_fifo_empty & m_axis_tready;

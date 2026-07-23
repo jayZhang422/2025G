@@ -27,6 +27,7 @@ typedef struct {
     float32_t cosine_step;
 } signal_oscillator_t;
 
+/** 初始化递推正弦振荡器，供时域建模和正交投影复用。 */
 static void signal_oscillator_init(signal_oscillator_t *oscillator,
                                    float32_t frequency_hz,
                                    float32_t phase_rad)
@@ -40,6 +41,7 @@ static void signal_oscillator_init(signal_oscillator_t *oscillator,
     oscillator->cosine_step = cosf(phase_step);
 }
 
+/** 推进一个采样点的振荡器状态，并周期性归一化以限制累计误差。 */
 static void signal_oscillator_advance(signal_oscillator_t *oscillator,
                                       int sample_index)
 {
@@ -60,6 +62,7 @@ static void signal_oscillator_advance(signal_oscillator_t *oscillator,
     }
 }
 
+/** 将单个正弦或三角波分量重建到工作区，可选择覆盖或叠加。 */
 static void signal_render_component(const signal_component_t *component,
                                     float32_t *model_workspace, int add)
 {
@@ -105,6 +108,7 @@ static void signal_render_component(const signal_component_t *component,
     }
 }
 
+/** 将高位对齐 ADC 码转为去直流的时域数据，并生成 Hann 窗 FFT 输入。 */
 static void signal_prepare_adc_frame(const u16 *raw_samples,
                                      float32_t *time_domain,
                                      float32_t *fft_input)
@@ -128,6 +132,7 @@ static void signal_prepare_adc_frame(const u16 *raw_samples,
     }
 }
 
+/** 计算 CMSIS 实数 FFT 半谱各频点的复数模值。 */
 static void signal_compute_magnitudes(const float32_t *spectrum,
                                       float32_t *magnitude)
 {
@@ -142,6 +147,7 @@ static void signal_compute_magnitudes(const float32_t *spectrum,
     }
 }
 
+/** 将局部峰值按幅值降序插入固定容量候选表。 */
 static void signal_insert_peak(signal_peak_t *peaks, int *peak_count,
                                int bin, float32_t magnitude)
 {
@@ -171,6 +177,7 @@ static void signal_insert_peak(signal_peak_t *peaks, int *peak_count,
     }
 }
 
+/** 在允许频带内提取局部峰值，作为后续频率候选的原始来源。 */
 static int signal_find_candidate_peaks(const float32_t *magnitude,
                                        signal_peak_t *peaks)
 {
@@ -195,6 +202,7 @@ static int signal_find_candidate_peaks(const float32_t *magnitude,
     return peak_count;
 }
 
+/** 对峰值 bin 做三点抛物线插值，得到更精细的频率估计。 */
 static float32_t signal_refine_frequency(const float32_t *magnitude, int bin)
 {
     float32_t left = magnitude[bin - 1];
@@ -214,6 +222,7 @@ static float32_t signal_refine_frequency(const float32_t *magnitude, int bin)
     return ((float32_t)bin + offset) * APP_BIN_WIDTH_HZ;
 }
 
+/** 按幅值维护去重后的频率候选表。 */
 static void signal_insert_frequency_candidate(
     signal_frequency_candidate_t *candidates, int *candidate_count,
     float32_t frequency_hz, float32_t magnitude)
@@ -253,6 +262,7 @@ static void signal_insert_frequency_candidate(
     }
 }
 
+/** 验证频率是否落在题目栅格容差内，并输出吸附后的栅格频率。 */
 static int signal_snap_to_grid(float32_t frequency_hz,
                                float32_t *snapped_frequency_hz)
 {
@@ -270,6 +280,7 @@ static int signal_snap_to_grid(float32_t frequency_hz,
     return 1;
 }
 
+/** 从峰值构建栅格频率候选，并补充三倍频/三分频谐波冲突候选。 */
 static int signal_build_frequency_candidates(
     const float32_t *magnitude, const signal_peak_t *peaks, int peak_count,
     signal_frequency_candidate_t *candidates)
@@ -311,6 +322,7 @@ static int signal_build_frequency_candidates(
     return candidate_count;
 }
 
+/** 用正交投影估计指定频率与波形假设的基波幅度和相位。 */
 static void signal_estimate_fundamental(const float32_t *time_domain,
                                         float32_t frequency_hz,
                                         signal_waveform_t waveform,
@@ -335,6 +347,7 @@ static void signal_estimate_fundamental(const float32_t *time_domain,
     component->waveform = waveform;
 }
 
+/** 重建 A/B 两路模型并返回相对原信号能量的归一化残差。 */
 static float32_t signal_joint_residual(const float32_t *time_domain,
                                        const signal_component_t *channel_a,
                                        const signal_component_t *channel_b,
@@ -360,6 +373,7 @@ static float32_t signal_joint_residual(const float32_t *time_domain,
     return sqrtf(error_energy / signal_energy);
 }
 
+/** 交替消除另一分量后重新投影两路参数，抑制谐波与基波重叠干扰。 */
 static void signal_refine_pair(const float32_t *time_domain,
                                signal_component_t *channel_a,
                                signal_component_t *channel_b,
@@ -389,6 +403,10 @@ static void signal_refine_pair(const float32_t *time_domain,
     }
 }
 
+/**
+ * 分析一帧 DMA ADC 数据，选择残差最小的双频率、双波形组合。
+ * 调用前必须完成 DMA 接收并使接收缓冲区缓存失效。
+ */
 int signal_analyze_frame(const u16 *raw_samples,
                          arm_rfft_fast_instance_f32 *fft_instance,
                          float32_t *time_domain,
@@ -484,6 +502,7 @@ int signal_analyze_frame(const u16 *raw_samples,
     return XST_SUCCESS;
 }
 
+/** 按给定一阶系数平滑已跟踪结果的频率，其余测量字段直接更新。 */
 void signal_track_result(signal_analysis_result_t *tracked,
                          const signal_analysis_result_t *measurement,
                          float32_t frequency_alpha)
@@ -518,11 +537,13 @@ void signal_track_result(signal_analysis_result_t *tracked,
     tracked->normalized_residual = measurement->normalized_residual;
 }
 
+/** 将波形枚举转换为诊断输出使用的名称。 */
 const char *signal_waveform_name(signal_waveform_t waveform)
 {
     return (waveform == SIGNAL_WAVE_TRIANGLE) ? "triangle" : "sine";
 }
 
+/** 根据两个组件模型生成高位对齐的合成 ADC 帧，供纯软件回归使用。 */
 static void signal_generate_test_frame(u16 *raw_samples,
                                        const signal_component_t *channel_a,
                                        const signal_component_t *channel_b,
@@ -544,6 +565,7 @@ static void signal_generate_test_frame(u16 *raw_samples,
     }
 }
 
+/** 运行一个给定波形和频率组合的信号分析回归用例。 */
 static int signal_run_test_case(signal_waveform_t waveform_a,
                                 signal_waveform_t waveform_b,
                                 float32_t frequency_a,
@@ -591,6 +613,7 @@ static int signal_run_test_case(signal_waveform_t waveform_a,
     return XST_SUCCESS;
 }
 
+/** 执行四种波形组合和三次谐波冲突的算法自测。 */
 int signal_run_self_tests(void)
 {
     if (signal_run_test_case(SIGNAL_WAVE_SINE, SIGNAL_WAVE_SINE,

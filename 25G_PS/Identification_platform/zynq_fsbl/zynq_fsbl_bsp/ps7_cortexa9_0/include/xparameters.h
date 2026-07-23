@@ -18,8 +18,6 @@
 
 #include "xparameters_ps.h"
 
-#define STDIN_BASEADDRESS 0xE0001000
-#define STDOUT_BASEADDRESS 0xE0001000
 
 /******************************************************************/
 
@@ -269,6 +267,11 @@
 #define XPAR_PS7_SLCR_0_S_AXI_HIGHADDR 0xF8000FFF
 
 
+/* Definitions for peripheral IQ_DEMODULATOR_0 */
+#define XPAR_IQ_DEMODULATOR_0_BASEADDR 0x43C00000
+#define XPAR_IQ_DEMODULATOR_0_HIGHADDR 0x43C0FFFF
+
+
 /******************************************************************/
 
 /* Definitions for driver GPIOPS */
@@ -287,6 +290,15 @@
 #define XPAR_XGPIOPS_0_BASEADDR 0xE000A000
 #define XPAR_XGPIOPS_0_HIGHADDR 0xE000AFFF
 
+
+/******************************************************************/
+
+/* Definitions for Fabric interrupts connected to ps7_scugic_0 */
+#define XPAR_FABRIC_IQ_DEMODULATOR_0_O_IRQ_INTR 61U
+
+/******************************************************************/
+
+/* Canonical definitions for Fabric interrupts connected to ps7_scugic_0 */
 
 /******************************************************************/
 

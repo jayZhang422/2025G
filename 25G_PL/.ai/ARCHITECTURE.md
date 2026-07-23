@@ -297,3 +297,38 @@ including the already-open-project path, BD validation, bitstream current-state
 detection, and the interactive `0` / `--keep` no-write path. `system.tcl`,
 `top.xsa`, `top.bit`, and `2023H_pl.xpr` were not modified during these checks.
 <!-- SYNC: PL_AUTOMATION_CONTRACT_END -->
+
+## 15. IQ Integration Status
+
+The active IQ data path is now:
+
+```text
+AD9226 registered sample and stable valid
+ -> ad_fifo_output adc_raw/sample_valid
+ -> H_top IQ outputs
+ -> top
+ -> generated system_wrapper
+ -> iq_demodulator_0 in system.bd
+ -> AXI-Lite result/control registers and IRQ_F2P
+```
+
+`iq_demodulator_0` is controlled from `0x43C0_0000`. It runs its DSP and DDS
+in the ADC phase-clock domain, while its AXI-Lite control/status interface
+runs on FCLK0. Its configuration and result paths include CDC handshakes;
+the top-level must not substitute raw ADC pins or FCLK0 for the four IQ
+wrapper ports. See `.ai/ip_rep.md` for the maintained port and IP inventory.
+
+## 16. PS/PL Architecture Synchronization
+
+The maintained cross-system record is `../../25G_系统当前架构.md`; the PS-side
+software view is `../../25G_PS/.ai/architecture.md`. The active IQ capability is
+**IQ demodulation**, not IQ modulation: ADC-domain registered samples are mixed
+with an ADC-domain DDS sin/cos pair and accumulated into I/Q windows. The PS only
+configures and reads this IP through AXI-Lite. The existing ADC-to-DMA-to-PS FFT
+path remains active for unknown-frequency search and waveform classification.
+
+The DAC path is separately implemented by `DDS_DAC`: it uses a ten-word BRAM
+snapshot and independent single-tone DDS states. Since it has no streaming I/Q
+baseband input, interpolation, pulse shaping, or quadrature up-converter, it is
+not an IQ modulator. IP-specific use documents are maintained in
+`ip_core/*/usage/README.md`.

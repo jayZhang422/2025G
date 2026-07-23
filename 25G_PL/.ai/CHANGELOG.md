@@ -1,5 +1,36 @@
 # Change Log
 
+## 2026-07-23 - IQ Demodulator Top-Level Integration
+
+### Changed
+
+- Repackaged local `ad_fifo_output` with `adc_raw[11:0]` and
+  `sample_valid` outputs. Both mirror the registered AD9226 sample and the
+  post-stabilization valid flag already consumed by the FIFO write port; the
+  DMA acquisition path is unchanged.
+- Set `25G_PL/ip_core` as the project IP repository and upgraded the active
+  `ad_fifo_output` instance from that local package.
+- Corrected `dds_iq_lo` AXI clock metadata to `5,120,060 Hz`. Its DDS clock
+  rate remains `5.12006 MHz`, while phase increment and phase offset remain
+  runtime-programmable through the IQ IP AXI-Lite interface.
+- Replaced the stale imported `system_wrapper.v` source with the current BD
+  generated wrapper. The old file remains on disk only and is no longer in
+  `sources_1`.
+- Connected the IQ BD ports in `top.v`: the ADC phase clock, registered raw
+  sample, valid flag, and active-low reset now flow from `H_top` through the
+  generated wrapper to `iq_demodulator_0`.
+- Added `.ai/ip_rep.md` as the current IP inventory and interface-maintenance
+  reference.
+
+### Verification
+
+- Local custom-IP packaging, `upgrade_ip`, and generated HDL refresh
+  completed without launching simulation, synthesis, implementation, or
+  bitstream generation.
+- `validate_bd_design` completed successfully.
+- Vivado 2020.2 `check_syntax -fileset sources_1` reported no errors or
+  warnings.
+
 ## 2026-07-22 - Top-Level Custom-IP Integration
 
 ### Changed

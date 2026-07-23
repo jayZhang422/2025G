@@ -10,12 +10,14 @@
 #include "xil_io.h"
 #include "xil_printf.h"
 
+/** 判断当前尝试次数是否应输出受限频率的诊断日志。 */
 int diagnostics_should_report(u32 attempt)
 {
     return attempt <= APP_DIAG_FIRST_ATTEMPTS ||
            (attempt % APP_DIAG_REPORT_PERIOD) == 0U;
 }
 
+/** 统计一帧高位对齐 ADC 码的范围、均值、变化和饱和情况并输出日志。 */
 void diagnostics_report_adc_frame(const u16 *raw_samples, u32 attempt)
 {
     u16 minimum = 0xFFFFU;
@@ -60,6 +62,7 @@ void diagnostics_report_adc_frame(const u16 *raw_samples, u32 attempt)
                (int)(raw_samples[6] >> 4), (int)(raw_samples[7] >> 4));
 }
 
+/** 输出一次信号分析与锁定判定的摘要；分析失败时只打印失败原因。 */
 void diagnostics_report_analysis(u32 attempt, int analysis_status,
                                  int lock_status,
                                  const signal_analysis_result_t *result)
@@ -80,6 +83,7 @@ void diagnostics_report_analysis(u32 attempt, int analysis_status,
                (lock_status == XST_SUCCESS) ? "accept" : "reject");
 }
 
+/** 读取并输出 DDS 控制 BRAM 当前快照，用于确认 PS 写入结果。 */
 void diagnostics_report_dds_snapshot(const char *tag,
                                      const dds_control_t *control)
 {

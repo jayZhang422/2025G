@@ -27,7 +27,7 @@
 static XAxiDma g_dma_rx;
 static arm_rfft_fast_instance_f32 g_fft_instance;
 
-/*printf Func*/
+/** 输出已锁定 A/B 分量的波形、频率、幅度、相位及拟合残差。 */
 static void app_report_result(const signal_analysis_result_t *result)
 {
     xil_printf("A: %s f=%d Hz amp=%d phase_mrad=%d\r\n",
@@ -44,6 +44,7 @@ static void app_report_result(const signal_analysis_result_t *result)
 }
 
 
+/** 采集一帧 DMA ADC 数据、完成缓存失效和信号分析，并按需输出耗时诊断。 */
 static int app_capture_measurement(signal_analysis_result_t *measurement,
                                    u32 attempt)
 {
@@ -86,6 +87,7 @@ static int app_capture_measurement(signal_analysis_result_t *measurement,
     return analysis_status;
 }
 
+/** 构造固定 50 kHz/100 kHz 正弦配置，用于绕过 ADC 分析的 DDS 诊断模式。 */
 static int app_start_forced_dds_test(dds_control_t *dds_control)
 {
     signal_component_t channel_a;
@@ -116,12 +118,14 @@ static int app_start_forced_dds_test(dds_control_t *dds_control)
     return XST_SUCCESS;
 }
 
+/** 将频率吸附到应用定义的最近离散频率栅格。 */
 static float32_t app_snap_to_frequency_grid(float32_t frequency_hz)
 {
     return floorf(frequency_hz / APP_FREQUENCY_GRID_HZ + 0.5f) *
            APP_FREQUENCY_GRID_HZ;
 }
 
+/** 验证残差和频率容差，规范化锁定候选并要求 A 频率小于 B。 */
 static int app_normalize_lock_measurement(signal_analysis_result_t *measurement)
 {
     signal_component_t *channels[2];
@@ -150,6 +154,7 @@ static int app_normalize_lock_measurement(signal_analysis_result_t *measurement)
             measurement->channel_b.frequency_hz) ? XST_SUCCESS : XST_FAILURE;
 }
 
+/** 判断两帧锁定候选的 A/B 波形和栅格频率是否完全一致。 */
 static int app_same_lock_solution(const signal_analysis_result_t *left,
                                   const signal_analysis_result_t *right)
 {
@@ -159,6 +164,7 @@ static int app_same_lock_solution(const signal_analysis_result_t *left,
            left->channel_b.frequency_hz == right->channel_b.frequency_hz;
 }
 
+/** 当 B/A 是精确整数比时，由 A 步进推导 B 步进以保持数字频率比例。 */
 static void app_preserve_integer_frequency_ratio(
     const signal_analysis_result_t *result, dds_channel_config_t *dds_a,
     dds_channel_config_t *dds_b)
@@ -173,6 +179,7 @@ static void app_preserve_integer_frequency_ratio(
     }
 }
 
+/** 以环绕方式更新用户选择的 B 相对 A 相位，并输出当前设置。 */
 static void app_update_phase_setting(float32_t *phase_degrees,
                                      float32_t phase_delta_degrees)
 {
@@ -185,6 +192,7 @@ static void app_update_phase_setting(float32_t *phase_degrees,
     xil_printf("B-to-A phase setting: %d degrees\r\n", (int)*phase_degrees);
 }
 
+/** 在 RUNNING 状态处理复位和 B 相位微调，并提交对应 DDS BRAM 配置。 */
 static int app_process_running_buttons(button_input_t *buttons,
                                        dds_control_t *dds_control,
                                        const dds_channel_config_t *dds_a,
@@ -220,6 +228,7 @@ static int app_process_running_buttons(button_input_t *buttons,
     return 0;
 }
 
+/** 判断从锁定开始到当前时刻是否超过允许的获取时限。 */
 static int app_lock_timed_out(XTime start_time)
 {
     XTime current_time;
@@ -229,6 +238,7 @@ static int app_lock_timed_out(XTime start_time)
         ((XTime)APP_LOCK_TIMEOUT_SECONDS * (XTime)COUNTS_PER_SECOND);
 }
 
+/** 在 ARMED 状态轮询按键，允许预设相位并等待一次启动按压。 */
 static int app_wait_for_start(button_input_t *buttons,
                               float32_t *phase_degrees)
 {
@@ -248,6 +258,10 @@ static int app_wait_for_start(button_input_t *buttons,
     }
 }
 
+/**
+ * 归档的信号分离主状态机：ARMED、LOCKING、RUNNING 三态间循环。
+ * 在 FreeRTOS 任务中包含时会重命名为 signal_separator_bare_metal_main。
+ */
 int main(void)
 {
     dds_control_t dds_control;
@@ -375,6 +389,7 @@ int main(void)
 
         diagnostics_report_dds_snapshot("locked start", &dds_control);
         app_report_result(&locked_result);
+        app_report_pl_iq(&locked_result);
         xil_printf("RUNNING: T17/R17 adjust B phase; N16 stops and rearms\r\n");
         while (1) {
             int button_status = app_process_running_buttons(
