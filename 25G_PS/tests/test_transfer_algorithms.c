@@ -6,6 +6,8 @@
 #include "calibration.h"
 #include "coherent_measure.h"
 #include "filter_classifier.h"
+#include "frequency_estimator.h"
+#include "waveform_inference.h"
 #include "known_model.h"
 
 static int close_enough(float actual, float expected, float tolerance)
@@ -33,6 +35,10 @@ int main(void)
     float bandpass_magnitude[5] = {0.1f, 0.2f, 1.0f, 0.2f, 0.1f};
     float frequencies[5] = {100.0f, 200.0f, 300.0f, 400.0f, 500.0f};
     filter_class_t filter_class;
+    frequency_estimator_config_t estimator_config;
+    frequency_estimate_t estimate;
+    waveform_response_bin_t response_bin;
+    uint16_t waveform_table[64];
     size_t n;
 
     if (known_model_eval(&lowpass, 1.0f / (2.0f * pi), &model_response) != 0 ||
@@ -81,6 +87,29 @@ int main(void)
                                    &filter_class) != 0 ||
         filter_class != FILTER_CLASS_BAND_PASS) {
         return 5;
+    }
+    for (n = 0U; n < 4096U; ++n) {
+        const float phase = 2.0f * pi * 1234.0f * (float)n / fs;
+        input[n] = cosf(phase);
+    }
+    estimator_config.min_frequency_hz = 1000.0f;
+    estimator_config.max_frequency_hz = 1500.0f;
+    estimator_config.step_hz = 1.0f;
+    if (frequency_estimator_estimate(input, 4096U, fs, &estimator_config,
+                                     &estimate) != 0 ||
+        !close_enough(estimate.frequency_hz, 1234.0f, 1.0f) ||
+        estimate.magnitude < 0.8f) {
+        return 7;
+    }
+    response_bin.harmonic = 1U;
+    response_bin.real = 0.5f;
+    response_bin.imag = 0.0f;
+    if (waveform_inference_build_table(input, 4096U, fs, 1234.0f,
+                                       &response_bin, 1U, waveform_table,
+                                       64U) != 0 ||
+        waveform_table[0] < 12000U || waveform_table[0] > 12500U ||
+        waveform_table[16] < 8000U || waveform_table[16] > 8400U) {
+        return 8;
     }
     puts("TRANSFER_ALGORITHM_SELF_TEST_PASSED");
     return 0;

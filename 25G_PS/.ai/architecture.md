@@ -66,3 +66,7 @@ BOOT → MENU → BASIC
 - 已加入 known_model、calibration、coherent_measure、filter_classifier 纯软件层，均不访问硬件寄存器。
 - tests/test_transfer_algorithms.c 已用 GCC 严格告警编译并运行通过，覆盖模型幅相、标定正逆插值、I/Q 复频响及基础分类。
 - 波表 HAL、DMA 采集闭环和 FreeRTOS 菜单尚未接入；它们必须等新 XSA 导出并核对 XPAR_* 后再实现。
+
+## 2026-07-23 发挥 2 算法状态
+
+frequency_estimator 和 waveform_inference 已实现为不访问硬件的纯软件层，并通过严格 GCC 主机自检。当前波表生成接受已学习的复响应系数，输出归一化 14-bit 表；实际 PS BRAM 写入仍等待新 XSA/BSP 的 XPAR 证据。
