@@ -80,3 +80,6 @@ app_state_machine 已实现为硬件无关的流程骨架：BOOT → MENU，并�
 - `app_runtime_capture_and_analyze` 负责一次 S2MM 4096 样本捕获，并在 DMA 前后失效 ADC 缓冲区缓存，再调用 `signal_analyze_frame`；算法层不接触 XPAR、寄存器或 DMA。
 - 当前只完成运行时服务层，尚未替换 FreeRTOS 示例入口；应用状态机仍由上层控制器接入，波表 HAL 继续等待新 XSA/BSP 的 XPAR 证据。
 - `test_transfer_algorithms.c` 与 `test_app_state_machine.c` 均通过 `gcc -std=c11 -Wall -Wextra -Werror` 主机回归；目标侧 Vitis 编译尚未宣称通过。
+## 2026-07-23 新对话默认续作
+
+若新对话没有另行指定 PL/PS 子任务，应从这里继续：使用当前 BSP/Vitis 工具链完成 `app_runtime` 与 `app_state_machine` 的目标侧编译核对；通过后再将状态机接入应用入口。入口接入前不得宣称端到端流程完成；新 XSA/BSP 未确认 `XPAR_*` 前不得实现波表 RAM HAL。

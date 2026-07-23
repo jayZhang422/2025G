@@ -14,6 +14,10 @@
 
 ## 按任务展开阅读
 
+### 新对话未给出具体任务时
+
+不要因用户只说“读取并执行”就停在启动检查。完成核心恢复必读后，读取对应 `.ai` 的最新实施状态，沿“第一个尚未完成且当前证据允许执行的验证门”继续工作；若没有安全可执行的下一步，才汇报阻塞点并提问。当前默认续作是 PS/Vitis：先用当前 BSP/Vitis 工具链完成 `app_runtime` 与状态机的目标侧编译核对，再接入应用入口；波表 HAL 仍需等待新 XSA/BSP 的 `XPAR_*` 证据。
+
 不要为无关任务读取整个工程，只沿任务边界展开：
 
 - PL 任务：读取 `25G_PL/AGENTS.md`、相关的 `25G_PL/.ai/ARCHITECTURE.md`、`STYLE.md`、`MEMORY.md`、最新相关 `CHANGELOG.md`/handoff，以及直接相关的全部 RTL、XDC、BD、XCI/component.xml 和脚本。
