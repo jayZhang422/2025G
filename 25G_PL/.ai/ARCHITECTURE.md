@@ -82,3 +82,46 @@ Static inspection alone never passes a gate.
 - XSim printed PACKAGED_IP_REGRESSION_PASSED and called $finish at 2506 ns.
 - Regression covers DDS shadow isolation, arbitrary-mode atomic commit, phase reload, step advance, DAC falling-phase update, atomic stop/midscale, ADC stabilization, FIFO threshold release, changing samples, and 12-bit high alignment.
 - This passes verification gate 3 only. Packaged IPs remain absent from the active top-level hierarchy; gates 4 through 7 remain open.
+
+## 2026-07-23 执行架构：已知模型、学习与波表重放
+
+本节是本题当前执行方案；它记录设计边界和验证顺序，不把尚未通过工程验证的集成写成既成事实。
+
+### 功能分层
+
+- 基本 1：已知模型电路用扫频测量与理论 H(s) 对照，软件侧由 known_model.[ch] 负责模型与比较。
+- 基本 2：1 MHz 输出使用 125 MHz 时钟 DDS 相位累加器，step = round(f * 2^32 / 125 MHz)；幅度由 DAC 离线标定。
+- 基本 3：1 kHz、2 Vpp 先计算 |H(j2πf)|，令 Vin,pp = Vout,target,pp / |H(j2πf)|，再由标定曲线换算 DDS 幅度码。
+- 基本 4：100 Hz–3 kHz、1–2 Vpp 沿用同一开环模型与标定流程，频率和目标幅度参数化；启动前一次性设置，运行中不使用 ADC/PID 反馈。
+- 发挥 1：未知 RLC 学习阶段逐点扫频；ADC 对每个频点同步解调得到复数 H_k，再分类为低通/高通/带通/带阻。对应软件模块为 coherent_measure.[ch]、rlc_learning.[ch]、filter_classifier.[ch]。
+- 发挥 2：周期输入重放分为“捕获输入→估计基频→得到响应系数→逆变换生成 4096 点波表→DDS 循环播放”，对应 frequency_estimator.[ch]、waveform_inference.[ch]、wave_ram.[ch]。
+
+同步解调定义为：
+
+I = (2/N) Σ y[n] cos(2π f n/fs)
+Q = -(2/N) Σ y[n] sin(2π f n/fs)
+Y(f) = I + jQ
+H(f) = Y(f) / X(f)
+
+保留复数增益和相位；基本 3/4 的目标输出严格走开环离线标定，不连接已知模型输出端到探测装置，也不引入运行时 PID、采样闭环或 DMA 控制回路。
+
+### RTL 集成顺序与边界
+
+1. 以当前已验证的生成 system_wrapper.v 为唯一 XPR 活动 wrapper；保留旧 wrapper 作为回退参考。
+2. 先修正并独立编译 reviewed 的 g2025_top_v3 + g2025_dac_adapter_v3 路径，再切换 XPR 顶层；不得把 v1/v2 探索文件混入活动源集。
+3. 波表 BRAM 物理边界固定为 4096×32、字节地址、4-bit 写使能；样本放在低 14 位，PL 只读，控制 BRAM 既有接口和默认参数不变。
+4. 通过 RTL/仿真后再运行综合、实现并生成新 XSA；在新 XSA 和 xparameters.h 核对前，不实现 PS 波表 HAL 或硬编码波表地址。
+
+### 验证门
+
+- Gate A：接口、位宽、wrapper 端口和 XPR 源集静态核对。
+- Gate B：DDS/波表适配器隔离仿真，检查停止、中点、原始波形选择、原子提交和一拍同步 BRAM 读。
+- Gate C：活动顶层 RTL 编译/仿真，检查 ADC/AXIS/TLAST、旧控制 BRAM 和 DAC 波表路径。
+- Gate D：Vivado 综合/实现/bitstream/XSA；随后更新平台、BSP 与 XPAR。
+- Gate E：Vitis 先实现 HAL 和离线标定/基本服务，再实现学习与推断，最后接入菜单和 FreeRTOS 状态机；每层都要有日志或离线测试证据。
+
+## 2026-07-23 实施状态
+
+- g2025_top_v3.sv 已修正为连接 generated wrapper 的 DDR_we_n 端口；旧 top 和旧 wrapper 未删除。
+- script/pl_select_g2025_top_v3.tcl 已准备好，要求 generated wrapper 存在，加入 reviewed v3 顶层、适配器和 DDS RTL，并提供 --check、--compile-only 与正式切换入口。
+- XPR 当前活动顶层仍是旧 top；在 Vivado Gate C 通过前，不宣称波表路径已经集成。
