@@ -83,3 +83,6 @@ app_state_machine 已实现为硬件无关的流程骨架：BOOT → MENU，并�
 ## 2026-07-23 新对话默认续作
 
 若新对话没有另行指定 PL/PS 子任务，应从这里继续：使用当前 BSP/Vitis 工具链完成 `app_runtime` 与 `app_state_machine` 的目标侧编译核对；通过后再将状态机接入应用入口。入口接入前不得宣称端到端流程完成；新 XSA/BSP 未确认 `XPAR_*` 前不得实现波表 RAM HAL。
+## 2026-07-23 目标编译交接状态
+
+当前交接证据显示：`app_runtime`、`app_state_machine` 及其直接依赖已通过 Vitis 2020.2 ARM GCC 的严格目标对象编译；完整 Vitis 链接仍受工作区 `.metadata` 未注册 `Identification_Processing_System_system` 工程影响。活动入口 `identification_main.c` 仍是 FreeRTOS Hello World，状态机尚未接入；后续应先处理现有工作区工程注册/构建入口，再做最小入口接入，不得重建或覆盖生成 BSP、Makefile 或 Vitis 元数据。
