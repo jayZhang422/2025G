@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "basic_service.h"
 #include "calibration.h"
 #include "coherent_measure.h"
 #include "filter_classifier.h"
@@ -20,6 +21,8 @@ int main(void)
     calibration_curve_t curve = {{{1000U, 1.0f}, {2000U, 2.0f}}, 2U};
     uint16_t code;
     float vpp;
+    basic_output_request_t request;
+    basic_output_plan_t plan;
     float input[4096];
     float output[4096];
     const float fs = 10000.0f;
@@ -42,6 +45,21 @@ int main(void)
         !close_enough(vpp, 1.5f, 0.001f) ||
         calibration_code_for_vpp(&curve, 1.5f, &code) != 0 || code != 1500U) {
         return 2;
+    }
+    {
+        const known_model_coeffs_t plan_model =
+            {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+        const calibration_curve_t plan_curve =
+            {{{1000U, 1.0f}, {4000U, 4.0f}}, 2U};
+        request.frequency_hz = 1.0f / (2.0f * pi);
+        request.target_output_vpp = 2.0f;
+        if (basic_service_plan_output(&plan_model, &plan_curve, &request,
+                                      &plan) != 0 ||
+            !close_enough(plan.model_magnitude, 0.70710678f, 0.001f) ||
+            !close_enough(plan.required_input_vpp, 2.8284271f, 0.002f) ||
+            plan.amplitude_code != 2828U) {
+            return 6;
+        }
     }
     for (n = 0U; n < 4096U; ++n) {
         const float phase = 2.0f * pi * frequency * (float)n / fs;

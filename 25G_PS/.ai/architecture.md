@@ -40,7 +40,7 @@ Use repository-root CODEX_START.md as the only new-session entry. Both packaged 
 
 - known_model：保存已知 RLC 模型参数，计算 H(j2πf) 并与扫频结果比较。
 - calibration：保存 DAC 幅度码到实际 Vpp 的离线标定关系；基本 3/4 按 Vin,pp = Vout,target,pp / |H(j2πf)| 开环计算 DDS 幅度。
-- basic_service：执行基本 1–4 的参数检查、一次性 DDS 设置和结果输出；运行期间不启用 ADC/PID 反馈。
+- basic_service：执行基本 1–4 的参数检查、一次性 DDS 设置和结果输出；运行期间不启用 ADC/PID 反馈。纯软件开环计划器已实现并通过主机自检。
 - coherent_measure：用 I=(2/N)Σy[n]cos(2πfn/fs)、Q=-(2/N)Σy[n]sin(2πfn/fs) 得到 Y=I+jQ，再除以输入参考 X 得到复数 H。
 - rlc_learning / filter_classifier：管理未知 RLC 扫频、复响应缓存及低通/高通/带通/带阻分类。
 - frequency_estimator / waveform_inference：捕获未知输入、估计基频、用学习到的响应系数生成 4096 点重放波表。
