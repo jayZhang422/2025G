@@ -20,6 +20,14 @@
 #include "xil_printf.h"
 #include "xparameters.h"
 
+/* Project hardware glue. */
+#include "User/include/app_config.h"
+#if APP_DIAG_FORCE_DDS_TEST
+#include "User/include/dds_control.h"
+#include "User/include/diagnostics.h"
+#include "User/algorithms/two_channel_signal_analyzer.h"
+#endif
+
 #define TIMER_ID	1
 #define DELAY_10_SECONDS	10000UL
 #define DELAY_1_SECOND		1000UL
@@ -30,6 +38,9 @@
 static void prvTxTask( void *pvParameters );
 static void prvRxTask( void *pvParameters );
 static void vTimerCallback( TimerHandle_t pxTimer );
+#if APP_DIAG_FORCE_DDS_TEST
+static void prvBasic2DdsTask( void *pvParameters );
+#endif
 /*-----------------------------------------------------------*/
 
 /* The queue used by the Tx and Rx tasks, as described at the top of this
@@ -41,11 +52,41 @@ static TimerHandle_t xTimer = NULL;
 char HWstring[15] = "Hello World";
 long RxtaskCntr = 0;
 
+#if APP_DIAG_FORCE_DDS_TEST
+/*
+ * This is a bench-only value for the Basic 2 bring-up path. 1 kHz is also the
+ * explicit frequency used by the contest's Basic 3 item; it is not a product
+ * default and does not replace the future user frequency-setting interface.
+ */
+#define BASIC2_BRINGUP_FREQUENCY_HZ 1000.0f
+#endif
+
 int main( void )
 {
+#if !APP_DIAG_FORCE_DDS_TEST
 	const TickType_t x10seconds = pdMS_TO_TICKS( DELAY_10_SECONDS );
+#endif
 
+#if APP_DIAG_FORCE_DDS_TEST
+	/*
+	 * Explicitly isolate the Basic 2 analogue path from ADC/DMA/FFT. The
+	 * legacy Hello World tasks are disabled so UART output stays focused.
+	 */
+	xil_printf( "Basic 2 DDS bring-up mode: %s\r\n", APP_DIAG_BUILD_TAG );
+	configASSERT( xTaskCreate( prvBasic2DdsTask,
+							  ( const char * ) "Basic2DDS",
+							  configMINIMAL_STACK_SIZE,
+							  NULL,
+							  tskIDLE_PRIORITY + 1,
+							  NULL ) == pdPASS );
+#endif
+
+#if !APP_DIAG_FORCE_DDS_TEST
 	xil_printf( "Hello from Freertos example main\r\n" );
+#endif
+
+
+#if !APP_DIAG_FORCE_DDS_TEST
 
 	/* Create the two tasks.  The Tx task is given a lower priority than the
 	Rx task, so the Rx task will leave the Blocked state and pre-empt the Tx
@@ -93,6 +134,8 @@ int main( void )
 	   10 seconds */
 	xTimerStart( xTimer, 0 );
 
+#endif
+
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
 
@@ -106,6 +149,44 @@ int main( void )
 
 
 /*-----------------------------------------------------------*/
+#if APP_DIAG_FORCE_DDS_TEST
+static void prvBasic2DdsTask( void *pvParameters )
+{
+	dds_control_t dds;
+	dds_channel_config_t channel_a;
+	dds_channel_config_t channel_b;
+	signal_component_t sine;
+	int status;
+
+	(void)pvParameters;
+	sine.frequency_hz = BASIC2_BRINGUP_FREQUENCY_HZ;
+	sine.fundamental_amplitude = 1.0f;
+	sine.measured_phase_rad = 0.0f;
+	sine.waveform = SIGNAL_WAVE_SINE;
+
+	dds_control_init( &dds );
+	dds_control_from_component( &sine, 0.0f, &channel_a );
+	dds_control_from_component( &sine, APP_DDS_B_PHASE_COMPENSATION_DEGREES, &channel_b );
+	channel_a.amplitude_code = APP_DIAG_FORCE_DDS_AMPLITUDE;
+	channel_b.amplitude_code = APP_DIAG_FORCE_DDS_AMPLITUDE;
+
+	status = dds_control_commit( &dds, &channel_a, &channel_b, 1, 1 );
+	if (status != XST_SUCCESS) {
+		xil_printf( "Basic 2 DDS bring-up FAILED\r\n" );
+		vTaskDelete( NULL );
+		return;
+	}
+
+	diagnostics_report_dds_snapshot( "BASIC2", &dds );
+	xil_printf( "Basic 2 DDS output started: %d Hz, amp_code=%d\r\n", (int)BASIC2_BRINGUP_FREQUENCY_HZ, (int)APP_DIAG_FORCE_DDS_AMPLITUDE );
+
+	for ( ;; ) {
+		/* Keep the output running; no repeated COMMIT_SEQ writes are needed. */
+		vTaskDelay( pdMS_TO_TICKS( 1000UL ) );
+	}
+}
+#endif
+
 static void prvTxTask( void *pvParameters )
 {
 const TickType_t x1second = pdMS_TO_TICKS( DELAY_1_SECOND );
