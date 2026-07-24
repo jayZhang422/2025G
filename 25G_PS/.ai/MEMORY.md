@@ -8,4 +8,8 @@
 - Build an arbitrary waveform table while DDS is stopped, then atomically start it.
 - Active main remains FreeRTOS Hello World until a verified replacement is built.
 - Packaged IPs are independently verified but not integrated into the active top level.
-- Use repository-root CODEX_START.md for each new session; do not hard-code a clone path.
+- Use repository-root FPGA_CodexPrompt.md for each new session; do not hard-code a clone path.
+
+- A Vitis workspace is machine-local generated state, not portable source. If platform read reports a missing HwDb after a workspace move, the platform descriptor may retain an obsolete absolute XSA handoff path. Close Vitis and create a new platform from the current XSA with script/ps_create_platform_from_xsa.tcl; do not hand-edit generated platform descriptors or BSP files.
+
+- A newly created Vitis platform can have a valid export directory but no archived BSP libraries when only domain generation has run. Before application linking, run the parameterized platform library-generation script and verify the exported libxil.a and libfreertos.a files; otherwise gcc may compile all sources and fail only at the final link stage.

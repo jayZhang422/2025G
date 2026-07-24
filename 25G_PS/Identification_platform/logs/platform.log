@@ -1467,3 +1467,63 @@ E:/7020_Project/25G/25G_PS/Identification_platform/zynq_fsbl/zynq_fsbl_bsp/syste
 
 TRACE::2026-07-21.12:18:19::SCWMssOS::Sw design exists and opened at  E:/7020_Project/25G/25G_PS/Identification_platform/ps7_cortexa9_0/freertos10_xilinx_domain/bsp/system.mss
 TRACE::2026-07-21.12:18:19::SCWReader::No isolation master present  
+TRACE::2026-07-24.12:03:13::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:13::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:13::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:16::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:03:16::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:03:23::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:03:23::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:03:23::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:05:08::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:05:08::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:05:08::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:07:30::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:30::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:30::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:07:33::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:07:33::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:07:33::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:07:33::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:12:59::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:12:59::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:12:59::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:12:59::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:12:59::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:15:45::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:15:45::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:15:45::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa
+TRACE::2026-07-24.12:47:58::SCWPlatform::Trying to open the hw design at D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:47:58::SCWPlatform::DSA given D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:47:58::SCWPlatform::DSA absoulate path D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw/top.xsa
+TRACE::2026-07-24.12:48:01::SCWPlatform::DSA directory D:/DianSai/2023H_25/2025G_calvin/25G_PS/Identification_platform/hw
+ERROR::2026-07-24.12:48:01::SCWPlatform::Error: Hw specification provided does not have the HwDb, please check: E:/7020_Project/25G/25G_PL/top.xsa

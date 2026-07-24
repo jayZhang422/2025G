@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Added repository-root CODEX_START.md as the single reusable Codex session entry.
+- Added repository-root FPGA_CodexPrompt.md as the single reusable Codex session entry.
 - Corrected PL/PS automation paths to current 25G_PL and Identification project names.
 - Corrected the Vivado user IP repository to $PPRDIR/ip_core.
 - Added bounded packaged-IP regression script ../script/pl_test_packaged_ips.tcl and testbench ../sim/ip/tb_packaged_ips.sv.

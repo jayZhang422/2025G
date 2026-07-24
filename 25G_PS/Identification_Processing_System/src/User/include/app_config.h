@@ -98,7 +98,7 @@
 #define APP_DIAG_FIRST_ATTEMPTS      4U
 #define APP_DIAG_REPORT_PERIOD       16U
 #ifndef APP_DIAG_FORCE_DDS_TEST
-#define APP_DIAG_FORCE_DDS_TEST      0   //0: normal 1:force
+#define APP_DIAG_FORCE_DDS_TEST      1   //0: normal 1:force
 #endif
 #define APP_DIAG_FORCE_DDS_AMPLITUDE APP_DDS_UNITY_AMPLITUDE
 #endif /* USER_INCLUDE_APP_CONFIG_H_ */

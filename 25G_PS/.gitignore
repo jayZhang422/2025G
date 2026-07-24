@@ -13,6 +13,9 @@ RemoteSystemsTempFiles/
 .ai/
 IDE.log
 
+# Vitis platform logs are regenerated for each local workspace session.
+**/.log/
+
 # ==================== 编译生成的二进制镜像/映射文件 ====================
 *.elf
 *.elf.size

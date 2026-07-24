@@ -69,7 +69,7 @@ evidence that the active hardware satisfies any G-question requirement.
 
 ## Safe next actions
 
-1. Read the core recovery section of `CODEX_START.md` and this handoff when
+1. Read the core recovery section of `FPGA_CodexPrompt.md` and this handoff when
    the task concerns wave-RAM or PL integration.
 2. Inspect `git status --short` before touching any generated or exploratory
    files; this worktree is intentionally dirty and has no commit.

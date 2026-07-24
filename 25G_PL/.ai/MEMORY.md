@@ -2,7 +2,7 @@
 
 ## New-session recovery
 
-- The single reusable entry point is the repository-root CODEX_START.md.
+- The single reusable entry point is the repository-root FPGA_CodexPrompt.md.
 - Paths in prompts and automation must be repository-relative or derived from the script location.
 - A new session must separate implemented-and-verified, implemented-unverified, verified-not-integrated, and not-implemented states.
 - The official problem PDF remains authoritative. If unavailable, do not guess disputed metrics or diagrams.

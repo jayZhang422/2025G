@@ -3,7 +3,6 @@
 	<name>Identification_Processing_System</name>
 	<comment>Created by Vitis v2020.2</comment>
 	<projects>
-		<project>Identification_platform</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

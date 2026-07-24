@@ -30,3 +30,7 @@ usage_statistics_webtalk*.xml
 *.xsa
 !top.xsa
 !**/top.xsa
+# Generated PS initialization and memory-map artifacts.
+/ps7_init.*
+/ps7_init_gpl.*
+/top.mmi

@@ -15,3 +15,7 @@ platform create -name {Identification_platform}\
 platform write
 platform generate -domains 
 platform active {Identification_platform}
+platform active {Identification_platform}
+platform active {Identification_platform}
+platform config -updatehw {D:/DianSai/2023H_25/2025G_calvin/25G_PL/top.xsa}
+platform config -updatehw {D:/DianSai/2023H_25/2025G_calvin/25G_PL/top.xsa}
