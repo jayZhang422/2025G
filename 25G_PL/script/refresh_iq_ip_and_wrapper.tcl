@@ -9,17 +9,34 @@ proc require_file {path description} {
 }
 
 set script_dir [file dirname [file normalize [info script]]]
+source [file join $script_dir pl_automation_helpers.tcl]
+pl_automation::init $script_dir
 set project_dir [file normalize [file join $script_dir ..]]
-set project_file [file join $project_dir 25G_PL.xpr]
+set project_file [pl_automation::project_file $project_dir]
+set project_dir [file dirname $project_file]
+set project_name [pl_automation::project_name $project_file]
 set ip_repo [file join $project_dir ip_core]
-set ad_fifo_component [file join $ip_repo ad_fifo_ip component.xml]
-set bd_file [file join $project_dir 25G_PL.srcs sources_1 bd system system.bd]
-set generated_wrapper [file join $project_dir 25G_PL.gen sources_1 bd system hdl system_wrapper.v]
-set legacy_wrapper [file join $project_dir 25G_PL.srcs sources_1 imports system_wrapper.v]
 
 require_file $project_file "Vivado project"
+set ad_fifo_component [pl_automation::option --ad-fifo-component]
+if {$ad_fifo_component eq ""} {
+    set ad_fifo_candidates {}
+    foreach component [glob -nocomplain -types f -directory $ip_repo */component.xml] {
+        if {[string match *fifo* [string tolower [file tail [file dirname $component]]]]} {
+            lappend ad_fifo_candidates $component
+        }
+    }
+    set ad_fifo_component [pl_automation::unique_file $ad_fifo_candidates "FIFO custom IP component" --ad-fifo-component]
+}
 require_file $ad_fifo_component "AD/FIFO IP component"
-require_file $bd_file "Block Design"
+
+if {[lsearch -exact $argv "--check"] >= 0} {
+    open_project $project_file
+    set bd_file [pl_automation::bd_file]
+    close_project
+    puts "CHECK PASSED: $project_file, $ad_fifo_component, and $bd_file are available."
+    return
+}
 
 # Update the custom package checksum after its RTL port list changed.
 set ad_fifo_core [ipx::open_core $ad_fifo_component]
@@ -27,12 +44,22 @@ ipx::update_checksums $ad_fifo_core
 ipx::save_core $ad_fifo_core
 
 open_project $project_file
+set bd_file [pl_automation::bd_file]
+set bd_name [file rootname [file tail $bd_file]]
+set generated_wrapper [file join $project_dir "$project_name.gen" sources_1 bd $bd_name hdl "${bd_name}_wrapper.v"]
+set legacy_wrapper [file join $project_dir "$project_name.srcs" sources_1 imports "${bd_name}_wrapper.v"]
 set_property ip_repo_paths [list $ip_repo] [current_project]
 update_ip_catalog -rebuild
 
-set dds_ip [get_ips -quiet dds_iq_lo]
+set dds_ip [pl_automation::choice --dds-ip]
 if {$dds_ip eq ""} {
-    error "dds_iq_lo is not part of the project"
+    set dds_candidates {}
+    foreach ip [get_ips -quiet] {
+        if {[string match *dds_compiler* [get_property IPDEF $ip]]} { lappend dds_candidates $ip }
+    }
+    set dds_ip [pl_automation::unique_file $dds_candidates "DDS Compiler IP" --dds-ip]
+} elseif {[get_ips -quiet $dds_ip] eq ""} {
+    error "DDS IP is not part of the project: $dds_ip"
 }
 
 # This is metadata for the actual ADC clock domain. Runtime LO frequency
@@ -41,9 +68,16 @@ set_property CONFIG.ACLK_INTF.FREQ_HZ 5120060 $dds_ip
 set_property CONFIG.DDS_Clock_Rate 5.12006 $dds_ip
 generate_target all $dds_ip -force
 
-set ad_fifo_ip [get_ips -quiet ad_fifo_output]
+set ad_fifo_ip [pl_automation::choice --ad-fifo-ip]
 if {$ad_fifo_ip eq ""} {
-    error "ad_fifo_output is not part of the project"
+    set ad_fifo_candidates {}
+    set ad_fifo_vlnv [get_property VLNV $ad_fifo_core]
+    foreach ip [get_ips -quiet] {
+        if {[get_property VLNV $ip] eq $ad_fifo_vlnv} { lappend ad_fifo_candidates $ip }
+    }
+    set ad_fifo_ip [pl_automation::unique_file $ad_fifo_candidates "AD/FIFO IP" --ad-fifo-ip]
+} elseif {[get_ips -quiet $ad_fifo_ip] eq ""} {
+    error "AD/FIFO IP is not part of the project: $ad_fifo_ip"
 }
 upgrade_ip $ad_fifo_ip
 generate_target all $ad_fifo_ip -force
@@ -66,5 +100,6 @@ if {[get_files -quiet $generated_wrapper] eq ""} {
 }
 
 update_compile_order -fileset sources_1
+pl_automation::remember
 close_project
 puts "REFRESH PASSED: local IP repository, DDS clock metadata, BD products, and generated wrapper are current."

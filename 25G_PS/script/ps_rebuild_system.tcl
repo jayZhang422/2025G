@@ -1,6 +1,7 @@
 # Clean and build the existing Vitis system project after PS source changes.
 # Run: xsct ps_rebuild_system.tcl
 # Check names only: xsct ps_rebuild_system.tcl --check
+# Resolve an ambiguous target once with --system, --app, --elf, or --bsp.
 
 proc require_file {path description} {
     if {![file isfile $path]} {
@@ -24,15 +25,14 @@ proc require_optimized_makefile {build_dir} {
     }
 }
 
-proc build_application {build_dir} {
-    puts [exec make -C $build_dir all 2>@1]
-}
-
 set script_dir [file dirname [file normalize [info script]]]
+source [file join $script_dir ps_automation_helpers.tcl]
+ps_automation::init $script_dir
 set workspace [file normalize [file join $script_dir ..]]
-set system_name Signal_separation_app_system
-set app_debug_dir [file join $workspace Signal_separation_app Debug]
-set elf_file [file join $app_debug_dir Signal_separation_app.elf]
+set platform_name [ps_automation::platform_name $workspace]
+set system_name [ps_automation::system_name $workspace]
+set elf_file [ps_automation::application_elf $workspace 0]
+set app_debug_dir [file dirname $elf_file]
 
 progress "opening workspace $workspace"
 setws $workspace
@@ -41,12 +41,16 @@ if {[lsearch -exact $argv "--check"] >= 0} {
     return
 }
 
+ps_automation::remember
+
 progress "cleaning system project $system_name"
 sysproj clean -name $system_name
 progress "building system project $system_name"
 sysproj build -name $system_name
+progress "checking application BSP link"
+ps_automation::ensure_bsp_link $workspace $platform_name $app_debug_dir
 require_optimized_makefile $app_debug_dir
 progress "building application Debug ELF with -O2"
-build_application $app_debug_dir
+ps_automation::build_application $app_debug_dir
 require_file $elf_file "Debug ELF"
 progress "DONE: cleaned and built $system_name plus optimized $elf_file"

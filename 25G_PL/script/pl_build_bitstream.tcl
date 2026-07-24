@@ -4,6 +4,7 @@
 # Force a full rebuild without a prompt: -tclargs --rebuild
 # Keep an up-to-date bitstream without a prompt: -tclargs --keep
 # Check names only: vivado -mode batch -source pl_build_bitstream.tcl -tclargs --check
+# Resolve an ambiguous project once: ... -tclargs --project <path-to-xpr>
 
 proc require_file {path description} {
     if {![file isfile $path]} {
@@ -14,30 +15,6 @@ proc require_file {path description} {
 proc progress {message} {
     puts "[clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S}] PL build: $message"
     flush stdout
-}
-
-proc open_target_project {project_file project_dir} {
-    set current [current_project -quiet]
-    if {$current eq ""} {
-        progress "target project is not open; opening $project_file"
-        open_project $project_file
-        return 1
-    }
-
-    set current_dir [file normalize [get_property DIRECTORY $current]]
-    if {$current_dir ne $project_dir} {
-        error "Another project is open: $current_dir\nClose it or open 2023H_pl before running this script."
-    }
-
-    progress "using the already-open project 2023H_pl"
-    return 0
-}
-
-proc close_if_opened_by_script {opened_by_script} {
-    if {$opened_by_script} {
-        progress "closing project opened by this script"
-        close_project
-    }
 }
 
 proc run_is_current {run expected_status} {
@@ -63,10 +40,12 @@ proc ask_current_bitstream_action {} {
 }
 
 set script_dir [file dirname [file normalize [info script]]]
-set project_dir [file normalize [file join $script_dir .. 2023H_pl]]
-set project_file [file join $project_dir 2023H_pl.xpr]
-set xsa_file [file join $project_dir top.xsa]
-set bit_file [file join $project_dir 2023H_pl.runs impl_1 top.bit]
+source [file join $script_dir pl_automation_helpers.tcl]
+pl_automation::init $script_dir
+set project_dir [file normalize [file join $script_dir ..]]
+set project_file [pl_automation::project_file $project_dir]
+set project_dir [file dirname $project_file]
+set project_name [pl_automation::project_name $project_file]
 set threads 24
 set thread_arg [lsearch -exact $argv "--threads"]
 if {$thread_arg >= 0} {
@@ -87,14 +66,21 @@ if {$has_rebuild && $has_keep} {
 
 progress "checking project files"
 require_file $project_file "Vivado project"
-set opened_by_script [open_target_project $project_file $project_dir]
+set opened_by_script [pl_automation::open_target_project $project_file]
+set top_name [get_property TOP [get_filesets sources_1]]
+if {$top_name eq ""} {
+    pl_automation::close_if_opened $opened_by_script
+    error "The synthesis top is not set in $project_file"
+}
+set xsa_file [file join $project_dir "$top_name.xsa"]
+set bit_file [file join $project_dir "$project_name.runs" impl_1 "$top_name.bit"]
 if {[get_runs -quiet impl_1] eq ""} {
-    close_if_opened_by_script $opened_by_script
-    error "Implementation run impl_1 does not exist in project 2023H_pl"
+    pl_automation::close_if_opened $opened_by_script
+    error "Implementation run impl_1 does not exist in project $project_name"
 }
 if {[get_runs -quiet synth_1] eq ""} {
-    close_if_opened_by_script $opened_by_script
-    error "Synthesis run synth_1 does not exist in project 2023H_pl"
+    pl_automation::close_if_opened $opened_by_script
+    error "Synthesis run synth_1 does not exist in project $project_name"
 }
 
 # Validate the requested concurrency against this Vivado version even in check mode.
@@ -103,10 +89,12 @@ if {[lsearch -exact $argv "--check"] >= 0} {
     progress "checking existing bitstream and hardware export"
     require_file $bit_file "Existing bitstream"
     require_file $xsa_file "Existing hardware export"
-    progress "CHECK PASSED: 2023H_pl and implementation run impl_1 are available"
-    close_if_opened_by_script $opened_by_script
+    progress "CHECK PASSED: $project_name and implementation run impl_1 are available"
+    pl_automation::close_if_opened $opened_by_script
     return
 }
+
+pl_automation::remember
 
 set impl_run [get_runs impl_1]
 set synth_run [get_runs synth_1]
@@ -128,7 +116,7 @@ if {$bitstream_current} {
 
     if {$build_action eq "keep"} {
         progress "keeping current top.bit and top.xsa; no files were regenerated"
-        close_if_opened_by_script $opened_by_script
+        pl_automation::close_if_opened $opened_by_script
         return
     }
 } else {
@@ -159,5 +147,5 @@ require_file $bit_file "Generated bitstream"
 
 progress "exporting hardware platform with bitstream to top.xsa"
 write_hw_platform -fixed -include_bit -force -file $xsa_file
-close_if_opened_by_script $opened_by_script
+pl_automation::close_if_opened $opened_by_script
 progress "DONE: generated $bit_file and exported $xsa_file with the bitstream"

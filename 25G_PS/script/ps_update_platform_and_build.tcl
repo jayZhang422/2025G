@@ -1,6 +1,7 @@
 # Update the Vitis platform with the latest PL XSA, reset/regenerate BSP, then clean and build the system project.
 # Run: xsct ps_update_platform_and_build.tcl
 # Check names only: xsct ps_update_platform_and_build.tcl --check
+# Resolve an ambiguous target once with --xsa, --platform, --system, --app, --elf, or --bsp.
 
 proc require_file {path description} {
     if {![file isfile $path]} {
@@ -24,17 +25,16 @@ proc require_optimized_makefile {build_dir} {
     }
 }
 
-proc build_application {build_dir} {
-    puts [exec make -C $build_dir all 2>@1]
-}
-
 set script_dir [file dirname [file normalize [info script]]]
+source [file join $script_dir ps_automation_helpers.tcl]
+ps_automation::init $script_dir
 set workspace [file normalize [file join $script_dir ..]]
-set xsa_file [file normalize [file join $workspace .. 2023H_PL 2023H_pl top.xsa]]
-set platform_name Signal_separation_platform
-set system_name Signal_separation_app_system
-set app_debug_dir [file join $workspace Signal_separation_app Debug]
-set elf_file [file join $app_debug_dir Signal_separation_app.elf]
+set project_root [file dirname $workspace]
+set xsa_file [ps_automation::find_file $project_root --xsa [glob -nocomplain -types f -directory $project_root */*.xsa] "Latest PL XSA"]
+set platform_name [ps_automation::platform_name $workspace]
+set system_name [ps_automation::system_name $workspace]
+set elf_file [ps_automation::application_elf $workspace 0]
+set app_debug_dir [file dirname $elf_file]
 
 progress "checking latest PL XSA"
 require_file $xsa_file "Latest PL XSA"
@@ -47,6 +47,8 @@ if {[lsearch -exact $argv "--check"] >= 0} {
     progress "CHECK PASSED: workspace, platform $platform_name, system $system_name, and $xsa_file are available"
     return
 }
+
+ps_automation::remember
 
 progress "updating platform hardware specification from $xsa_file"
 platform config -updatehw $xsa_file
@@ -61,8 +63,10 @@ progress "cleaning system project $system_name"
 sysproj clean -name $system_name
 progress "building system project $system_name"
 sysproj build -name $system_name
+progress "checking application BSP link"
+ps_automation::ensure_bsp_link $workspace $platform_name $app_debug_dir
 require_optimized_makefile $app_debug_dir
 progress "building application Debug ELF with -O2"
-build_application $app_debug_dir
+ps_automation::build_application $app_debug_dir
 require_file $elf_file "Debug ELF"
 progress "DONE: updated $platform_name from $xsa_file and built $system_name plus optimized $elf_file"

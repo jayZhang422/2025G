@@ -1,6 +1,7 @@
 # Program the PL and start the optimized Debug ELF on Cortex-A9 core 0.
 # Run: xsct ps_program_and_run.tcl
 # Check files only: xsct ps_program_and_run.tcl --check
+# Resolve an ambiguous artifact once with --bit, --xsa, --ps7-init, or --elf.
 
 proc require_file {path description} {
     if {![file isfile $path]} {
@@ -25,12 +26,14 @@ proc require_optimized_makefile {build_dir} {
 }
 
 set script_dir [file dirname [file normalize [info script]]]
+source [file join $script_dir ps_automation_helpers.tcl]
+ps_automation::init $script_dir
 set workspace [file normalize [file join $script_dir ..]]
-set app_debug_dir [file join $workspace Signal_separation_app Debug]
-set bit_file [file join $workspace Signal_separation_app _ide bitstream top.bit]
-set xsa_file [file join $workspace Signal_separation_platform export Signal_separation_platform hw top.xsa]
-set ps7_init_file [file join $workspace Signal_separation_app _ide psinit ps7_init.tcl]
-set elf_file [file join $workspace Signal_separation_app Debug Signal_separation_app.elf]
+set bit_file [ps_automation::find_file $workspace --bit [glob -nocomplain -types f -directory $workspace */_ide/bitstream/*.bit] "Application bitstream"]
+set xsa_file [ps_automation::find_file $workspace --xsa [glob -nocomplain -types f -directory $workspace */export/*/hw/*.xsa] "Platform XSA"]
+set ps7_init_file [ps_automation::find_file $workspace --ps7-init [glob -nocomplain -types f -directory $workspace */_ide/psinit/ps7_init.tcl] "PS7 initialization script"]
+set elf_file [ps_automation::application_elf $workspace 1]
+set app_debug_dir [file dirname $elf_file]
 
 progress "checking programming artifacts"
 require_optimized_makefile $app_debug_dir
@@ -43,9 +46,11 @@ foreach {path description} [list \
 }
 
 if {[lsearch -exact $argv "--check"] >= 0} {
-    progress "CHECK PASSED: top.bit, top.xsa, ps7_init.tcl, and Signal_separation_app.elf are available"
+    progress "CHECK PASSED: $bit_file, $xsa_file, $ps7_init_file, and $elf_file are available"
     return
 }
+
+ps_automation::remember
 
 progress "connecting to hardware server"
 connect
