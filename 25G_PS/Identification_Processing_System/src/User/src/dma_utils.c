@@ -73,18 +73,18 @@ int dma_init_s2mm(XAxiDma *dma, u16 device_id)
 
     config = XAxiDma_LookupConfig(device_id);
     if (config == NULL) {
-        xil_printf("ERROR: no config for DMA %d\r\n", device_id);
+        xil_printf("[DMA] ERROR: no config for device %d\r\n", device_id);
         return XST_FAILURE;
     }
 
     status = XAxiDma_CfgInitialize(dma, config);
     if (status != XST_SUCCESS) {
-        xil_printf("ERROR: DMA %d init failed\r\n", device_id);
+        xil_printf("[DMA] ERROR: device %d init failed\r\n", device_id);
         return XST_FAILURE;
     }
 
     if (XAxiDma_HasSg(dma) || !dma->HasS2Mm || dma->HasMm2S) {
-        xil_printf("ERROR: DMA does not match simple S2MM-only PL design\r\n");
+        xil_printf("[DMA] ERROR: device does not match simple S2MM-only PL design\r\n");
         return XST_FAILURE;
     }
 
@@ -92,14 +92,14 @@ int dma_init_s2mm(XAxiDma *dma, u16 device_id)
     XAxiDma_Reset(dma);
     while (!XAxiDma_ResetIsDone(dma)) {
         if (--timeout == 0U) {
-            xil_printf("ERROR: ADC DMA reset timeout\r\n");
+            xil_printf("[DMA] ERROR: ADC reset timeout\r\n");
             return XST_FAILURE;
         }
     }
 
     status = XAxiDma_CfgInitialize(dma, config);
     if (status != XST_SUCCESS) {
-        xil_printf("ERROR: DMA %d reinit failed\r\n", device_id);
+        xil_printf("[DMA] ERROR: device %d reinit failed\r\n", device_id);
         return XST_FAILURE;
     }
     XAxiDma_IntrDisable(dma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DEVICE_TO_DMA);
@@ -114,9 +114,9 @@ static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
 {
     int status;
 
-    dma_dump_s2mm_regs("S2MM before reset:", dma);
+    dma_dump_s2mm_regs("[DMA] S2MM before reset:", dma);
     if (dma_init_s2mm(dma, device_id) != XST_SUCCESS) {
-        xil_printf("ERROR: ADC DMA receive reinitialization failed\r\n");
+        xil_printf("[DMA] ERROR: receive reinitialization failed\r\n");
         g_dma_needs_realign = 1;
         return XST_FAILURE;
     }
@@ -134,16 +134,16 @@ static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
                               APP_RX_FRAME_BYTES);
 
     if (status != XST_SUCCESS) {
-        xil_printf("ERROR: ADC DMA frame realignment failed (%d)\r\n",
+        xil_printf("[DMA] ERROR: frame realignment failed (%d)\r\n",
                    status);
-        dma_dump_s2mm_regs("S2MM realignment failed:", dma);
+        dma_dump_s2mm_regs("[DMA] S2MM realignment failed:", dma);
         (void)dma_init_s2mm(dma, device_id);
         g_dma_needs_realign = 1;
         return XST_FAILURE;
     }
 
     g_dma_needs_realign = 0;
-    dma_dump_s2mm_regs("S2MM realigned:", dma);
+    dma_dump_s2mm_regs("[DMA] S2MM realigned:", dma);
     return XST_SUCCESS;
 }
 
@@ -160,7 +160,7 @@ int dma_capture_frame(XAxiDma *dma, u16 device_id, u16 *buffer,
 
     if (XAxiDma_SimpleTransfer(dma, (UINTPTR)buffer, length_bytes,
                                XAXIDMA_DEVICE_TO_DMA) != XST_SUCCESS) {
-        xil_printf("ERROR: ADC DMA start failed\r\n");
+        xil_printf("[DMA] ERROR: ADC start failed\r\n");
         g_dma_needs_realign = 1;
         (void)dma_recover_s2mm(dma, device_id);
         return XST_FAILURE;
@@ -169,8 +169,8 @@ int dma_capture_frame(XAxiDma *dma, u16 device_id, u16 *buffer,
     status = dma_wait_s2mm(dma);
     if (status != XST_SUCCESS) {
         xil_printf((status == XST_TIMEOUT) ?
-                   "ERROR: ADC DMA timeout\r\n" :
-                   "ERROR: ADC DMA status error\r\n");
+                   "[DMA] ERROR: ADC timeout\r\n" :
+                   "[DMA] ERROR: ADC status error\r\n");
         g_dma_needs_realign = 1;
         (void)dma_recover_s2mm(dma, device_id);
         return XST_FAILURE;

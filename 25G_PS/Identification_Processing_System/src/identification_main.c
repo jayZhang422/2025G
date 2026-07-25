@@ -26,7 +26,7 @@ int main(void)
     if (xTaskCreate(signal_separator_task, "signal_separator",
                     APP_TASK_STACK_WORDS, NULL, APP_TASK_PRIORITY,
                     NULL) != pdPASS) {
-        xil_printf("ERROR: unable to create signal separator task\r\n");
+        xil_printf("[APP] ERROR: unable to create signal separator task\r\n");
         for (;;) {
         }
     }

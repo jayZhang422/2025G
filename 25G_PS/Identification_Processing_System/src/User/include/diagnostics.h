@@ -9,6 +9,7 @@
 #define USER_INCLUDE_DIAGNOSTICS_H_
 
 #include "dds_control.h"
+#include "iq_demodulator.h"
 #include "signal_processing.h"
 #include "xil_types.h"
 
@@ -17,6 +18,10 @@ void diagnostics_report_adc_frame(const u16 *raw_samples, u32 attempt);
 void diagnostics_report_analysis(u32 attempt, int analysis_status,
                                  int lock_status,
                                  const signal_analysis_result_t *result);
+void diagnostics_report_signal_result(const signal_analysis_result_t *result);
+void diagnostics_report_iq_measurement(u32 channel_index,
+                                       float32_t frequency_hz,
+                                       const iq_measurement_t *measurement);
 void diagnostics_report_dds_snapshot(const char *tag,
                                      const dds_control_t *control);
 

@@ -8,4 +8,11 @@
 | `硬件接口与任务流程.md` | FreeRTOS 任务、DMA、DDS BRAM、按键和 PL IQ 解调器的调用顺序。 |
 | `函数索引.md` | 自研公开接口的职责、主要参数和最小使用方式。 |
 
-应用首先使用 DMA+FFT 识别输入，再一次性提交 DDS 配置；PL IQ 解调器是对已知频点进行幅相测量的补充路径，不能替代未知频率搜索。
+当前入口链为 `identification_main.c -> signal_separator_task.c ->
+signal_separator_app.c`。应用首先使用 DMA+FFT 识别输入，再一次性提交
+DDS 配置；PL IQ 解调器是对已知频点进行幅相测量的补充路径，不能替代
+未知频率搜索。
+
+应用源码只以正常 `.c/.h` 编译单元参与构建，不包含 `.txt` 或其他 `.c`
+源文件。串口诊断沿用现有打印数量和字段，并按 `[APP]`、`[ADC]`、
+`[DMA]`、`[FIFO]`、`[FFT]`、`[IQ]`、`[DDS]` 标明故障域。

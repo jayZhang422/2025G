@@ -31,7 +31,7 @@ int fifo_monitor_init(void)
         FIFO_MONITOR_BASEADDR, AD_FIFO_MONITOR_AXI_VERSION_OFFSET);
 
     if (version != AD_FIFO_MONITOR_AXI_VERSION) {
-        xil_printf("WARN: FIFO monitor version 0x%08x, expected 0x%08x\r\n",
+        xil_printf("[FIFO] WARN: monitor version 0x%08x, expected 0x%08x\r\n",
                    (unsigned int)version,
                    (unsigned int)AD_FIFO_MONITOR_AXI_VERSION);
         return XST_FAILURE;
@@ -127,16 +127,16 @@ void fifo_monitor_print(const char *tag,
         return;
     }
 
-    xil_printf("%s status=0x%08x version=0x%08x\r\n", tag,
+    xil_printf("[FIFO] %s status=0x%08x version=0x%08x\r\n", tag,
                (unsigned int)snapshot->status,
                (unsigned int)snapshot->version);
-    xil_printf("  ADC/FIFO:");
+    xil_printf("[FIFO] ADC/FIFO:");
     fifo_monitor_print_u64("valid", snapshot->adc_sample_count);
     fifo_monitor_print_u64("written", snapshot->fifo_write_count);
     fifo_monitor_print_u64("blocked_full",
                            snapshot->blocked_high_watermark_count);
     fifo_monitor_print_u64("blocked_reset", snapshot->blocked_reset_count);
-    xil_printf("\r\n  AXIS:");
+    xil_printf("\r\n[FIFO] AXIS:");
     fifo_monitor_print_u64("beats", snapshot->axis_beat_count);
     fifo_monitor_print_u64("frames", snapshot->frame_count);
     fifo_monitor_print_u64("stall", snapshot->axis_stall_cycle_count);
