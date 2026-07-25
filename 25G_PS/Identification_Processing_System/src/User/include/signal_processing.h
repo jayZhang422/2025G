@@ -7,6 +7,8 @@
 #ifndef USER_INCLUDE_SIGNAL_PROCESSING_H_
 #define USER_INCLUDE_SIGNAL_PROCESSING_H_
 
+#include "../config/signal_profiles.h"
+
 #include "arm_math.h"
 #include "xstatus.h"
 #include "xil_types.h"
@@ -40,6 +42,7 @@ int signal_analyze_frame(const u16 *raw_samples,
                          float32_t *fft_spectrum,
                          float32_t *fft_magnitude,
                          float32_t *model_workspace,
+                         const signal_profile_t *profile,
                          signal_analysis_result_t *result);
 
 /* Low-pass only the values safe to update during phase-continuous tracking. */

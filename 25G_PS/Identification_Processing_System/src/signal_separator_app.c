@@ -82,7 +82,8 @@ static void app_report_pl_iq(const signal_analysis_result_t *result)
 
 /** 采集一帧 DMA ADC 数据、完成缓存失效和信号分析，并按需输出耗时诊断。 */
 static int app_capture_measurement(signal_analysis_result_t *measurement,
-                                   u32 attempt)
+                                   u32 attempt,
+                                   const signal_profile_t *profile)
 {
     XTime capture_start_time;
     XTime capture_end_time;
@@ -111,7 +112,8 @@ static int app_capture_measurement(signal_analysis_result_t *measurement,
                                            g_fft_input_buffer,
                                            g_fft_spectrum_buffer,
                                            g_fft_magnitude_buffer,
-                                           g_model_buffer, measurement);
+                                           g_model_buffer, profile,
+                                           measurement);
     XTime_GetTime(&analysis_end_time);
     if (diagnostics_should_report(attempt)) {
         xil_printf("[APP] DBG time[%d]: dma_ms=%d analysis_ms=%d total_ms=%d\r\n",
@@ -158,14 +160,17 @@ static int app_start_forced_dds_test(dds_control_t *dds_control)
 }
 
 /** 将频率吸附到应用定义的最近离散频率栅格。 */
-static float32_t app_snap_to_frequency_grid(float32_t frequency_hz)
+static float32_t app_snap_to_frequency_grid(
+    float32_t frequency_hz, const signal_profile_t *profile)
 {
-    return floorf(frequency_hz / APP_FREQUENCY_GRID_HZ + 0.5f) *
-           APP_FREQUENCY_GRID_HZ;
+    return floorf(frequency_hz / profile->frequency_grid_hz + 0.5f) *
+           profile->frequency_grid_hz;
 }
 
 /** 验证残差和频率容差，规范化锁定候选并要求 A 频率小于 B。 */
-static int app_normalize_lock_measurement(signal_analysis_result_t *measurement)
+static int app_normalize_lock_measurement(
+    signal_analysis_result_t *measurement,
+    const signal_profile_t *profile)
 {
     signal_component_t *channels[2];
     int index;
@@ -178,10 +183,10 @@ static int app_normalize_lock_measurement(signal_analysis_result_t *measurement)
     channels[1] = &measurement->channel_b;
     for (index = 0; index < 2; index++) {
         float32_t snapped_frequency = app_snap_to_frequency_grid(
-            channels[index]->frequency_hz);
+            channels[index]->frequency_hz, profile);
 
-        if (snapped_frequency < APP_SIGNAL_MIN_HZ ||
-            snapped_frequency > APP_SIGNAL_MAX_HZ ||
+        if (snapped_frequency < profile->frequency_min_hz ||
+            snapped_frequency > profile->frequency_max_hz ||
             fabsf(channels[index]->frequency_hz - snapped_frequency) >
                 APP_GRID_LOCK_TOLERANCE_HZ) {
             return XST_FAILURE;
@@ -308,13 +313,22 @@ int signal_separator_run(void)
     signal_analysis_result_t measurement;
     signal_analysis_result_t locked_result;
     button_input_t buttons;
+    const signal_profile_t *profile = signal_profile_default();
     float32_t phase_degrees = APP_B_TO_A_PHASE_DEGREES;
 
     if (iq_demodulator_init(&g_iq_detector) != XST_SUCCESS) {
         xil_printf("[IQ] WARN: PL detector initialization failed\r\n");
     }
     xil_printf("\r\n[APP] === PL-aligned dual-channel signal separator ===\r\n");
-    xil_printf("[APP] DBG build=%s\r\n", APP_DIAG_BUILD_TAG);
+    if (profile == 0 || profile->frequency_min_hz <= 0.0f ||
+        profile->frequency_max_hz <= profile->frequency_min_hz ||
+        profile->frequency_grid_hz <= 0.0f ||
+        profile->confirm_frames == 0U) {
+        xil_printf("[APP] ERROR: default signal profile is not configured\r\n");
+        return XST_FAILURE;
+    }
+    xil_printf("[APP] DBG build=%s profile=%s\r\n",
+               APP_DIAG_BUILD_TAG, profile->name);
     if (APP_ENABLE_STARTUP_SELF_TEST &&
         signal_run_self_tests() != XST_SUCCESS) {
         xil_printf("[APP] ERROR: signal algorithm self-test failed\r\n");
@@ -381,7 +395,7 @@ int signal_separator_run(void)
             }
         }
 
-        while (confirmed_frames < APP_LOCK_CONFIRM_FRAMES) {
+        while (confirmed_frames < profile->confirm_frames) {
             int analysis_status;
             int lock_status;
 
@@ -396,9 +410,10 @@ int signal_separator_run(void)
             }
             lock_attempt++;
             analysis_status = app_capture_measurement(&measurement,
-                                                      lock_attempt);
+                                                      lock_attempt, profile);
             lock_status = (analysis_status == XST_SUCCESS) ?
-                app_normalize_lock_measurement(&measurement) : XST_FAILURE;
+                app_normalize_lock_measurement(&measurement, profile) :
+                XST_FAILURE;
             if (diagnostics_should_report(lock_attempt)) {
                 diagnostics_report_analysis(lock_attempt, analysis_status,
                                             lock_status, &measurement);
@@ -419,7 +434,7 @@ int signal_separator_run(void)
             }
         }
 
-        if (confirmed_frames < APP_LOCK_CONFIRM_FRAMES) {
+        if (confirmed_frames < profile->confirm_frames) {
             continue;
         }
 

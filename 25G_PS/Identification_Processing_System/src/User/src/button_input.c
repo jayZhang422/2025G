@@ -48,7 +48,7 @@ int button_input_init(button_input_t *buttons)
         return XST_FAILURE;
     }
 
-    config = XGpioPs_LookupConfig(XPAR_XGPIOPS_0_DEVICE_ID);
+    config = XGpioPs_LookupConfig(APP_GPIO_DEVICE_ID);
     if (config == 0 || XGpioPs_CfgInitialize(&buttons->instance, config,
                                               config->BaseAddr) != XST_SUCCESS) {
         return XST_FAILURE;

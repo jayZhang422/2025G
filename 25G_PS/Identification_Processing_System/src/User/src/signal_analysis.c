@@ -5,7 +5,7 @@
  * selects the independent A/B waveform types from the four valid combinations.
  ******************************************************************************/
 
-#include "../include/app_config.h"
+#include "../config/algorithm_config.h"
 #include "../include/signal_processing.h"
 
 #include <math.h>
@@ -179,12 +179,13 @@ static void signal_insert_peak(signal_peak_t *peaks, int *peak_count,
 
 /** 在允许频带内提取局部峰值，作为后续频率候选的原始来源。 */
 static int signal_find_candidate_peaks(const float32_t *magnitude,
-                                       signal_peak_t *peaks)
+                                       signal_peak_t *peaks,
+                                       const signal_profile_t *profile)
 {
     int bin;
     int peak_count = 0;
-    int first_bin = (int)(APP_SIGNAL_MIN_HZ / APP_BIN_WIDTH_HZ);
-    int last_bin = (int)(APP_SIGNAL_MAX_HZ / APP_BIN_WIDTH_HZ) + 1;
+    int first_bin = (int)(profile->frequency_min_hz / APP_BIN_WIDTH_HZ);
+    int last_bin = (int)(profile->frequency_max_hz / APP_BIN_WIDTH_HZ) + 1;
 
     if (first_bin < 1) {
         first_bin = 1;
@@ -264,14 +265,15 @@ static void signal_insert_frequency_candidate(
 
 /** 验证频率是否落在题目栅格容差内，并输出吸附后的栅格频率。 */
 static int signal_snap_to_grid(float32_t frequency_hz,
-                               float32_t *snapped_frequency_hz)
+                               float32_t *snapped_frequency_hz,
+                               const signal_profile_t *profile)
 {
     float32_t snapped_frequency = floorf(frequency_hz /
-                                         APP_FREQUENCY_GRID_HZ + 0.5f) *
-                                 APP_FREQUENCY_GRID_HZ;
+                                         profile->frequency_grid_hz + 0.5f) *
+                                 profile->frequency_grid_hz;
 
-    if (snapped_frequency < APP_SIGNAL_MIN_HZ ||
-        snapped_frequency > APP_SIGNAL_MAX_HZ ||
+    if (snapped_frequency < profile->frequency_min_hz ||
+        snapped_frequency > profile->frequency_max_hz ||
         fabsf(frequency_hz - snapped_frequency) >
             APP_GRID_LOCK_TOLERANCE_HZ) {
         return 0;
@@ -283,7 +285,8 @@ static int signal_snap_to_grid(float32_t frequency_hz,
 /** 从峰值构建栅格频率候选，并补充三倍频/三分频谐波冲突候选。 */
 static int signal_build_frequency_candidates(
     const float32_t *magnitude, const signal_peak_t *peaks, int peak_count,
-    signal_frequency_candidate_t *candidates)
+    signal_frequency_candidate_t *candidates,
+    const signal_profile_t *profile)
 {
     int candidate_count = 0;
     int index;
@@ -294,7 +297,7 @@ static int signal_build_frequency_candidates(
         float32_t frequency = signal_refine_frequency(magnitude,
                                                        peaks[index].bin);
 
-        if (signal_snap_to_grid(frequency, &snapped_frequency)) {
+        if (signal_snap_to_grid(frequency, &snapped_frequency, profile)) {
             signal_insert_frequency_candidate(candidates, &candidate_count,
                                               snapped_frequency,
                                               peaks[index].magnitude);
@@ -307,13 +310,15 @@ static int signal_build_frequency_candidates(
         float32_t frequency = candidates[index].frequency_hz;
         float32_t collision_frequency = frequency / 3.0f;
 
-        if (signal_snap_to_grid(collision_frequency, &snapped_frequency)) {
+        if (signal_snap_to_grid(collision_frequency, &snapped_frequency,
+                                profile)) {
             signal_insert_frequency_candidate(candidates, &candidate_count,
                                               snapped_frequency,
                                               candidates[index].magnitude);
         }
         collision_frequency = frequency * 3.0f;
-        if (signal_snap_to_grid(collision_frequency, &snapped_frequency)) {
+        if (signal_snap_to_grid(collision_frequency, &snapped_frequency,
+                                profile)) {
             signal_insert_frequency_candidate(candidates, &candidate_count,
                                               snapped_frequency,
                                               candidates[index].magnitude);
@@ -414,6 +419,7 @@ int signal_analyze_frame(const u16 *raw_samples,
                          float32_t *fft_spectrum,
                          float32_t *fft_magnitude,
                          float32_t *model_workspace,
+                         const signal_profile_t *profile,
                          signal_analysis_result_t *result)
 {
     signal_peak_t peaks[APP_PEAK_CANDIDATE_COUNT];
@@ -429,19 +435,22 @@ int signal_analyze_frame(const u16 *raw_samples,
 
     if (raw_samples == 0 || fft_instance == 0 || time_domain == 0 ||
         fft_input == 0 || fft_spectrum == 0 || fft_magnitude == 0 ||
-        model_workspace == 0 || result == 0) {
+        model_workspace == 0 || profile == 0 || result == 0 ||
+        profile->frequency_min_hz <= 0.0f ||
+        profile->frequency_max_hz <= profile->frequency_min_hz ||
+        profile->frequency_grid_hz <= 0.0f) {
         return XST_FAILURE;
     }
 
     signal_prepare_adc_frame(raw_samples, time_domain, fft_input);
     arm_rfft_fast_f32(fft_instance, fft_input, fft_spectrum, 0);
     signal_compute_magnitudes(fft_spectrum, fft_magnitude);
-    peak_count = signal_find_candidate_peaks(fft_magnitude, peaks);
+    peak_count = signal_find_candidate_peaks(fft_magnitude, peaks, profile);
     if (peak_count < 2) {
         return XST_FAILURE;
     }
-    candidate_count = signal_build_frequency_candidates(fft_magnitude, peaks,
-                                                         peak_count, candidates);
+    candidate_count = signal_build_frequency_candidates(
+        fft_magnitude, peaks, peak_count, candidates, profile);
     if (candidate_count < 2) {
         return XST_FAILURE;
     }
@@ -569,7 +578,8 @@ static void signal_generate_test_frame(u16 *raw_samples,
 static int signal_run_test_case(signal_waveform_t waveform_a,
                                 signal_waveform_t waveform_b,
                                 float32_t frequency_a,
-                                float32_t frequency_b)
+                                float32_t frequency_b,
+                                const signal_profile_t *profile)
 {
     static u16 raw_samples[APP_FFT_LEN];
     static float32_t time_domain[APP_FFT_LEN];
@@ -600,7 +610,8 @@ static int signal_run_test_case(signal_waveform_t waveform_a,
 
     if (signal_analyze_frame(raw_samples, &fft_instance, time_domain,
                              fft_input, fft_spectrum, fft_magnitude,
-                             model_workspace, &result) != XST_SUCCESS) {
+                             model_workspace, profile, &result) !=
+        XST_SUCCESS) {
         return XST_FAILURE;
     }
     if (result.channel_a.waveform != waveform_a ||
@@ -616,16 +627,21 @@ static int signal_run_test_case(signal_waveform_t waveform_a,
 /** 执行四种波形组合和三次谐波冲突的算法自测。 */
 int signal_run_self_tests(void)
 {
+    const signal_profile_t *profile = signal_profile_default();
+
+    if (profile == 0) {
+        return XST_FAILURE;
+    }
     if (signal_run_test_case(SIGNAL_WAVE_SINE, SIGNAL_WAVE_SINE,
-                             50000.0f, 55000.0f) != XST_SUCCESS ||
+                             50000.0f, 55000.0f, profile) != XST_SUCCESS ||
         signal_run_test_case(SIGNAL_WAVE_SINE, SIGNAL_WAVE_TRIANGLE,
-                             50000.0f, 55000.0f) != XST_SUCCESS ||
+                             50000.0f, 55000.0f, profile) != XST_SUCCESS ||
         signal_run_test_case(SIGNAL_WAVE_TRIANGLE, SIGNAL_WAVE_SINE,
-                             50000.0f, 55000.0f) != XST_SUCCESS ||
+                             50000.0f, 55000.0f, profile) != XST_SUCCESS ||
         signal_run_test_case(SIGNAL_WAVE_TRIANGLE, SIGNAL_WAVE_TRIANGLE,
-                             50000.0f, 55000.0f) != XST_SUCCESS ||
+                             50000.0f, 55000.0f, profile) != XST_SUCCESS ||
         signal_run_test_case(SIGNAL_WAVE_TRIANGLE, SIGNAL_WAVE_SINE,
-                             25000.0f, 75000.0f) != XST_SUCCESS) {
+                             25000.0f, 75000.0f, profile) != XST_SUCCESS) {
         return XST_FAILURE;
     }
     return XST_SUCCESS;

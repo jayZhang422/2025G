@@ -5,14 +5,16 @@
  * easier to debug during bring-up than interrupt-driven transfers.
  ******************************************************************************/
 
-#include "../include/app_config.h"
+#include "../config/algorithm_config.h"
+#include "../config/hardware_config.h"
 #include "../include/dma_utils.h"
 
 #include "xil_cache.h"
 #include "xil_printf.h"
 #include "xtime_l.h"
 
-static u16 g_dma_discard_buffer[APP_FFT_LEN] __attribute__((aligned(64)));
+static u16 g_dma_discard_buffer[APP_ADC_FRAME_SAMPLES]
+    __attribute__((aligned(64)));
 static int g_dma_needs_realign;
 
 /** 轮询 S2MM 完成，同时区分超时和 DMA 状态错误。 */

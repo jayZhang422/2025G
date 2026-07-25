@@ -5,14 +5,13 @@
  ******************************************************************************/
 
 #include "../include/fifo_monitor.h"
+#include "../config/hardware_config.h"
 
 #include "ad_fifo_monitor_axi.h"
 #include "xil_printf.h"
-#include "xparameters.h"
 #include "xstatus.h"
 
-#define FIFO_MONITOR_BASEADDR \
-    XPAR_AD_FIFO_MONITOR_AXI_0_AD_FIFO_MONITOR_AXI_BASEADDR
+#define FIFO_MONITOR_BASEADDR       APP_FIFO_MONITOR_BASEADDR
 #define FIFO_MONITOR_TIMEOUT_POLLS 2000U
 
 static u64 fifo_monitor_read64(u32 low_offset, u32 high_offset)
@@ -30,10 +29,10 @@ int fifo_monitor_init(void)
     u32 version = AD_FIFO_MONITOR_AXI_mReadReg(
         FIFO_MONITOR_BASEADDR, AD_FIFO_MONITOR_AXI_VERSION_OFFSET);
 
-    if (version != AD_FIFO_MONITOR_AXI_VERSION) {
+    if (version != APP_FIFO_MONITOR_PROTOCOL_VERSION) {
         xil_printf("[FIFO] WARN: monitor version 0x%08x, expected 0x%08x\r\n",
                    (unsigned int)version,
-                   (unsigned int)AD_FIFO_MONITOR_AXI_VERSION);
+                   (unsigned int)APP_FIFO_MONITOR_PROTOCOL_VERSION);
         return XST_FAILURE;
     }
     return XST_SUCCESS;

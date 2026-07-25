@@ -7,9 +7,10 @@
 #ifndef USER_INCLUDE_APP_BUFFERS_H_
 #define USER_INCLUDE_APP_BUFFERS_H_
 
+#include "../config/algorithm_config.h"
+
 #include "arm_math.h"
 #include "xil_types.h"
-#include "app_config.h"
 
 /*
  * Float buffers are static globals because 4096-point arrays are too large for

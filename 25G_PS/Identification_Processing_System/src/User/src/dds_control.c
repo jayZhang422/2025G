@@ -4,7 +4,7 @@
  * Writes one complete shadow configuration, then changes COMMIT_SEQ last.
  ******************************************************************************/
 
-#include "../include/app_config.h"
+#include "../config/hardware_config.h"
 #include "../include/dds_control.h"
 
 #include "xil_io.h"

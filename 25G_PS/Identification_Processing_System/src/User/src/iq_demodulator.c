@@ -4,7 +4,8 @@
  * The offsets below match the active iq_demodulator.sv AXI-Lite slave.
  ******************************************************************************/
 
-#include "../include/app_config.h"
+#include "../config/algorithm_config.h"
+#include "../config/hardware_config.h"
 #include "../include/iq_demodulator.h"
 
 #include "FreeRTOS.h"
