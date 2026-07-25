@@ -54,12 +54,38 @@ module fifo(
     assign mon_wr_rst_busy = wr_rst_busy;
     assign mon_rd_rst_busy = rd_rst_busy;
 
-    // Reset Extension: Holds FIFO reset high for 15 cycles for safe initialization
+    // Do not release the dual-clock FIFO until its PS/FCLK read clock has
+    // actually started.  FPGA configuration can finish before FCLK0 is
+    // running; releasing reset in that interval leaves FIFO Generator's
+    // reset-busy outputs asserted indefinitely.
+    reg       rd_clock_seen = 1'b0;
+    (* ASYNC_REG = "TRUE" *) reg [1:0] rd_clock_seen_sync = 2'b00;
+
+    always @(posedge rd_clk or negedge rst) begin
+        if (!rst)
+            rd_clock_seen <= 1'b0;
+        else
+            rd_clock_seen <= 1'b1;
+    end
+
+    always @(posedge wr_clk or negedge rst) begin
+        if (!rst)
+            rd_clock_seen_sync <= 2'b00;
+        else
+            rd_clock_seen_sync <= {rd_clock_seen_sync[0], rd_clock_seen};
+    end
+
+    // Once both clocks are live, hold FIFO reset high for another 15 write
+    // clocks so reset is observed safely in both domains.
     reg [3:0] rst_cnt    = 4'd0;
     reg       rst_fifo_n = 1'b0;
 
     always @(posedge wr_clk or negedge rst) begin
         if (!rst) begin
+            rst_cnt    <= 4'd0;
+            rst_fifo_n <= 1'b0;
+        end
+        else if (!rd_clock_seen_sync[1]) begin
             rst_cnt    <= 4'd0;
             rst_fifo_n <= 1'b0;
         end

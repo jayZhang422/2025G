@@ -68,3 +68,4 @@ platform generate
 platform generate
 platform active {Identification_platform}
 platform generate
+platform active {Identification_platform}
