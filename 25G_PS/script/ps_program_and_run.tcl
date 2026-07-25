@@ -1,6 +1,6 @@
 # Program the PL and start the optimized Debug ELF on Cortex-A9 core 0.
-# Run: xsct ps_program_and_run.tcl
-# Check files only: xsct ps_program_and_run.tcl --check
+# Run from CLion/Windows: ps_program_and_run.bat
+# Check files only: ps_program_and_run.bat --check
 # Resolve an ambiguous artifact once with --bit, --xsa, --ps7-init, or --elf.
 
 proc require_file {path description} {
@@ -27,11 +27,13 @@ proc require_optimized_makefile {build_dir} {
 
 set script_dir [file dirname [file normalize [info script]]]
 source [file join $script_dir ps_automation_helpers.tcl]
-ps_automation::init $script_dir
+ps_automation::run {
+ps_automation::init $script_dir [file rootname [file tail [info script]]]
 set workspace [file normalize [file join $script_dir ..]]
-set bit_file [ps_automation::find_file $workspace --bit [glob -nocomplain -types f -directory $workspace */_ide/bitstream/*.bit] "Application bitstream"]
-set xsa_file [ps_automation::find_file $workspace --xsa [glob -nocomplain -types f -directory $workspace */export/*/hw/*.xsa] "Platform XSA"]
-set ps7_init_file [ps_automation::find_file $workspace --ps7-init [glob -nocomplain -types f -directory $workspace */_ide/psinit/ps7_init.tcl] "PS7 initialization script"]
+set platform_name [ps_automation::platform_name $workspace]
+set bit_file [ps_automation::platform_hardware_file $workspace $platform_name *.bit "Platform hardware bitstream" --bit]
+set xsa_file [ps_automation::platform_hardware_file $workspace $platform_name *.xsa "Platform hardware XSA" --xsa]
+set ps7_init_file [ps_automation::platform_hardware_file $workspace $platform_name ps7_init.tcl "Platform PS7 initialization script" --ps7-init]
 set elf_file [ps_automation::application_elf $workspace 1]
 set app_debug_dir [file dirname $elf_file]
 
@@ -74,3 +76,4 @@ dow $elf_file
 configparams force-mem-access 0
 progress "starting Cortex-A9 core 0"
 con
+}

@@ -43,6 +43,11 @@ module top (
     wire        iq_clk_adc;
     wire [11:0] iq_adc_raw;
     wire        iq_sample_valid;
+    wire        fifo_mon_write;
+    wire        fifo_mon_prog_full;
+    wire        fifo_mon_full;
+    wire        fifo_mon_wr_rst_busy;
+    wire        fifo_mon_rd_rst_busy;
     wire [31:0] bram_addr;
     wire [31:0] bram_dout;
     wire        bram_en;
@@ -68,6 +73,11 @@ module top (
         .iq_clk_adc    (iq_clk_adc),
         .iq_adc_raw    (iq_adc_raw),
         .iq_sample_valid (iq_sample_valid),
+        .fifo_mon_write      (fifo_mon_write),
+        .fifo_mon_prog_full  (fifo_mon_prog_full),
+        .fifo_mon_full       (fifo_mon_full),
+        .fifo_mon_wr_rst_busy(fifo_mon_wr_rst_busy),
+        .fifo_mon_rd_rst_busy(fifo_mon_rd_rst_busy),
         .bram_addr     (bram_addr),
         .bram_en       (bram_en),
         .bram_we       (bram_we),
@@ -108,10 +118,19 @@ module top (
         .FIXED_IO_ps_clk      (FIXED_IO_ps_clk),
         .FIXED_IO_ps_porb     (FIXED_IO_ps_porb),
         .FIXED_IO_ps_srstb    (FIXED_IO_ps_srstb),
-        .clk_adc_in           (iq_clk_adc),
+        .adc_clk_0            (iq_clk_adc),
         .clk_dac              (clk_dac),
+        .fifo_full_0          (fifo_mon_full),
+        .fifo_prog_full_0     (fifo_mon_prog_full),
+        .fifo_rd_rst_busy_0   (fifo_mon_rd_rst_busy),
+        .fifo_wr_rst_busy_0   (fifo_mon_wr_rst_busy),
+        .fifo_write_0         (fifo_mon_write),
         .i_adc_raw_0          (iq_adc_raw),
         .i_sample_valid_0     (iq_sample_valid),
+        .sample_valid_0       (iq_sample_valid),
+        .axis_tlast_0         (adc_tlast),
+        .axis_tready_0        (adc_tready),
+        .axis_tvalid_0        (adc_tvalid),
         .pl_key_i             (pl_key_i),
         .rst_n_0              (i_rst)
     );

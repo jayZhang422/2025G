@@ -12,4 +12,5 @@ float32_t g_fft_spectrum_buffer[APP_FFT_LEN];
 float32_t g_fft_magnitude_buffer[APP_SPEC_LEN];
 float32_t g_model_buffer[APP_FFT_LEN];
 
-u16 *g_adc_raw_buffer = (u16 *)APP_DMA_BUFFER_BASE;
+u16 g_adc_raw_buffer[APP_FFT_LEN]
+    __attribute__((section(".dma_buffer"), aligned(64)));

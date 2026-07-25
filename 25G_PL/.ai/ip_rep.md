@@ -16,13 +16,14 @@ run-output files.
   `25G_PL.gen/sources_1/bd/system/hdl/system_wrapper.v`. The legacy copy in
   `25G_PL.srcs/sources_1/imports` is intentionally not in `sources_1`.
 - Do not connect the IQ core directly to `i_ad_data`. Use the registered
-  `adc_raw` and `sample_valid` outputs of `ad_fifo_output` with `w_ad_phase`.
+  `adc_raw` and `sample_valid` outputs of `ad_fifo_wrapper_0` with `w_ad_phase`.
 
 ## Custom IP
 
 | IP | Source | Clock/domain | Purpose and important interfaces |
 | --- | --- | --- | --- |
-| `ad_fifo_output` | `ip_core/ad_fifo_ip` | ADC write domain plus FCLK0 read domain | Wraps `ad9226` and the independent-clock FIFO. Inputs: `rst_n`, `clk_phase`, `adc_din`, `rd_clk`, `rd_en`. Outputs: FIFO `dout[15:0]`, `empty`; IQ observation `adc_raw[11:0]`, `sample_valid`. The latter two are the same registered and stable sample stream used by FIFO writes. |
+| `ad_fifo_wrapper_0` | `ip_core/ad_fifo_ip` | ADC write domain plus FCLK0 read domain | Wraps `ad9226` and the independent-clock FIFO. Inputs: `rst_n`, `clk_phase`, `adc_din`, `rd_clk`, `rd_en`. Outputs include FIFO data/status, IQ observation, and passive monitor taps. The first valid FIFO write is aligned to a registered ADC sample. |
+| `fifo_monitor_axi_0` | `ip_core/ad_fifo_monitor_axis/ad_fifo_monitor_axi_1.0` | ADC domain plus FCLK0 AXI4-Lite | Passively counts ADC samples, accepted FIFO writes, blocked writes, AXIS beats/frames/stalls, and publishes snapshots to PS at `0x43C1_0000`. |
 | `DDS_DAC` | `ip_core/DDS_DAC_ip` | `clk_dac`, 125 MHz | Reads the ten-word BRAM control snapshot, applies changes at `COMMIT_SEQ`, and drives independent A/B DDS paths. It uses external sine/triangle ROM data and forces midscale while stopped. |
 | `iq_demodulator` | `ip_core/iq_demodulator_ip_core` | ADC phase clock for DSP/DDS; FCLK0 for AXI-Lite | Single-frequency I/Q lock-in detector. ADC inputs are `clk_adc`, `i_adc_raw`, `i_sample_valid`, and `rst_n`. AXI-Lite input is `s_axi`; result IRQ is `o_irq`. The control/result CDC is inside this IP. |
 
@@ -31,7 +32,7 @@ run-output files.
 | IP | Vendor core | Key configuration/use |
 | --- | --- | --- |
 | `PLL_AD` | Clocking Wizard 6.0 | Takes the 50 MHz board clock and produces the ADC 0-degree clock plus the phase-shifted ADC capture clock. The current DDS IQ clock-rate configuration is 5.12006 MHz. |
-| `fifo_generator_0` | FIFO Generator 13.2 | Native 16-bit independent-clock FIFO inside `ad_fifo_output`; ADC phase clock writes and FCLK0 reads. |
+| `fifo_generator_0` | FIFO Generator 13.2 | Native 16-bit independent-clock FIFO inside `ad_fifo_wrapper_0`; ADC phase clock writes and FCLK0 reads. |
 | `dds_iq_lo` | DDS Compiler 6.0 | 32-bit programmable phase increment and phase offset, 16-bit signed sine/cosine output, fixed latency 8, no TREADY. Its `aclk` metadata is 5,120,060 Hz and its LO frequency is set at runtime by IQ AXI-Lite configuration, not by this metadata. |
 | `blk_rom_sine` | Block Memory Generator 8.4 | 4096 x 14 single-port sine ROM. Two instances serve DAC A and B. |
 | `blk_rom_triangle` | Block Memory Generator 8.4 | 4096 x 14 single-port triangle ROM. Two instances serve DAC A and B. |
@@ -47,10 +48,11 @@ run-output files.
 | `axi_dma_adc` | AXI DMA 7.1 | Simple S2MM-only ADC DMA: 16-bit AXIS input and 64-bit memory interface. |
 | `axis_data_fifo_0` | AXIS Data FIFO 2.0 | Buffers `ADC_STREAM_IN` before DMA S2MM. |
 | `smartconnect_0` | SmartConnect 1.0 | Routes the DMA memory master to PS HP0 and PS GP0 slave path. |
-| `axi_interconnect_0` | AXI Interconnect 2.1 | Routes PS GP0 AXI-Lite control to DMA, DDS BRAM controller, and IQ AXI-Lite. |
+| `axi_interconnect_0` | AXI Interconnect 2.1 | Routes PS GP0 AXI-Lite control to DMA, DDS BRAM controller, IQ, and FIFO monitor. |
 | `axi_bram_ctrl_0` | AXI BRAM Controller 4.1 | PS AXI-Lite access to the DDS control BRAM. |
 | `blk_PS_TO_PL` | Block Memory Generator 8.4 | True dual-port 2048 x 32 BRAM: PS uses port A; the DAC IP uses port B. |
 | `iq_demodulator_0` | Local custom `iq_demodulator` 1.0 | IQ control/status at `0x43C0_0000`; ADC-domain sample inputs are exported through the generated wrapper; `o_irq` drives PS `IRQ_F2P`. |
+| `fifo_monitor_axi_0` | Local custom `ad_fifo_monitor_axi` 1.0 | Read-only snapshot/status registers at `0x43C1_0000`; CONTROL provides snapshot and sticky-clear pulses. |
 | `xbar`, `auto_pc` | AXI Crossbar / Protocol Converter | Generated internal support cells for the AXI interconnect. |
 
 ## IQ Control Contract

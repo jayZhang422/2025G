@@ -25,6 +25,6 @@ extern float32_t g_model_buffer[APP_FFT_LEN];
  * The ADC DMA writes g_adc_raw_buffer. The other buffers are CPU workspaces.
  * The DDS is configured through BRAM words, so no DAC sample stream exists.
  */
-extern u16 *g_adc_raw_buffer;
+extern u16 g_adc_raw_buffer[APP_FFT_LEN];
 
 #endif /* USER_INCLUDE_APP_BUFFERS_H_ */

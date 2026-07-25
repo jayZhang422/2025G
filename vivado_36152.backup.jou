@@ -1,0 +1,14 @@
+#-----------------------------------------------------------
+# Vivado v2020.2 (64-bit)
+# SW Build 3064766 on Wed Nov 18 09:12:45 MST 2020
+# IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
+# Start of session at: Fri Jul 24 20:21:50 2026
+# Process ID: 36152
+# Current directory: E:/7020_Project/25G
+# Command line: vivado.exe -mode tcl
+# Log file: E:/7020_Project/25G/vivado.log
+# Journal file: E:/7020_Project/25G\vivado.jou
+#-----------------------------------------------------------
+open_project {E:/7020_Project/25G/25G_PL/25G_PL.xpr}
+report_ip_status
+close_project

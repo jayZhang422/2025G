@@ -26,6 +26,12 @@ module H_top (
     output wire [11:0] iq_adc_raw,
     output wire        iq_sample_valid,
 
+    output wire        fifo_mon_write,
+    output wire        fifo_mon_prog_full,
+    output wire        fifo_mon_full,
+    output wire        fifo_mon_wr_rst_busy,
+    output wire        fifo_mon_rd_rst_busy,
+
     output wire [31:0] bram_addr,
     output wire        bram_en,
     output wire [3:0]  bram_we,
@@ -88,7 +94,7 @@ module H_top (
         .clk_sys       (i_clk_50m)
     );
 
-    ad_fifo_output u_ad_fifo (
+    ad_fifo_wrapper_0 u_ad_fifo (
         .rst_n     (i_rst),
         .clk_phase (w_ad_phase),
         .adc_din   (i_ad_data),
@@ -96,8 +102,13 @@ module H_top (
         .rd_en     (w_fifo_rd_en),
         .dout      (w_fifo_data),
         .empty     (w_fifo_empty),
-        .adc_raw   (iq_adc_raw),
-        .sample_valid (iq_sample_valid)
+        .adc_raw        (iq_adc_raw),
+        .sample_valid   (iq_sample_valid),
+        .mon_fifo_write (fifo_mon_write),
+        .mon_prog_full  (fifo_mon_prog_full),
+        .mon_fifo_full  (fifo_mon_full),
+        .mon_wr_rst_busy(fifo_mon_wr_rst_busy),
+        .mon_rd_rst_busy(fifo_mon_rd_rst_busy)
     );
 
     assign w_fifo_rd_en  = ~w_fifo_empty & m_axis_tready;

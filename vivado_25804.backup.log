@@ -1,0 +1,52 @@
+#-----------------------------------------------------------
+# Vivado v2020.2 (64-bit)
+# SW Build 3064766 on Wed Nov 18 09:12:45 MST 2020
+# IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
+# Start of session at: Fri Jul 24 20:21:04 2026
+# Process ID: 25804
+# Current directory: E:/7020_Project/25G
+# Command line: vivado.exe -mode batch -source 25G_PL\.Xil\refresh_ad_fifo_monitor_driver_export.tcl
+# Log file: E:/7020_Project/25G/vivado.log
+# Journal file: E:/7020_Project/25G\vivado.jou
+#-----------------------------------------------------------
+source {25G_PL\.Xil\refresh_ad_fifo_monitor_driver_export.tcl}
+# set pl_dir [file normalize [file join [file dirname [info script]] ..]]
+# set component_file [file join $pl_dir ip_core ad_fifo_monitor_axis ad_fifo_monitor_axi_1.0 component.xml]
+# set project_file [file join $pl_dir 25G_PL.xpr]
+# set xsa_file [file join $pl_dir top.xsa]
+# set core [ipx::open_core $component_file]
+# ipx::update_checksums $core
+# ipx::save_core $core
+# ipx::unload_core $component_file
+# open_project $project_file
+Scanning sources...
+Finished scanning sources
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'e:/7020_Project/25G/25G_PL/ip_core'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'D:/FPGA/Xilinx/Vivado/2020.2/data/ip'.
+WARNING: [BD 41-1661] One or more IPs have been locked in the design 'system.bd'. Please run report_ip_status for more details and recommendations on how to fix this issue.
+List of locked IPs:
+system_ad_fifo_monitor_axi_0_0
+
+open_project: Time (s): cpu = 00:00:01 ; elapsed = 00:00:05 . Memory (MB): peak = 1104.035 ; gain = 0.000
+# update_ip_catalog -rebuild
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'e:/7020_Project/25G/25G_PL/ip_core'.
+# write_hw_platform -fixed -include_bit -force -file $xsa_file
+INFO: [Vivado 12-4895] Creating Hardware Platform: E:/7020_Project/25G/25G_PL/top.xsa ...
+WARNING: [Vivado_Tcl 4-413] Exported hardware design may be stale because Block Design is locked for the following reasons 
+* Block design contains locked IPs. Please run report_ip_status for more details and recommendations on how to fix this issue. 
+List of locked IPs: 
+system_ad_fifo_monitor_axi_0_0
+
+INFO: [Hsi 55-2053] elapsed time for repository (D:/FPGA/Xilinx/Vivado/2020.2/data\embeddedsw) loading 0 seconds
+WARNING: [Vivado_Tcl 4-413] Exported hardware design may be stale because Block Design is locked for the following reasons 
+* Block design contains locked IPs. Please run report_ip_status for more details and recommendations on how to fix this issue. 
+List of locked IPs: 
+system_ad_fifo_monitor_axi_0_0
+
+INFO: [Vivado 12-12467] The Hardware Platform can be used for Hardware
+INFO: [Vivado 12-4896] Successfully created Hardware Platform: E:/7020_Project/25G/25G_PL/top.xsa
+write_hw_platform: Time (s): cpu = 00:00:01 ; elapsed = 00:00:05 . Memory (MB): peak = 1104.035 ; gain = 0.000
+# close_project
+INFO: [Common 17-206] Exiting Vivado at Fri Jul 24 20:21:20 2026...

@@ -11,7 +11,9 @@ file(GLOB_RECURSE SOURCES
         "Identification_Processing_System/src/*.cpp"
 )
 
-add_executable(Identification_Processing ${SOURCES})
+add_executable(Identification_Processing ${SOURCES}
+        Identification_Processing_System/src/User/include/fifo_monitor.h
+        Identification_Processing_System/src/User/src/fifo_monitor.c)
 
 # ================= 核心魔法区：自动提取包含路径 =================
 

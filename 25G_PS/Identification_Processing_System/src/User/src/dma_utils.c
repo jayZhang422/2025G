@@ -8,8 +8,35 @@
 #include "../include/app_config.h"
 #include "../include/dma_utils.h"
 
+#include "xil_cache.h"
 #include "xil_printf.h"
 #include "xtime_l.h"
+
+static u16 g_dma_discard_buffer[APP_FFT_LEN] __attribute__((aligned(64)));
+static int g_dma_needs_realign;
+
+/** 轮询 S2MM 完成，同时区分超时和 DMA 状态错误。 */
+static int dma_wait_s2mm(XAxiDma *dma)
+{
+    XTime start_time;
+    XTime current_time;
+    u32 status;
+
+    XTime_GetTime(&start_time);
+    while (XAxiDma_Busy(dma, XAXIDMA_DEVICE_TO_DMA)) {
+        XTime_GetTime(&current_time);
+        if ((current_time - start_time) >=
+            ((XTime)APP_DMA_CAPTURE_TIMEOUT_MS *
+             (XTime)COUNTS_PER_SECOND / 1000U)) {
+            return XST_TIMEOUT;
+        }
+    }
+
+    status = XAxiDma_ReadReg(dma->RegBase + XAXIDMA_RX_OFFSET,
+                             XAXIDMA_SR_OFFSET);
+    return ((status & XAXIDMA_ERR_ALL_MASK) == 0U) ?
+        XST_SUCCESS : XST_FAILURE;
+}
 
 /** 读取并打印 S2MM 控制、状态、目的地址和剩余长度寄存器。 */
 void dma_dump_s2mm_regs(const char *tag, XAxiDma *dma)
@@ -77,18 +104,46 @@ int dma_init_s2mm(XAxiDma *dma, u16 device_id)
     }
     XAxiDma_IntrDisable(dma, XAXIDMA_IRQ_ALL_MASK, XAXIDMA_DEVICE_TO_DMA);
 
+    g_dma_needs_realign = 0;
+
     return XST_SUCCESS;
 }
 
-/** 在传输启动失败或超时时打印现场并重新初始化 S2MM DMA。 */
+/** 复位 DMA 后丢弃到下一个 TLAST，使后续正式采集从帧边界开始。 */
 static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
 {
+    int status;
+
     dma_dump_s2mm_regs("S2MM before reset:", dma);
     if (dma_init_s2mm(dma, device_id) != XST_SUCCESS) {
         xil_printf("ERROR: ADC DMA receive reinitialization failed\r\n");
+        g_dma_needs_realign = 1;
         return XST_FAILURE;
     }
-    dma_dump_s2mm_regs("S2MM recovered:", dma);
+
+    g_dma_needs_realign = 1;
+    Xil_DCacheFlushRange((UINTPTR)g_dma_discard_buffer,
+                         APP_RX_FRAME_BYTES);
+    status = XAxiDma_SimpleTransfer(dma, (UINTPTR)g_dma_discard_buffer,
+                                    APP_RX_FRAME_BYTES,
+                                    XAXIDMA_DEVICE_TO_DMA);
+    if (status == XST_SUCCESS) {
+        status = dma_wait_s2mm(dma);
+    }
+    Xil_DCacheInvalidateRange((UINTPTR)g_dma_discard_buffer,
+                              APP_RX_FRAME_BYTES);
+
+    if (status != XST_SUCCESS) {
+        xil_printf("ERROR: ADC DMA frame realignment failed (%d)\r\n",
+                   status);
+        dma_dump_s2mm_regs("S2MM realignment failed:", dma);
+        (void)dma_init_s2mm(dma, device_id);
+        g_dma_needs_realign = 1;
+        return XST_FAILURE;
+    }
+
+    g_dma_needs_realign = 0;
+    dma_dump_s2mm_regs("S2MM realigned:", dma);
     return XST_SUCCESS;
 }
 
@@ -96,26 +151,29 @@ static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
 int dma_capture_frame(XAxiDma *dma, u16 device_id, u16 *buffer,
                       u32 length_bytes)
 {
-    XTime start_time;
-    XTime current_time;
+    int status;
+
+    if (g_dma_needs_realign &&
+        dma_recover_s2mm(dma, device_id) != XST_SUCCESS) {
+        return XST_FAILURE;
+    }
 
     if (XAxiDma_SimpleTransfer(dma, (UINTPTR)buffer, length_bytes,
                                XAXIDMA_DEVICE_TO_DMA) != XST_SUCCESS) {
         xil_printf("ERROR: ADC DMA start failed\r\n");
+        g_dma_needs_realign = 1;
         (void)dma_recover_s2mm(dma, device_id);
         return XST_FAILURE;
     }
 
-    XTime_GetTime(&start_time);
-    while (XAxiDma_Busy(dma, XAXIDMA_DEVICE_TO_DMA)) {
-        XTime_GetTime(&current_time);
-        if ((current_time - start_time) >=
-            ((XTime)APP_DMA_CAPTURE_TIMEOUT_MS *
-             (XTime)COUNTS_PER_SECOND / 1000U)) {
-            xil_printf("ERROR: ADC DMA timeout\r\n");
-            (void)dma_recover_s2mm(dma, device_id);
-            return XST_FAILURE;
-        }
+    status = dma_wait_s2mm(dma);
+    if (status != XST_SUCCESS) {
+        xil_printf((status == XST_TIMEOUT) ?
+                   "ERROR: ADC DMA timeout\r\n" :
+                   "ERROR: ADC DMA status error\r\n");
+        g_dma_needs_realign = 1;
+        (void)dma_recover_s2mm(dma, device_id);
+        return XST_FAILURE;
     }
 
     return XST_SUCCESS;

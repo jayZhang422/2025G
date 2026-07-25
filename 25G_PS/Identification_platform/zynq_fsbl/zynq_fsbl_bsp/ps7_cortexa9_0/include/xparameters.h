@@ -29,6 +29,17 @@
  
  
 /******************************************************************/
+/* Definitions for driver AD_FIFO_MONITOR_AXI */
+#define XPAR_AD_FIFO_MONITOR_AXI_NUM_INSTANCES 1
+
+/* Definitions for peripheral AD_FIFO_MONITOR_AXI_0 */
+#define XPAR_AD_FIFO_MONITOR_AXI_0_DEVICE_ID 0
+#define XPAR_AD_FIFO_MONITOR_AXI_0_AD_FIFO_MONITOR_AXI_BASEADDR 0x43C10000
+#define XPAR_AD_FIFO_MONITOR_AXI_0_AD_FIFO_MONITOR_AXI_HIGHADDR 0x43C1FFFF
+
+
+/******************************************************************/
+
 /* Definitions for driver AXIDMA */
 #define XPAR_XAXIDMA_NUM_INSTANCES 1
 

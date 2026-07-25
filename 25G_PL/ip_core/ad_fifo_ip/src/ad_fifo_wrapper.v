@@ -1,4 +1,4 @@
-module ad_fifo_warpper(
+module ad_fifo_wrapper(
     input  wire        rst_n,        // 系统异步复位 (低电平有效)
 
     // ===== 采样与写入时钟 (外部 PLL 输入) =====
@@ -17,7 +17,14 @@ module ad_fifo_warpper(
     // the same registered sample and validity flag that feed the FIFO write
     // port; they do not add a second capture path.
     output wire [11:0] adc_raw,
-    output wire        sample_valid
+    output wire        sample_valid,
+
+    // Read-only monitor taps; none of them feed back into the data path.
+    output wire        mon_fifo_write,
+    output wire        mon_prog_full,
+    output wire        mon_fifo_full,
+    output wire        mon_wr_rst_busy,
+    output wire        mon_rd_rst_busy
     //需在顶层写一个0度时钟给ADC引脚约束使用
 );
 
@@ -43,7 +50,12 @@ module ad_fifo_warpper(
         .rd_clk       (rd_clk),      // 外部 100MHz 读时钟
         .rd_en        (rd_en),       // 外部读使能
         .dout         (dout),        // 16-bit 输出
-        .empty        (empty)        // 空标志
+        .empty        (empty),       // 保留现有 prog_empty 门控语义
+        .mon_write_en (mon_fifo_write),
+        .mon_prog_full(mon_prog_full),
+        .mon_fifo_full(mon_fifo_full),
+        .mon_wr_rst_busy(mon_wr_rst_busy),
+        .mon_rd_rst_busy(mon_rd_rst_busy)
     );
 
     assign adc_raw      = ad_dout;

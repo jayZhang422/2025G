@@ -13,6 +13,7 @@
 #include "User/include/diagnostics.h"
 #include "User/include/dds_control.h"
 #include "User/include/dma_utils.h"
+#include "User/include/fifo_monitor.h"
 #include "User/include/signal_processing.h"
 
 #include <math.h>
@@ -26,6 +27,19 @@
 
 static XAxiDma g_dma_rx;
 static arm_rfft_fast_instance_f32 g_fft_instance;
+
+/** 请求并打印一次 FIFO/AXIS 计数器快照。 */
+static void app_report_fifo_monitor(const char *tag)
+{
+    fifo_monitor_snapshot_t snapshot;
+    int status = fifo_monitor_snapshot(&snapshot);
+
+    if (status == XST_SUCCESS) {
+        fifo_monitor_print(tag, &snapshot);
+    } else {
+        xil_printf("WARN: FIFO monitor snapshot failed (%d)\r\n", status);
+    }
+}
 
 /** 输出已锁定 A/B 分量的波形、频率、幅度、相位及拟合残差。 */
 static void app_report_result(const signal_analysis_result_t *result)
@@ -54,9 +68,12 @@ static int app_capture_measurement(signal_analysis_result_t *measurement,
     int analysis_status;
 
     XTime_GetTime(&capture_start_time);
+    Xil_DCacheFlushRange((UINTPTR)g_adc_raw_buffer,
+                         APP_RX_FRAME_BYTES);
     if (dma_capture_frame(&g_dma_rx, APP_DMA_RX_DEV_ID, g_adc_raw_buffer,
                           APP_RX_FRAME_BYTES) != XST_SUCCESS) {
         dma_dump_s2mm_regs("S2MM capture failed:", &g_dma_rx);
+        app_report_fifo_monitor("FIFO monitor after DMA failure:");
         return XST_FAILURE;
     }
     XTime_GetTime(&capture_end_time);
@@ -288,6 +305,14 @@ int main(void)
         return XST_FAILURE;
     }
     dma_dump_s2mm_regs("S2MM initialized:", &g_dma_rx);
+    if (fifo_monitor_init() == XST_SUCCESS) {
+        app_report_fifo_monitor("FIFO monitor initialized:");
+        if (fifo_monitor_clear_sticky() != XST_SUCCESS) {
+            xil_printf("WARN: FIFO monitor sticky clear failed\r\n");
+        }
+    } else {
+        xil_printf("WARN: FIFO monitor initialization failed; continuing\r\n");
+    }
 
     dds_control_init(&dds_control);
     stopped_channel.waveform = SIGNAL_WAVE_SINE;

@@ -20,25 +20,39 @@ module fifo(
     input  wire        rd_clk,      // Read side clock
     input  wire        rd_en,       // Read enable from downstream consumer (e.g. AXI Stream logic)
     output wire [15:0] dout,        // 16-bit FIFO output data to downstream consumer
-    output wire        empty        // FIFO empty flag (mapped to prog_empty)
+    output wire        empty,       // Legacy low-watermark flag (mapped to prog_empty)
+
+    // Read-only monitor taps. These outputs never participate in FIFO control.
+    output wire        mon_write_en,
+    output wire        mon_prog_full,
+    output wire        mon_fifo_full,
+    output wire        mon_wr_rst_busy,
+    output wire        mon_rd_rst_busy
 );
 
     // Internal Signals
     wire [15:0] ad_data_in;
+    wire        fifo_full;
     wire        prog_full;
     wire        wr_rst_busy;
     wire        prog_empty;
     wire        rd_rst_busy;
 
-    // Write Control: Block writes if FIFO is full or resetting
-    wire write_allow = (!wr_rst_busy) && (!prog_full);
+    // Write Control: prog_full is the normal high-watermark guard; full is
+    // also checked so the monitor reports only writes accepted by the FIFO.
+    wire write_allow = (!wr_rst_busy) && (!prog_full) && (!fifo_full);
     wire write_en    = wr_en && write_allow;
 
     // Read Control: Block reads if FIFO is empty or resetting
     wire read_allow  = (!rd_rst_busy) && (!prog_empty);
     wire read_en     = rd_en && read_allow;
 
-    assign empty = prog_empty;
+    assign empty           = prog_empty;
+    assign mon_write_en    = write_en;
+    assign mon_prog_full   = prog_full;
+    assign mon_fifo_full   = fifo_full;
+    assign mon_wr_rst_busy = wr_rst_busy;
+    assign mon_rd_rst_busy = rd_rst_busy;
 
     // Reset Extension: Holds FIFO reset high for 15 cycles for safe initialization
     reg [3:0] rst_cnt    = 4'd0;
@@ -70,7 +84,7 @@ module fifo(
         .wr_en        (write_en),
         .rd_en        (read_en),
         .dout         (dout),
-        .full         (),
+        .full         (fifo_full),
         .empty        (),
         .prog_full    (prog_full),
         .prog_empty   (prog_empty),

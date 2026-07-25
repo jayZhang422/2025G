@@ -241,6 +241,17 @@ SECTIONS
    __bss_end = .;
 } > ps7_ddr_0
 
+.dma_buffer 0x01000000 (NOLOAD) : {
+   . = ALIGN(64);
+   __dma_buffer_start = .;
+   KEEP(*(.dma_buffer))
+   . = ALIGN(64);
+   __dma_buffer_end = .;
+} > ps7_ddr_0
+
+ASSERT(SIZEOF(.dma_buffer) == 0x2000,
+       "DMA buffer must be exactly 8192 bytes")
+
 _SDA_BASE_ = __sdata_start + ((__sbss_end - __sdata_start) / 2 );
 
 _SDA2_BASE_ = __sdata2_start + ((__sbss2_end - __sdata2_start) / 2 );

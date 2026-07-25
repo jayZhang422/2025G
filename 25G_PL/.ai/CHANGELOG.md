@@ -1,5 +1,50 @@
 # Change Log
 
+## 2026-07-24 - Windows-Compatible FIFO Monitor Driver Packaging
+
+### Fixed
+
+- Replaced `*.c`, `*.h`, and `*.o` in the packaged
+  `ad_fifo_monitor_axi_v1_0` driver Makefile with explicit source, header, and
+  object lists. Vitis 2020.2 invokes custom drivers with `SHELL=CMD`, where the
+  wildcard object passed to `arm-none-eabi-ar` and `rm` was not expanded.
+- Updated the packaged IP checksums and upgraded the active BD instance without
+  changing its interface or parameters.
+
+### Verification
+
+- A full Vivado synthesis, implementation, and bitstream rebuild completed
+  with zero DRC errors and exported a non-stale XSA.
+- The exported XSA contains the corrected driver Makefile, the IP instance is
+  unlocked, and Vitis rebuilt both FSBL and FreeRTOS BSP libraries successfully.
+
+## 2026-07-24 - FIFO Transparency And Monitor Integration
+
+### Changed
+
+- Replaced the obsolete `ad_fifo_output` top-level instance with
+  `ad_fifo_wrapper_0` while preserving the validated FIFO Generator settings,
+  programmable thresholds, FWFT mode, reset extension, and read/write gates.
+- Captured `din` on the ADC stabilization transition so the first asserted
+  `sample_valid` leads to a real registered sample on the first FIFO write.
+- Replaced the standalone `ad_fifo_monitor_0` with BD `fifo_monitor_axi_0`.
+  PS now requests snapshots, clears sticky flags, and reads the monitor counters
+  through AXI4-Lite at `0x43C1_0000`.
+- Prevented `fifo_full_sticky` from latching the FIFO Generator's intentional
+  reset value by ignoring `fifo_full` while `fifo_wr_rst_busy` is asserted.
+- Declared the ADC/write clocks as 5,120,060 Hz IP clock interfaces, associated
+  both custom-IP clock domains with `rst_n`, and moved the project IP repository
+  reference to the versioned `25G_PL/ip_core` directory.
+- Updated `refresh_iq_ip_and_wrapper.tcl` to refresh both FIFO packages and use
+  the Vivado 2020.2 `IPDEF` instance property.
+
+### Verification
+
+- Refreshed both user IPs, DDS output products, the validated Block Design, and
+  generated `system_wrapper.v` without running simulation or synthesis.
+- Vivado `check_syntax -fileset sources_1` reported no errors or warnings, and
+  all project IP instances were unlocked.
+
 ## 2026-07-23 - IQ Demodulator Top-Level Integration
 
 ### Changed

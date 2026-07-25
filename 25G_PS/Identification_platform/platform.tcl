@@ -47,3 +47,24 @@ platform clean
 platform generate
 platform clean
 platform generate
+platform clean
+platform generate
+platform active {Identification_platform}
+platform config -updatehw {E:/7020_Project/25G/25G_PL/top.xsa}
+platform clean
+platform generate
+platform generate
+platform active {Identification_platform}
+platform active {Identification_platform}
+bsp reload
+platform clean
+platform active {Identification_platform}
+platform active {Identification_platform}
+bsp reload
+domain active {zynq_fsbl}
+bsp reload
+platform active {Identification_platform}
+platform generate
+platform generate
+platform active {Identification_platform}
+platform generate

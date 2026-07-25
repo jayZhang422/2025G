@@ -44,12 +44,6 @@
 #define APP_DMA_CAPTURE_TIMEOUT_MS   1000U
 #define APP_DMA_RESET_TIMEOUT        1000000U
 
-/*
- * DMA writes this fixed DDR region. It is not a PL register address; fixed
- * placement is retained because linker-placed buffers failed during bring-up.
- */
-#define APP_DMA_BUFFER_BASE         0x01000000U
-
 /* DDS control BRAM is a PL contract and must always come from xparameters.h. */
 #define APP_DDS_BRAM_BASEADDR       XPAR_AXI_BRAM_CTRL_0_S_AXI_BASEADDR
 #define APP_DDS_CLOCK_HZ            125000000.0f

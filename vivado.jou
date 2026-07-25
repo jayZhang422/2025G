@@ -1,0 +1,16 @@
+#-----------------------------------------------------------
+# Vivado v2020.2 (64-bit)
+# SW Build 3064766 on Wed Nov 18 09:12:45 MST 2020
+# IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
+# Start of session at: Fri Jul 24 20:27:48 2026
+# Process ID: 34820
+# Current directory: E:/7020_Project/25G
+# Command line: vivado.exe -mode tcl
+# Log file: E:/7020_Project/25G/vivado.log
+# Journal file: E:/7020_Project/25G\vivado.jou
+#-----------------------------------------------------------
+open_project {E:/7020_Project/25G/25G_PL/25G_PL.xpr}
+set target [get_ips system_ad_fifo_monitor_axi_0_0]
+puts "STATUS=[get_property STATUS $target]"
+puts "IS_LOCKED=[get_property IS_LOCKED $target]"
+close_project

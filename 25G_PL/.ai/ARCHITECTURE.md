@@ -18,7 +18,7 @@ The application-side PS source code is not in this Vivado workspace. Hardware ex
 | Acquisition | independent-clock FIFO, AXIS FIFO, AXI DMA S2MM, PS HP0 DDR |
 | DDS/DAC | Two 32-bit DDS states, four single-port ROM instances, 14-bit AD9767 A/B outputs; XSIM behavioral regression passed, hardware verification pending |
 | PS | PS7 DDR, FCLK0 100 MHz, M_AXI_GP0, S_AXI_HP0, UART1 MIO 48/49, three EMIO GPIO inputs |
-| Debug | `ila_0` exists but is AutoDisabled and not instantiated |
+| Debug | `fifo_monitor_axi_0` publishes FIFO/AXIS snapshots to PS through AXI4-Lite; `ila_0` remains uninstantiated |
 | Tooling | Vivado 2020.2, Questa is the selected target simulator |
 
 PL owns sampling, FIFO CDC, AXIS framing, DDS, ROM lookup, amplitude scaling, and DAC pins. PS owns DMA configuration, DDR, and writes DDS control BRAM. Fabric interrupt capability is enabled in PS7 configuration, but no DMA IRQ connection is present in the BD.
@@ -30,13 +30,11 @@ Synthesis top is `top`; active simulation top is `tb_H_top`. `system_wrapper` is
 ```text
 top
 |- H_top u_h_top
-|  |- ad9226 u_ad9226
-|  |  `- PLL_AD ad_clk                         (Clocking Wizard)
-|  |- fifo u_adc_fifo
-|  |  `- fifo_generator_0 my_fifo_ip           (FIFO Generator)
-|  `- ad9767 u_ad9767
-|     |- blk_rom_sine sine_a, sine_b            (one BRAM ROM per channel)
-|     `- blk_rom_triangle triangle_a, triangle_b (one BRAM ROM per channel)
+|  |- PLL_AD ad_clk                             (Clocking Wizard)
+|  |- ad_fifo_wrapper_0 u_ad_fifo               (local user IP)
+|  |  |- ad9226 u_ad9226
+|  |  `- fifo -> fifo_generator_0 my_fifo_ip
+|  `- DDS_DAC u_dac_dds                         (local user IP)
 `- system_wrapper u_system                      (generated from system.bd)
    `- system system_i
       |- processing_system7_0                   (Zynq PS7)
@@ -69,6 +67,13 @@ i_ad_data[11:0]
 ```
 
 The first FIFO is the intended 5.12 MHz to 100 MHz CDC boundary. `fifo.v` blocks writes on `prog_full` and reads on `prog_empty`/reset-busy. `H_top` emits `TLAST` on every 4096th accepted AXIS beat. Its counter, `tvalid`, `tready`, and `tlast` are all in the 100 MHz FCLK0 domain.
+
+BD `fifo_monitor_axi_0` observes this path without feeding any signal back into
+it. PS writes AXI4-Lite control bits to request a snapshot or clear sticky faults,
+then reads the published counters at `0x43C1_0000`. The monitor ignores FIFO
+`full` while `wr_rst_busy` is active because the FIFO Generator intentionally
+resets its full flag to one. Its AXIS counters describe acceptance into the BD
+AXIS FIFO, not completion of the downstream DMA write.
 
 The second stage is BD `axis_data_fifo_0`: depth 4096, 16-bit AXIS and TLAST. It is configured asynchronous even though both its ports currently use FCLK0.
 
@@ -170,6 +175,7 @@ Generated child BD `bd_919a` implements SmartConnect internals: AXI-to-SC and SC
 | --- | --- | ---: | ---: |
 | `processing_system7_0/Data` | BRAM Controller memory | `0x4000_0000` | 8 KiB |
 | `processing_system7_0/Data` | DMA AXI-Lite registers | `0x4040_0000` | 64 KiB |
+| `processing_system7_0/Data` | FIFO monitor AXI-Lite registers | `0x43C1_0000` | 64 KiB |
 | `axi_dma_adc/Data_S2MM` | PS HP0 DDR/OCM | `0x0000_0000` | 1 GiB |
 
 DMA mappings to GP0 IOP (`0xE0000000`, 4 MiB) and GP0 master space (`0x40000000`, 1 GiB) are explicitly excluded. No DMA interrupt net is in the BD connection list.
@@ -204,8 +210,8 @@ The workspace contains 101 physical XCI files: 17 source configurations, 49 cach
 
 | File / module | Role, state, dependencies, standalone simulation |
 | --- | --- |
-| `top.v` / `top` | synthesis top; physical ADC/DAC/DDR/PS pins; instantiates `H_top` and generated wrapper; no FSM or parameters; needs BD/IP products |
-| `H_top.v` / `H_top` | PL integration; ADC/FIFO/AXIS/BRAM/DAC wiring plus 12-bit TLAST counter; depends on `ad9226`, `fifo`, `ad9767`; simulated by `tb_H_top` |
+| `top.v` / `top` | synthesis top; physical ADC/DAC/DDR/PS pins; instantiates `H_top` and generated wrapper; forwards passive FIFO/AXIS observation signals into the BD AXI monitor |
+| `H_top.v` / `H_top` | PL integration; `ad_fifo_wrapper_0`, AXIS, BRAM, and `DDS_DAC` wiring plus 12-bit TLAST counter; simulated by `tb_H_top` |
 | `ad9226.v` / `ad9226` | AD capture/clock wrapper; 7-bit 64-cycle stabilization counter and `stable` flag; depends on `PLL_AD` |
 | `fifo.v` / `fifo` | 5.12 MHz write to 100 MHz read wrapper; 4-bit reset counter; depends on `fifo_generator_0` |
 | `ad9767.sv` / `ad9767` | dual DDS/DAC driver; ten-word BRAM polling, A/B shadow/running registers, two phase accumulators, four ROM instances, and independent DAC registers; source is under review |
@@ -242,7 +248,8 @@ Both have 12-bit addresses through `phase_acc[31:20]`. XCI output products gener
    AD9226 input timing remain unverified.
 2. `i_rst` is asynchronously deasserted in several custom clock domains; `w_rst_safe` originates in ADC domain and resets the FIFO wrapper. Review reset deassertion when changing clocks or FIFO settings.
 3. The ten-word shadow/commit protocol passes the one-clock BRAM behavioral model, but it still needs hardware validation against the generated true-dual-port BRAM and PS AXI writes.
-4. FIFO overflow is suppressed with `prog_full` but has no PS-visible status.
+4. FIFO/AXIS counters and sticky status are visible through Hardware Manager
+   debug nets but are not PS-readable registers.
 5. AXIS FIFO asynchronous configuration is redundant with its present common FCLK0 ports and should be explicitly justified or revised.
 6. PS fabric IRQ capability is enabled but DMA IRQ is not wired; software must poll unless the BD changes.
 7. Active simulation does not prove DMA/DDR, TLAST cadence, FIFO stress, or reset release across all clocks.
@@ -304,7 +311,7 @@ The active IQ data path is now:
 
 ```text
 AD9226 registered sample and stable valid
- -> ad_fifo_output adc_raw/sample_valid
+ -> ad_fifo_wrapper_0 adc_raw/sample_valid
  -> H_top IQ outputs
  -> top
  -> generated system_wrapper

@@ -28,8 +28,12 @@ always @(posedge clk_phase or negedge rst_ad) begin
     else if (!stable) begin
         if (delay_cnt < 7'd64)
             delay_cnt <= delay_cnt + 1'b1;
-        else
+        else begin
+            // Present a real registered ADC sample before ad_out_valid can
+            // enable the first FIFO write on the following clock edge.
+            dout   <= din;
             stable <= 1'b1;
+        end
     end
     else begin
         dout <= din;
