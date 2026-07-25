@@ -86,9 +86,19 @@
 #define BUTTON_RESET                 54U
 #define BUTTON_PHASE_INC             55U
 #define BUTTON_PHASE_DEC             56U
+#define BUTTON_STOP_BACK             BUTTON_RESET
+#define BUTTON_LEARN                 BUTTON_PHASE_INC
+#define BUTTON_SYSTEM_RESET          BUTTON_PHASE_DEC
 #define APP_BUTTON_ACTIVE_LEVEL      0U
 #define APP_BUTTON_DEBOUNCE_US       20000U
 #define APP_BUTTON_POLL_US           1000U
+
+#ifndef APP_BASIC34_INITIAL_FREQUENCY_HZ
+#define APP_BASIC34_INITIAL_FREQUENCY_HZ 1000.0f
+#endif
+#ifndef APP_BASIC34_INITIAL_TARGET_VPP
+#define APP_BASIC34_INITIAL_TARGET_VPP   2.0f
+#endif
 
 /*
  * Board bring-up diagnostics. Keep DDS test mode at zero for normal use.

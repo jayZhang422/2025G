@@ -80,6 +80,21 @@ int button_input_take_phase_decrement_press(button_input_t *buttons)
     return button_input_take_press(buttons, BUTTON_PHASE_DEC);
 }
 
+int button_input_take_stop_back_press(button_input_t *buttons)
+{
+    return button_input_take_press(buttons, BUTTON_STOP_BACK);
+}
+
+int button_input_take_learn_press(button_input_t *buttons)
+{
+    return button_input_take_press(buttons, BUTTON_LEARN);
+}
+
+int button_input_take_system_reset_press(button_input_t *buttons)
+{
+    return button_input_take_press(buttons, BUTTON_SYSTEM_RESET);
+}
+
 /*read level*/
 u32 button_input_read_start_level(const button_input_t *buttons)
 {
@@ -99,4 +114,19 @@ u32 button_input_read_phase_increment_level(const button_input_t *buttons)
 u32 button_input_read_phase_decrement_level(const button_input_t *buttons)
 {
     return XGpioPs_ReadPin(&buttons->instance, BUTTON_PHASE_DEC);
+}
+
+u32 button_input_read_stop_back_level(const button_input_t *buttons)
+{
+    return XGpioPs_ReadPin(&buttons->instance, BUTTON_STOP_BACK);
+}
+
+u32 button_input_read_learn_level(const button_input_t *buttons)
+{
+    return XGpioPs_ReadPin(&buttons->instance, BUTTON_LEARN);
+}
+
+u32 button_input_read_system_reset_level(const button_input_t *buttons)
+{
+    return XGpioPs_ReadPin(&buttons->instance, BUTTON_SYSTEM_RESET);
 }

@@ -86,3 +86,32 @@ app_state_machine 已实现为硬件无关的流程骨架：BOOT → MENU，并�
 ## 2026-07-23 目标编译交接状态
 
 当前交接证据显示：`app_runtime`、`app_state_machine` 及其直接依赖已通过 Vitis 2020.2 ARM GCC 的严格目标对象编译；完整 Vitis 链接仍受工作区 `.metadata` 未注册 `Identification_Processing_System_system` 工程影响。活动入口 `identification_main.c` 仍是 FreeRTOS Hello World，状态机尚未接入；后续应先处理现有工作区工程注册/构建入口，再做最小入口接入，不得重建或覆盖生成 BSP、Makefile 或 Vitis 元数据。
+
+## 2026-07-24 Basic3/Basic4 integration status
+
+- basic_output.c/.h freezes the Basic3/Basic4 frequency and target-amplitude grids and reuses the verified open-loop output planner for model compensation, required input Vpp, and DAC amplitude-code lookup.
+- basic_output_ui.c/.h provides menu field selection, stepping, reset, and start events; the non-diagnostic identification_main.c entry is connected to app_runtime, app_state_machine, and button services.
+- This is implemented but not board-verified: host algorithm self-tests, ARM object compilation, and manual ARM linking pass; physical buttons, voltage amplitude, and frequency still require a board download and measurement.
+- The DAC calibration curve is intentionally empty. Without measured code-to-Vpp data, START blocks output and reports that calibration is required; Basic3/Basic4 closed-loop amplitude completion is not claimed.
+- The existing APP_DIAG_FORCE_DDS_TEST default remains 1 to preserve the user diagnostic behavior. Basic3/Basic4 requires an explicit non-diagnostic build definition of 0. The generated Vitis Makefile source list still needs a Vitis project refresh before formal GUI-build integration.
+
+
+## 2026-07-24 First advanced learning gate
+
+- rlc_learning_measure_scan composes the existing coherent I/Q measurement across caller-owned captured frames; rlc_learning_summarize classifies the scan and extracts edge/peak facts.
+- The new layer is hardware-independent and has passed a strict host self-test plus ARM target object compilation.
+- DMA scan scheduling, physical capture, waveform-RAM write, and replay still require verified PL/XSA/BSP contracts and are not claimed complete.
+
+
+## 2026-07-25 Basic3/Basic4 measured DAC calibration
+
+- The Basic3/Basic4 runtime now uses seven monotonic 1 kHz code-to-Vpp measurements spanning code 0 through 16383 and 0.000 through 5.470 Vpp.
+- The measured curve covers the known-model 3 kHz, 2.0 Vpp worst-case input requirement. Host boundary regression and normal-mode ARM compile/link pass.
+- This closes the software calibration-data gap only. Button behavior, frequency accuracy, and final filter-output Vpp still require on-board verification.
+
+
+## 2026-07-25 Fixed button contract
+
+- The stable physical roles are START=MIO50, STOP/BACK=EMIO54, LEARN=EMIO55, and SYSTEM RESET=EMIO56. Legacy phase/reset API names remain available for compatibility; new semantic wrappers are used by active tasks.
+- Touch UI owns mode/parameter selection. Basic3/Basic4 no longer changes frequency or target Vpp with physical buttons.
+- Learning execution is not integrated: the LEARN key currently proves event routing and enters a clearly reported pending state only.
