@@ -8,6 +8,8 @@
 #include "algorithm_config.h"
 #include "signal_profiles.h"
 
+/* 静态存储期保证返回的指针在程序整个运行期间有效；const 防止调用者修改
+ * 共享的题目参数。 */
 static const signal_profile_t g_signal_profiles[SIGNAL_PROFILE_COUNT] = {
     {
         .name = "old_separator",
@@ -45,6 +47,8 @@ const signal_profile_t *signal_profile_get(signal_profile_id_t id)
 /** 返回保持当前功能和参数的旧双分量分离 profile。 */
 const signal_profile_t *signal_profile_default(void)
 {
+    /* 默认选择集中在此处；调用者得到的仍是 signal_profile_get() 返回的同一个
+     * 只读表项。 */
     return signal_profile_get(PROFILE_OLD_SEPARATOR);
 }
 

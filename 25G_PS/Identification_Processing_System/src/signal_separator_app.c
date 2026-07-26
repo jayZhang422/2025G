@@ -259,6 +259,8 @@ static int app_wait_for_start(signal_api_t *api, float32_t *phase_degrees,
 /** 运行 ARMED、LOCKING、RUNNING 三态信号分离应用。 */
 int signal_separator_run(void)
 {
+    /* 这些对象跨越下方多轮 ARMED -> LOCKING -> RUNNING 流程，保存硬件/API
+     * 状态以及本轮识别、DDS 配置结果。 */
     signal_api_t api;
     signal_status_t status;
     signal_dds_pair_t dds_pair;
@@ -268,6 +270,8 @@ int signal_separator_run(void)
     float32_t phase_degrees;
     signal_error_t error;
 
+    /* 一次性启动阶段：选择参数、按配置执行算法自测并初始化所有硬件服务，
+     * 完成后才进入长期状态循环。 */
     xil_printf("\r\n[APP] === PL-aligned dual-channel signal separator ===\r\n");
     if (!signal_profile_is_configured(profile)) {
         xil_printf("[APP] ERROR: default signal profile is not configured\r\n");
@@ -309,12 +313,17 @@ int signal_separator_run(void)
                (int)APP_BUTTON_ACTIVE_LEVEL);
     signal_api_report_dds_snapshot(&api, "stopped");
 
+    /* 外层循环的每次迭代是一轮完整分离流程；RUNNING 中复位后回到这里，
+     * 不重复初始化硬件。 */
     while (1) {
+        /* 锁定候选状态属于单轮流程：每次重新启动都会重置超时起点和连续帧
+         * 确认历史。 */
         XTime lock_start_time;
         u32 lock_attempt = 0U;
         u32 confirmed_frames = 0U;
         int have_candidate = 0;
 
+        /* ARMED：保持 DDS 停止，轮询相位设置并等待启动按键。 */
         xil_printf("[APP] ARMED: T17/R17 set phase, KEY1 starts one separation run\r\n");
         app_wait_for_start(&api, &phase_degrees, profile);
         XTime_GetTime(&lock_start_time);
@@ -340,6 +349,8 @@ int signal_separator_run(void)
         }
         signal_api_print_status(&api, "[DMA] startup frame aligned:");
 
+        /* LOCKING：重复采集和识别，直到归一化后的频率/波形解连续出现足够
+         * 帧数。 */
         while (confirmed_frames < profile->confirm_frames) {
             int analysis_status;
             int lock_status;
@@ -383,6 +394,8 @@ int signal_separator_run(void)
             continue;
         }
 
+        /* 锁定结果只转换并提交一次；RUNNING 仅处理相位按键和复位，不根据
+         * 后续噪声连续重调 DDS。 */
         if (signal_dds_build_pair(&api, &locked_result, phase_degrees,
                                   &dds_pair) != SIGNAL_OK ||
             signal_dds_apply(&api, &dds_pair) != SIGNAL_OK) {

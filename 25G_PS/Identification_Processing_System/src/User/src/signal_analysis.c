@@ -10,21 +10,24 @@
 
 #include <math.h>
 
+/** FFT 局部峰值候选，仅在单帧分析期间存在。 */
 typedef struct {
-    int bin;
-    float32_t magnitude;
+    int bin;             /**< 峰值所在的 FFT bin 下标。 */
+    float32_t magnitude; /**< 该 bin 的复数谱幅值。 */
 } signal_peak_t;
 
+/** 经插值、栅格吸附和去重后的单帧频率候选。 */
 typedef struct {
-    float32_t frequency_hz;
-    float32_t magnitude;
+    float32_t frequency_hz; /**< 候选基波频率，单位 Hz。 */
+    float32_t magnitude;    /**< 用于候选排序的谱峰幅值。 */
 } signal_frequency_candidate_t;
 
+/** 无需逐点调用三角函数的递推正弦振荡器状态。 */
 typedef struct {
-    float32_t sine;
-    float32_t cosine;
-    float32_t sine_step;
-    float32_t cosine_step;
+    float32_t sine;        /**< 当前相位的正弦值。 */
+    float32_t cosine;      /**< 当前相位的余弦值。 */
+    float32_t sine_step;   /**< 每样本相位步进的正弦值。 */
+    float32_t cosine_step; /**< 每样本相位步进的余弦值。 */
 } signal_oscillator_t;
 
 /** 初始化递推正弦振荡器，供时域建模和正交投影复用。 */

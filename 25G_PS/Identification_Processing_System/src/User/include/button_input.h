@@ -10,8 +10,9 @@
 #include "xgpiops.h"
 #include "xstatus.h"
 
+/** PS MIO 按键输入上下文；内部实例保存 GPIO 配置和寄存器基址。 */
 typedef struct {
-    XGpioPs instance;
+    XGpioPs instance; /**< Xilinx PS GPIO 驱动实例，由 init 初始化。 */
 } button_input_t;
 
 int button_input_init(button_input_t *buttons);
