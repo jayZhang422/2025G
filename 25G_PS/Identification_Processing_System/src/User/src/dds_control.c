@@ -58,12 +58,14 @@ void dds_control_init(dds_control_t *control)
 /** 将已识别的信号分量转换为 PL DDS 所需的波形、步进、相位和幅度配置。 */
 void dds_control_from_component(const signal_component_t *component,
                                 float32_t initial_phase_degrees,
+                                u16 amplitude_code,
                                 dds_channel_config_t *config)
 {
     config->waveform = component->waveform;
     config->phase_step = dds_phase_step_from_frequency(component->frequency_hz);
     config->phase_word = dds_phase_word_from_degrees(initial_phase_degrees);
-    config->amplitude_code = APP_DDS_UNITY_AMPLITUDE;
+    config->amplitude_code = (amplitude_code > APP_DDS_UNITY_AMPLITUDE) ?
+        APP_DDS_UNITY_AMPLITUDE : amplitude_code;
 }
 
 /**

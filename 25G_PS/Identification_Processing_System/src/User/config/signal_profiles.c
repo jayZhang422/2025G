@@ -10,28 +10,27 @@
 
 static const signal_profile_t g_signal_profiles[SIGNAL_PROFILE_COUNT] = {
     {
-        "old_separator",
-        SIGNAL_MODE_SEPARATOR,
-        20000.0f,
-        100000.0f,
-        5000.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        APP_DEFAULT_CONFIRM_FRAMES
+        .name = "old_separator",
+        .mode = SIGNAL_MODE_SEPARATOR,
+        .frequency_min_hz = 20000.0f,
+        .frequency_max_hz = 100000.0f,
+        .frequency_grid_hz = 5000.0f,
+        .grid_lock_tolerance_hz = 1000.0f,
+        .lock_max_residual = 0.30f,
+        .confirm_frames = 3U,
+        .lock_timeout_seconds = 18U,
+        .allowed_waveforms = SIGNAL_WAVEFORM_MASK_ALL,
+        .dds_amplitude_code = APP_DDS_UNITY_AMPLITUDE,
+        .initial_phase_degrees = 0.0f,
+        .phase_step_degrees = 5.0f,
+        .phase_max_degrees = 180.0f
     },
-    { "general_measure", SIGNAL_MODE_MEASURE, 0.0f, 0.0f, 0.0f,
-      0.0f, 0.0f, 0.0f, 0U },
-    { "weak_signal", SIGNAL_MODE_LOCKIN, 0.0f, 0.0f, 0.0f,
-      0.0f, 0.0f, 0.0f, 0U },
-    { "am", SIGNAL_MODE_AM, 0.0f, 0.0f, 0.0f,
-      0.0f, 0.0f, 0.0f, 0U },
-    { "ask", SIGNAL_MODE_ASK, 0.0f, 0.0f, 0.0f,
-      0.0f, 0.0f, 0.0f, 0U },
-    { "2fsk", SIGNAL_MODE_FSK, 0.0f, 0.0f, 0.0f,
-      0.0f, 0.0f, 0.0f, 0U },
-    { "fm", SIGNAL_MODE_FM, 0.0f, 0.0f, 0.0f,
-      0.0f, 0.0f, 0.0f, 0U }
+    { .name = "general_measure", .mode = SIGNAL_MODE_MEASURE },
+    { .name = "weak_signal", .mode = SIGNAL_MODE_LOCKIN },
+    { .name = "am", .mode = SIGNAL_MODE_AM },
+    { .name = "ask", .mode = SIGNAL_MODE_ASK },
+    { .name = "2fsk", .mode = SIGNAL_MODE_FSK },
+    { .name = "fm", .mode = SIGNAL_MODE_FM }
 };
 
 /** 按固定 ID 返回只读题目配置；越界 ID 不返回默认值。 */
@@ -53,4 +52,21 @@ const signal_profile_t *signal_profile_default(void)
 u32 signal_profile_count(void)
 {
     return (u32)SIGNAL_PROFILE_COUNT;
+}
+
+/** 验证当前已实现模式运行所需的题目参数是否完整。 */
+int signal_profile_is_configured(const signal_profile_t *profile)
+{
+    return profile != 0 && profile->name != 0 &&
+           profile->frequency_min_hz > 0.0f &&
+           profile->frequency_max_hz > profile->frequency_min_hz &&
+           profile->frequency_grid_hz > 0.0f &&
+           profile->grid_lock_tolerance_hz > 0.0f &&
+           profile->lock_max_residual > 0.0f &&
+           profile->confirm_frames > 0U &&
+           profile->lock_timeout_seconds > 0U &&
+           profile->allowed_waveforms != 0U &&
+           profile->dds_amplitude_code <= APP_DDS_UNITY_AMPLITUDE &&
+           profile->phase_step_degrees > 0.0f &&
+           profile->phase_max_degrees >= profile->phase_step_degrees;
 }

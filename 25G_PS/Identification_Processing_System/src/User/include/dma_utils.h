@@ -12,7 +12,9 @@
 
 void dma_dump_s2mm_regs(const char *tag, XAxiDma *dma);
 int dma_init_s2mm(XAxiDma *dma, u16 device_id);
+int dma_align_s2mm(XAxiDma *dma, u16 device_id);
 int dma_capture_frame(XAxiDma *dma, u16 device_id, u16 *buffer,
                       u32 length_bytes);
+u32 dma_last_s2mm_length_bytes(const XAxiDma *dma);
 
 #endif /* USER_INCLUDE_DMA_UTILS_H_ */

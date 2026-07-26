@@ -25,6 +25,7 @@ typedef struct {
 void dds_control_init(dds_control_t *control);
 void dds_control_from_component(const signal_component_t *component,
                                 float32_t initial_phase_degrees,
+                                u16 amplitude_code,
                                 dds_channel_config_t *config);
 int dds_control_commit(dds_control_t *control,
                        const dds_channel_config_t *channel_a,

@@ -275,7 +275,7 @@ static int signal_snap_to_grid(float32_t frequency_hz,
     if (snapped_frequency < profile->frequency_min_hz ||
         snapped_frequency > profile->frequency_max_hz ||
         fabsf(frequency_hz - snapped_frequency) >
-            APP_GRID_LOCK_TOLERANCE_HZ) {
+            profile->grid_lock_tolerance_hz) {
         return 0;
     }
     *snapped_frequency_hz = snapped_frequency;
@@ -438,7 +438,8 @@ int signal_analyze_frame(const u16 *raw_samples,
         model_workspace == 0 || profile == 0 || result == 0 ||
         profile->frequency_min_hz <= 0.0f ||
         profile->frequency_max_hz <= profile->frequency_min_hz ||
-        profile->frequency_grid_hz <= 0.0f) {
+        profile->frequency_grid_hz <= 0.0f ||
+        profile->allowed_waveforms == 0U) {
         return XST_FAILURE;
     }
 
@@ -478,11 +479,19 @@ int signal_analyze_frame(const u16 *raw_samples,
 
             for (waveform_a = SIGNAL_WAVE_SINE;
                  waveform_a <= SIGNAL_WAVE_TRIANGLE; waveform_a++) {
+                if ((profile->allowed_waveforms & (1U << waveform_a)) == 0U) {
+                    continue;
+                }
                 for (waveform_b = SIGNAL_WAVE_SINE;
                      waveform_b <= SIGNAL_WAVE_TRIANGLE; waveform_b++) {
                     signal_component_t candidate_a;
                     signal_component_t candidate_b;
                     float32_t residual;
+
+                    if ((profile->allowed_waveforms &
+                         (1U << waveform_b)) == 0U) {
+                        continue;
+                    }
 
                     candidate_a = fundamental_a;
                     candidate_b = fundamental_b;
@@ -618,7 +627,7 @@ static int signal_run_test_case(signal_waveform_t waveform_a,
         result.channel_b.waveform != waveform_b ||
         fabsf(result.channel_a.frequency_hz - frequency_a) > 750.0f ||
         fabsf(result.channel_b.frequency_hz - frequency_b) > 750.0f ||
-        result.normalized_residual > 0.30f) {
+        result.normalized_residual > profile->lock_max_residual) {
         return XST_FAILURE;
     }
     return XST_SUCCESS;

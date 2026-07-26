@@ -8,28 +8,11 @@
 #define USER_INCLUDE_SIGNAL_PROCESSING_H_
 
 #include "../config/signal_profiles.h"
+#include "signal_types.h"
 
 #include "arm_math.h"
 #include "xstatus.h"
 #include "xil_types.h"
-
-typedef enum {
-    SIGNAL_WAVE_SINE = 0,
-    SIGNAL_WAVE_TRIANGLE = 1
-} signal_waveform_t;
-
-typedef struct {
-    float32_t frequency_hz;
-    float32_t fundamental_amplitude;
-    float32_t measured_phase_rad;
-    signal_waveform_t waveform;
-} signal_component_t;
-
-typedef struct {
-    signal_component_t channel_a;
-    signal_component_t channel_b;
-    float32_t normalized_residual;
-} signal_analysis_result_t;
 
 /*
  * Convert ADC codes, perform a windowed FFT coarse search, then select the

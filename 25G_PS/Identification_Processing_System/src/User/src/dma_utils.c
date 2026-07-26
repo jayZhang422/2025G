@@ -149,6 +149,15 @@ static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
     return XST_SUCCESS;
 }
 
+/** 显式重置接收通道并丢弃至下一个 TLAST，供首次正式采集前建立边界。 */
+int dma_align_s2mm(XAxiDma *dma, u16 device_id)
+{
+    if (dma == NULL) {
+        return XST_FAILURE;
+    }
+    return dma_recover_s2mm(dma, device_id);
+}
+
 /** 启动一帧 ADC S2MM 传输并轮询完成；失败或超时后尝试恢复 DMA。 */
 int dma_capture_frame(XAxiDma *dma, u16 device_id, u16 *buffer,
                       u32 length_bytes)
@@ -179,4 +188,14 @@ int dma_capture_frame(XAxiDma *dma, u16 device_id, u16 *buffer,
     }
 
     return XST_SUCCESS;
+}
+
+/** 返回最近一次 S2MM 完成后 DMA 报告的实际接收字节数。 */
+u32 dma_last_s2mm_length_bytes(const XAxiDma *dma)
+{
+    if (dma == NULL) {
+        return 0U;
+    }
+    return XAxiDma_ReadReg(dma->RegBase + XAXIDMA_RX_OFFSET,
+                           XAXIDMA_BUFFLEN_OFFSET);
 }
