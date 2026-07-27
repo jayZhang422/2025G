@@ -40,6 +40,10 @@ module top (
     wire        adc_tvalid;
     wire        adc_tready;
     wire        adc_tlast;
+    wire [15:0] ddc_tdata;
+    wire        ddc_tvalid;
+    wire        ddc_tready;
+    wire        ddc_tlast;
     wire        iq_clk_adc;
     wire [11:0] iq_adc_raw;
     wire        iq_sample_valid;
@@ -52,6 +56,8 @@ module top (
     wire [31:0] bram_dout;
     wire        bram_en;
     wire [3:0]  bram_we;
+
+    assign adc_tready = 1'b0;
 
     H_top u_h_top (
         .i_clk_50m     (i_clk_50m),
@@ -85,10 +91,10 @@ module top (
     );
 
     system_wrapper u_system (
-        .ADC_STREAM_IN_tdata  (adc_tdata),
-        .ADC_STREAM_IN_tlast  (adc_tlast),
-        .ADC_STREAM_IN_tready (adc_tready),
-        .ADC_STREAM_IN_tvalid (adc_tvalid),
+        .ADC_STREAM_IN_tdata  (ddc_tdata),
+        .ADC_STREAM_IN_tlast  (ddc_tlast),
+        .ADC_STREAM_IN_tready (ddc_tready),
+        .ADC_STREAM_IN_tvalid (ddc_tvalid),
         .BRAM_DATA_addr       (bram_addr),
         .BRAM_DATA_clk        (clk_dac),
         .BRAM_DATA_din        (32'd0),
@@ -126,7 +132,13 @@ module top (
         .fifo_wr_rst_busy_0   (fifo_mon_wr_rst_busy),
         .fifo_write_0         (fifo_mon_write),
         .i_adc_raw_0          (iq_adc_raw),
+        .i_adc_raw_1          (iq_adc_raw),
         .i_sample_valid_0     (iq_sample_valid),
+        .i_sample_valid_1     (iq_sample_valid),
+        .m_ddc_stream_axis_tdata (ddc_tdata),
+        .m_ddc_stream_axis_tlast (ddc_tlast),
+        .m_ddc_stream_axis_tready(ddc_tready),
+        .m_ddc_stream_axis_tvalid(ddc_tvalid),
         .sample_valid_0       (iq_sample_valid),
         .axis_tlast_0         (adc_tlast),
         .axis_tready_0        (adc_tready),

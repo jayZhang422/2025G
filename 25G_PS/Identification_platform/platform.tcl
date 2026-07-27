@@ -69,3 +69,10 @@ platform generate
 platform active {Identification_platform}
 platform generate
 platform active {Identification_platform}
+platform active {Identification_platform}
+platform config -updatehw {E:/7020_Project/25G/25G_PL/top.xsa}
+bsp reload
+catch {bsp regenerate}
+platform clean
+platform generate
+platform generate

@@ -129,6 +129,7 @@ xilinx.com:ip:axi_bram_ctrl:4.1\
 xilinx.com:ip:axi_dma:7.1\
 xilinx.com:ip:axis_data_fifo:2.0\
 xilinx.com:ip:blk_mem_gen:8.4\
+xilinx.com:user:ddc_stream:1.0\
 xilinx.com:user:iq_demodulator:1.0\
 xilinx.com:ip:proc_sys_reset:5.0\
 xilinx.com:ip:processing_system7:5.5\
@@ -218,11 +219,13 @@ proc create_root_design { parentCell } {
 
   set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
 
+  set m_ddc_stream_axis [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 m_ddc_stream_axis ]
+
 
   # Create ports
   set FCLK_CLK0_0 [ create_bd_port -dir O -type clk FCLK_CLK0_0 ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_BUSIF {ADC_STREAM_IN} \
+   CONFIG.ASSOCIATED_BUSIF {ADC_STREAM_IN:m_ddc_stream_axis} \
  ] $FCLK_CLK0_0
   set adc_clk_0 [ create_bd_port -dir I -type clk -freq_hz 5120060 adc_clk_0 ]
   set axis_tlast_0 [ create_bd_port -dir I axis_tlast_0 ]
@@ -238,7 +241,9 @@ proc create_root_design { parentCell } {
   set fifo_wr_rst_busy_0 [ create_bd_port -dir I fifo_wr_rst_busy_0 ]
   set fifo_write_0 [ create_bd_port -dir I fifo_write_0 ]
   set i_adc_raw_0 [ create_bd_port -dir I -from 11 -to 0 i_adc_raw_0 ]
+  set i_adc_raw_1 [ create_bd_port -dir I -from 11 -to 0 i_adc_raw_1 ]
   set i_sample_valid_0 [ create_bd_port -dir I i_sample_valid_0 ]
+  set i_sample_valid_1 [ create_bd_port -dir I i_sample_valid_1 ]
   set pl_key_i [ create_bd_port -dir I -from 2 -to 0 pl_key_i ]
   set rst_n_0 [ create_bd_port -dir I -type rst rst_n_0 ]
   set sample_valid_0 [ create_bd_port -dir I sample_valid_0 ]
@@ -278,7 +283,7 @@ proc create_root_design { parentCell } {
   # Create instance: axi_interconnect_0, and set properties
   set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
   set_property -dict [ list \
-   CONFIG.NUM_MI {4} \
+   CONFIG.NUM_MI {5} \
    CONFIG.NUM_SI {2} \
  ] $axi_interconnect_0
 
@@ -301,6 +306,9 @@ proc create_root_design { parentCell } {
    CONFIG.Port_B_Write_Rate {50} \
    CONFIG.Use_RSTB_Pin {true} \
  ] $blk_PS_TO_PL
+
+  # Create instance: ddc_stream_0, and set properties
+  set ddc_stream_0 [ create_bd_cell -type ip -vlnv xilinx.com:user:ddc_stream:1.0 ddc_stream_0 ]
 
   # Create instance: iq_demodulator_0, and set properties
   set iq_demodulator_0 [ create_bd_cell -type ip -vlnv xilinx.com:user:iq_demodulator:1.0 iq_demodulator_0 ]
@@ -653,7 +661,9 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_bram_ctrl_0/S_AXI] [get_bd_intf_pins axi_interconnect_0/M01_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins axi_interconnect_0/M02_AXI] [get_bd_intf_pins iq_demodulator_0/s_axi]
   connect_bd_intf_net -intf_net axi_interconnect_0_M03_AXI [get_bd_intf_pins ad_fifo_monitor_axi_0/ad_fifo_monitor_axi] [get_bd_intf_pins axi_interconnect_0/M03_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M04_AXI [get_bd_intf_pins axi_interconnect_0/M04_AXI] [get_bd_intf_pins ddc_stream_0/s_axi]
   connect_bd_intf_net -intf_net axis_data_fifo_0_M_AXIS [get_bd_intf_pins axi_dma_adc/S_AXIS_S2MM] [get_bd_intf_pins axis_data_fifo_0/M_AXIS]
+  connect_bd_intf_net -intf_net ddc_stream_0_m_axis [get_bd_intf_ports m_ddc_stream_axis] [get_bd_intf_pins ddc_stream_0/m_axis]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7_0/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins axi_interconnect_0/S00_AXI] [get_bd_intf_pins processing_system7_0/M_AXI_GP0]
@@ -663,7 +673,7 @@ proc create_root_design { parentCell } {
   # Create port connections
   connect_bd_net -net GPIO_I_0_1 [get_bd_ports pl_key_i] [get_bd_pins processing_system7_0/GPIO_I]
   connect_bd_net -net Pll_DA_locked [get_bd_pins Pll_DA/locked] [get_bd_pins proc_sys_reset_0/dcm_locked]
-  connect_bd_net -net adc_clk_0_1 [get_bd_ports adc_clk_0] [get_bd_pins ad_fifo_monitor_axi_0/adc_clk] [get_bd_pins iq_demodulator_0/clk_adc]
+  connect_bd_net -net adc_clk_0_1 [get_bd_ports adc_clk_0] [get_bd_pins ad_fifo_monitor_axi_0/adc_clk] [get_bd_pins ddc_stream_0/clk_adc] [get_bd_pins iq_demodulator_0/clk_adc]
   connect_bd_net -net axis_tlast_0_1 [get_bd_ports axis_tlast_0] [get_bd_pins ad_fifo_monitor_axi_0/axis_tlast]
   connect_bd_net -net axis_tready_0_1 [get_bd_ports axis_tready_0] [get_bd_pins ad_fifo_monitor_axi_0/axis_tready]
   connect_bd_net -net axis_tvalid_0_1 [get_bd_ports axis_tvalid_0] [get_bd_pins ad_fifo_monitor_axi_0/axis_tvalid]
@@ -674,10 +684,12 @@ proc create_root_design { parentCell } {
   connect_bd_net -net fifo_wr_rst_busy_0_1 [get_bd_ports fifo_wr_rst_busy_0] [get_bd_pins ad_fifo_monitor_axi_0/fifo_wr_rst_busy]
   connect_bd_net -net fifo_write_0_1 [get_bd_ports fifo_write_0] [get_bd_pins ad_fifo_monitor_axi_0/fifo_write]
   connect_bd_net -net i_adc_raw_0_1 [get_bd_ports i_adc_raw_0] [get_bd_pins iq_demodulator_0/i_adc_raw]
+  connect_bd_net -net i_adc_raw_1_1 [get_bd_ports i_adc_raw_1] [get_bd_pins ddc_stream_0/i_adc_raw]
   connect_bd_net -net i_sample_valid_0_1 [get_bd_ports i_sample_valid_0] [get_bd_pins iq_demodulator_0/i_sample_valid]
+  connect_bd_net -net i_sample_valid_1_1 [get_bd_ports i_sample_valid_1] [get_bd_pins ddc_stream_0/i_sample_valid]
   connect_bd_net -net iq_demodulator_0_o_irq [get_bd_pins iq_demodulator_0/o_irq] [get_bd_pins processing_system7_0/IRQ_F2P]
-  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins ad_fifo_monitor_axi_0/ad_fifo_monitor_axi_aresetn] [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins axi_dma_adc/axi_resetn] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_0/M03_ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_interconnect_0/S01_ARESETN] [get_bd_pins axis_data_fifo_0/s_axis_aresetn] [get_bd_pins iq_demodulator_0/s_axi_aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins smartconnect_0/aresetn]
-  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_ports FCLK_CLK0_0] [get_bd_pins Pll_DA/clk_in1] [get_bd_pins ad_fifo_monitor_axi_0/ad_fifo_monitor_axi_aclk] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins axi_dma_adc/m_axi_s2mm_aclk] [get_bd_pins axi_dma_adc/s_axi_lite_aclk] [get_bd_pins axi_interconnect_0/ACLK] [get_bd_pins axi_interconnect_0/M00_ACLK] [get_bd_pins axi_interconnect_0/M01_ACLK] [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_0/M03_ACLK] [get_bd_pins axi_interconnect_0/S00_ACLK] [get_bd_pins axi_interconnect_0/S01_ACLK] [get_bd_pins axis_data_fifo_0/m_axis_aclk] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins iq_demodulator_0/s_axi_aclk] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/S_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK] [get_bd_pins smartconnect_0/aclk]
+  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins ad_fifo_monitor_axi_0/ad_fifo_monitor_axi_aresetn] [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins axi_dma_adc/axi_resetn] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_0/M03_ARESETN] [get_bd_pins axi_interconnect_0/M04_ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_interconnect_0/S01_ARESETN] [get_bd_pins axis_data_fifo_0/s_axis_aresetn] [get_bd_pins ddc_stream_0/rst_n] [get_bd_pins ddc_stream_0/s_axi_aresetn] [get_bd_pins iq_demodulator_0/s_axi_aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins smartconnect_0/aresetn]
+  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_ports FCLK_CLK0_0] [get_bd_pins Pll_DA/clk_in1] [get_bd_pins ad_fifo_monitor_axi_0/ad_fifo_monitor_axi_aclk] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins axi_dma_adc/m_axi_s2mm_aclk] [get_bd_pins axi_dma_adc/s_axi_lite_aclk] [get_bd_pins axi_interconnect_0/ACLK] [get_bd_pins axi_interconnect_0/M00_ACLK] [get_bd_pins axi_interconnect_0/M01_ACLK] [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_0/M03_ACLK] [get_bd_pins axi_interconnect_0/M04_ACLK] [get_bd_pins axi_interconnect_0/S00_ACLK] [get_bd_pins axi_interconnect_0/S01_ACLK] [get_bd_pins axis_data_fifo_0/m_axis_aclk] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins ddc_stream_0/s_axi_aclk] [get_bd_pins iq_demodulator_0/s_axi_aclk] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/S_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK] [get_bd_pins smartconnect_0/aclk]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins Pll_DA/resetn] [get_bd_pins proc_sys_reset_0/ext_reset_in] [get_bd_pins processing_system7_0/FCLK_RESET0_N]
   connect_bd_net -net rst_n_0_1 [get_bd_ports rst_n_0] [get_bd_pins iq_demodulator_0/rst_n]
   connect_bd_net -net sample_valid_0_1 [get_bd_ports sample_valid_0] [get_bd_pins ad_fifo_monitor_axi_0/sample_valid]
@@ -687,6 +699,7 @@ proc create_root_design { parentCell } {
   assign_bd_address -offset 0x43C10000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs ad_fifo_monitor_axi_0/ad_fifo_monitor_axi/ad_fifo_monitor_axi_reg] -force
   assign_bd_address -offset 0x40000000 -range 0x00002000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force
   assign_bd_address -offset 0x40400000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_dma_adc/S_AXI_LITE/Reg] -force
+  assign_bd_address -offset 0x43C20000 -range 0x00001000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs ddc_stream_0/s_axi/reg0] -force
   assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs iq_demodulator_0/s_axi/reg0] -force
 
   # Exclude Address Segments

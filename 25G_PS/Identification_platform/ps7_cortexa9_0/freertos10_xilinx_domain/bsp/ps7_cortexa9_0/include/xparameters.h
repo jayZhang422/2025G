@@ -281,6 +281,11 @@
 #define XPAR_IQ_DEMODULATOR_0_HIGHADDR 0x43C0FFFF
 
 
+/* Definitions for peripheral DDC_STREAM_0 */
+#define XPAR_DDC_STREAM_0_BASEADDR 0x43C20000
+#define XPAR_DDC_STREAM_0_HIGHADDR 0x43C20FFF
+
+
 /******************************************************************/
 
 /* Definitions for driver GPIOPS */
