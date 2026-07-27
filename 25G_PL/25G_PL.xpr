@@ -53,13 +53,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="76"/>
-    <Option Name="WTModelSimExportSim" Val="76"/>
-    <Option Name="WTQuestaExportSim" Val="76"/>
-    <Option Name="WTIesExportSim" Val="76"/>
-    <Option Name="WTVcsExportSim" Val="76"/>
-    <Option Name="WTRivieraExportSim" Val="76"/>
-    <Option Name="WTActivehdlExportSim" Val="76"/>
+    <Option Name="WTXSimExportSim" Val="77"/>
+    <Option Name="WTModelSimExportSim" Val="77"/>
+    <Option Name="WTQuestaExportSim" Val="77"/>
+    <Option Name="WTIesExportSim" Val="77"/>
+    <Option Name="WTVcsExportSim" Val="77"/>
+    <Option Name="WTRivieraExportSim" Val="77"/>
+    <Option Name="WTActivehdlExportSim" Val="77"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -168,6 +168,12 @@
           <Attr Name="UserDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PGENDIR/sources_1/ip/ddc_stream_0/src/fir_ddc_18bit_precise.coe">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
@@ -386,6 +392,20 @@
         <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
+    <FileSet Name="ddc_stream_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/ddc_stream_0" RelGenDir="$PGENDIR/ddc_stream_0">
+      <File Path="$PSRCDIR/sources_1/ip/ddc_stream_0/ddc_stream_0.xci">
+        <FileInfo>
+          <Attr Name="AutoDisabled" Val="1"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <Config>
+        <Option Name="TopModule" Val="ddc_stream_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
   </FileSets>
   <Simulators>
     <Simulator Name="XSim">
@@ -498,6 +518,18 @@
     <Run Id="ad_fifo_wrapper_0_synth_1" Type="Ft3:Synth" SrcSet="ad_fifo_wrapper_0" Part="xc7z020clg400-2" ConstrsSet="ad_fifo_wrapper_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/ad_fifo_wrapper_0_synth_1" IncludeInArchive="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/ad_fifo_wrapper_0_synth_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2020"/>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2020"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+      <RQSFiles/>
+    </Run>
+    <Run Id="ddc_stream_0_synth_1" Type="Ft3:Synth" SrcSet="ddc_stream_0" Part="xc7z020clg400-2" ConstrsSet="ddc_stream_0" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/ddc_stream_0_synth_1" IncludeInArchive="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/ddc_stream_0_synth_1">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2020">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
         <Step Id="synth_design"/>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -662,6 +694,25 @@
     <Run Id="ad_fifo_wrapper_0_impl_1" Type="Ft2:EntireDesign" Part="xc7z020clg400-2" ConstrsSet="ad_fifo_wrapper_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="ad_fifo_wrapper_0_synth_1" IncludeInArchive="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/ad_fifo_wrapper_0_impl_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2020"/>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2020"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+      <RQSFiles/>
+    </Run>
+    <Run Id="ddc_stream_0_impl_1" Type="Ft2:EntireDesign" Part="xc7z020clg400-2" ConstrsSet="ddc_stream_0" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="ddc_stream_0_synth_1" IncludeInArchive="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/ddc_stream_0_impl_1">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2020">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>
