@@ -39,6 +39,11 @@
 #define DELAY_10_SECONDS	10000UL
 #define DELAY_1_SECOND		1000UL
 #define TIMER_CHECK_THRESHOLD	9
+
+#define APP_BASIC2_TASK_STACK_DEPTH \
+	( configMINIMAL_STACK_SIZE * 2U )
+#define APP_BASIC_OUTPUT_TASK_STACK_DEPTH \
+	( configMINIMAL_STACK_SIZE * 8U )
 /*-----------------------------------------------------------*/
 
 /* The Tx and Rx tasks as described at the top of this file. */
@@ -103,14 +108,14 @@ int main( void )
 	xil_printf( "Basic 2 DDS bring-up mode: %s\r\n", APP_DIAG_BUILD_TAG );
 	configASSERT( xTaskCreate( prvBasic2DdsTask,
 							  ( const char * ) "Basic2DDS",
-							  configMINIMAL_STACK_SIZE,
+							  APP_BASIC2_TASK_STACK_DEPTH,
 							  NULL,
 							  tskIDLE_PRIORITY + 1,
 							  NULL ) == pdPASS );
 #else
 	configASSERT( xTaskCreate( prvBasicOutputTask,
 							  ( const char * ) "BasicOutput",
-							  configMINIMAL_STACK_SIZE,
+							  APP_BASIC_OUTPUT_TASK_STACK_DEPTH,
 							  NULL,
 							  tskIDLE_PRIORITY + 1,
 							  NULL ) == pdPASS );

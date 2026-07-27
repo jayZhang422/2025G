@@ -26,9 +26,10 @@ proc require_optimized_makefile {build_dir} {
 
 set script_dir [file dirname [file normalize [info script]]]
 set workspace [file normalize [file join $script_dir ..]]
+set repo_root [file normalize [file join $workspace ..]]
 set app_debug_dir [file join $workspace Identification_Processing_System Debug]
 set bit_file [file join $workspace Identification_Processing_System _ide bitstream top.bit]
-set xsa_file [file join $workspace Identification_platform export Identification_platform hw top.xsa]
+set xsa_file [file join $repo_root 25G_PL top.xsa]
 set ps7_init_file [file join $workspace Identification_Processing_System _ide psinit ps7_init.tcl]
 set elf_file [file join $workspace Identification_Processing_System Debug Identification_Processing_System.elf]
 
@@ -43,7 +44,7 @@ foreach {path description} [list \
 }
 
 if {[lsearch -exact $argv "--check"] >= 0} {
-    progress "CHECK PASSED: top.bit, top.xsa, ps7_init.tcl, and Signal_separation_app.elf are available"
+    progress "CHECK PASSED: top.bit, top.xsa, ps7_init.tcl, and Identification_Processing_System.elf are available"
     return
 }
 

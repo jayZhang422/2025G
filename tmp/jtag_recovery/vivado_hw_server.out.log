@@ -1,0 +1,11 @@
+
+****** Xilinx hw_server v2020.2
+  **** Build date : Nov 18 2020 at 10:01:48
+    ** Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+
+INFO: hw_server application started
+INFO: Use Ctrl-C to exit hw_server application
+
+Server-Properties: {"Name":"Xilinx Hardware Server","OSName":"Windows 8","UserName":"刘泽2006","AgentID":"6a659f51-9dd7-4bd8-8788-3b591875490d","TransportName":"TCP","Host":"127.0.0.1","Port":"3121","ServiceManagerID":"6a659f51-9dd7-4bd8-8788-3b591875490d-0"}
+INFO: To connect to this hw_server instance use url: TCP:127.0.0.1:3121
+

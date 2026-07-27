@@ -115,3 +115,16 @@ app_state_machine 已实现为硬件无关的流程骨架：BOOT → MENU，并�
 - The stable physical roles are START=MIO50, STOP/BACK=EMIO54, LEARN=EMIO55, and SYSTEM RESET=EMIO56. Legacy phase/reset API names remain available for compatibility; new semantic wrappers are used by active tasks.
 - Touch UI owns mode/parameter selection. Basic3/Basic4 no longer changes frequency or target Vpp with physical buttons.
 - Learning execution is not integrated: the LEARN key currently proves event routing and enters a clearly reported pending state only.
+
+
+## 2026-07-25 Button route clarification and board-test gate
+
+- The button contract uses one PS key plus three PL-routed keys: START=MIO50/B13, STOP/BACK=EMIO0/pl_key_i[0]/N16, LEARN=EMIO1/pl_key_i[1]/T17, RESET=EMIO2/pl_key_i[2]/R17.
+- `XGpioPs` numbers 54, 55 and 56 are logical EMIO GPIO identifiers. N15/i_rst remains an independent PL hardware reset.
+- `HANDOFF_20260725_BASIC34_BUTTON_TEST.md` is the latest test entry. Board verification must record physical silkscreen mapping and measured known-model frequency/Vpp before Basic3/Basic4 is claimed complete.
+
+## 2026-07-25 Application task stack sizing
+
+- `BasicOutput` uses an application-owned 1600-word stack because its startup path runs the FFT algorithm self-test; `Basic2DDS` uses 400 words.
+- The BSP `configMINIMAL_STACK_SIZE` and `configTOTAL_HEAP_SIZE` remain generated values and were not edited.
+- This change passes both normal-mode and diagnostic-mode ARM compile/link. The observed board assertion still requires a repeat download/run before stack overflow is considered confirmed and closed.

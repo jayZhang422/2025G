@@ -62,3 +62,16 @@
 - Basic2 diagnostic mode now waits for START, supports STOP/BACK and RESET, and reports LEARN as unavailable instead of starting DDS automatically.
 - Basic3/Basic4 LEARN enters the state-machine learning page stub and explicitly reports that runtime learning integration is pending; STOP/BACK returns to the menu.
 - Host regressions, full diagnostic Vitis build/link, and normal-mode ARM build/link pass. Physical key identification and board behavior remain to be tested.
+
+
+## 2026-07-25 - Basic3/Basic4 board-test handoff
+
+- Added the latest board-test handoff with normal-mode build symbols, UART expectations, calibrated amplitude-code expectations, and Basic3/Basic4 acceptance ranges.
+- Corrected the hardware terminology: `XGpioPs` 54/55/56 are logical EMIO0/1/2 identifiers routed to N16/T17/R17, not package-pin numbers.
+- Recorded N15/i_rst as the independent PL hardware reset and preserved MIO50/B13 PS_KEY1 as START.
+
+## 2026-07-25 - Basic3/Basic4 startup assertion mitigation
+
+- Diagnosed the first normal-mode board run, which asserted at `tasks.c:1348` immediately after the ready/settings output, as most likely application-task stack corruption: the FFT startup self-test was running on the 200-word FreeRTOS minimum stack.
+- Added application-specific stack depths of 1600 words for `BasicOutput` and 400 words for `Basic2DDS`; no generated BSP, interface, or existing parameter default was changed.
+- Full normal-mode Vitis build/link and independent diagnostic-mode ARM compile/link pass. Board confirmation that the assertions are gone remains pending.

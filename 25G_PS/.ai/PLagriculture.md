@@ -45,3 +45,11 @@ The active Vitis entry is still FreeRTOS Hello World. Existing user modules most
 ## Verification state - 2026-07-22
 
 The packaged ADC/FIFO and DDS/DAC IPs passed isolated Vivado/XSim compilation and behavioral checks at their existing names and default parameters. They are not instantiated in the active top level. PS software must continue using the verified legacy contract until a new synthesized XSA and its xparameters.h prove otherwise.
+
+
+## Button and active-entry facts - 2026-07-25
+
+- The active top exposes `pl_key_i[2:0]` to PS GPIO EMIO input width 3. `XGpioPs` logical pins 54, 55 and 56 are EMIO0, EMIO1 and EMIO2, not package-pin numbers.
+- XDC mapping is `pl_key_i[0]=N16`, `pl_key_i[1]=T17`, and `pl_key_i[2]=R17`; MIO50 is package pin B13 and is the board PS_KEY1.
+- `i_rst=N15` is a separate active-low PL hardware reset and is not readable as an application key through `XGpioPs`.
+- The latest application entry contains Basic2 diagnostic and Basic3/Basic4 tasks; the earlier Hello World-only statement above is historical. Normal Basic3/Basic4 mode still requires `APP_DIAG_FORCE_DDS_TEST=0` at build time.

@@ -1314,6 +1314,24 @@ set_property PHASESHIFT_MODE WAVEFORM [get_cells -hierarchical *adv*]
 ####################################################################################
 
 current_instance -quiet
+
+####################################################################################
+# System Clock / Reset
+####################################################################################
+
+set_property IOSTANDARD LVCMOS33 [get_ports i_clk_50m]
+set_property IOSTANDARD LVCMOS33 [get_ports i_rst]
+
+set_property PACKAGE_PIN U18 [get_ports i_clk_50m]
+set_property PACKAGE_PIN N15 [get_ports i_rst]
+
+####################################################################################
+# ADC Channel A
+####################################################################################
+
+# IO Standard
+set_property IOSTANDARD LVCMOS33 [get_ports o_ad_clk]
+
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data[1]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data[2]}]
@@ -1326,10 +1344,67 @@ set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data[8]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data[9]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data[10]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data[11]}]
-set_property IOSTANDARD LVCMOS33 [get_ports i_clk_50m]
-set_property IOSTANDARD LVCMOS33 [get_ports i_rst]
+
+# Pins
+set_property PACKAGE_PIN V15 [get_ports o_ad_clk]
+
+set_property PACKAGE_PIN W15 [get_ports {i_ad_data[0]}]
+set_property PACKAGE_PIN W14 [get_ports {i_ad_data[1]}]
+set_property PACKAGE_PIN Y14 [get_ports {i_ad_data[2]}]
+set_property PACKAGE_PIN N17 [get_ports {i_ad_data[3]}]
+set_property PACKAGE_PIN P18 [get_ports {i_ad_data[4]}]
+set_property PACKAGE_PIN V14 [get_ports {i_ad_data[5]}]
+set_property PACKAGE_PIN U15 [get_ports {i_ad_data[6]}]
+set_property PACKAGE_PIN P15 [get_ports {i_ad_data[7]}]
+set_property PACKAGE_PIN P16 [get_ports {i_ad_data[8]}]
+set_property PACKAGE_PIN T16 [get_ports {i_ad_data[9]}]
+set_property PACKAGE_PIN U17 [get_ports {i_ad_data[10]}]
+set_property PACKAGE_PIN V17 [get_ports {i_ad_data[11]}]
+
+####################################################################################
+# ADC Channel B 
+####################################################################################
+
+# IO Standard
 set_property IOSTANDARD LVCMOS33 [get_ports o_ad_clk]
+
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[2]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[4]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[5]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[6]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[7]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[8]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[9]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[10]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[11]}]
+
+# Pins
+set_property PACKAGE_PIN T14 [get_ports o_ad_clk]
+
+set_property PACKAGE_PIN T15 [get_ports {i_ad_data_b[0]}]
+set_property PACKAGE_PIN U13 [get_ports {i_ad_data_b[1]}]
+set_property PACKAGE_PIN V13 [get_ports {i_ad_data_b[2]}]
+set_property PACKAGE_PIN V12 [get_ports {i_ad_data_b[3]}]
+set_property PACKAGE_PIN W13 [get_ports {i_ad_data_b[4]}]
+set_property PACKAGE_PIN T12 [get_ports {i_ad_data_b[5]}]
+set_property PACKAGE_PIN U12 [get_ports {i_ad_data_b[6]}]
+set_property PACKAGE_PIN T11 [get_ports {i_ad_data_b[7]}]
+set_property PACKAGE_PIN T10 [get_ports {i_ad_data_b[8]}]
+set_property PACKAGE_PIN B19 [get_ports {i_ad_data_b[9]}]
+set_property PACKAGE_PIN A20 [get_ports {i_ad_data_b[10]}]
+set_property PACKAGE_PIN C20 [get_ports {i_ad_data_b[11]}]
+
+####################################################################################
+# DAC Channel A
+####################################################################################
+
+# IO Standard
 set_property IOSTANDARD LVCMOS33 [get_ports o_da_clk]
+set_property IOSTANDARD LVCMOS33 [get_ports o_da_wrt]
+
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[1]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[2]}]
@@ -1337,30 +1412,18 @@ set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[4]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[5]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[6]}]
-set_property IOSTANDARD LVCMOS33 [get_ports o_da_wrt]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[13]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[12]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[11]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[10]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[9]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[8]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[7]}]
-set_property PACKAGE_PIN T15 [get_ports {i_ad_data[0]}]
-set_property PACKAGE_PIN U13 [get_ports {i_ad_data[1]}]
-set_property PACKAGE_PIN V13 [get_ports {i_ad_data[2]}]
-set_property PACKAGE_PIN V12 [get_ports {i_ad_data[3]}]
-set_property PACKAGE_PIN W13 [get_ports {i_ad_data[4]}]
-set_property PACKAGE_PIN T12 [get_ports {i_ad_data[5]}]
-set_property PACKAGE_PIN U12 [get_ports {i_ad_data[6]}]
-set_property PACKAGE_PIN T11 [get_ports {i_ad_data[7]}]
-set_property PACKAGE_PIN T10 [get_ports {i_ad_data[8]}]
-set_property PACKAGE_PIN B19 [get_ports {i_ad_data[9]}]
-set_property PACKAGE_PIN A20 [get_ports {i_ad_data[10]}]
-set_property PACKAGE_PIN C20 [get_ports {i_ad_data[11]}]
-set_property PACKAGE_PIN T14 [get_ports o_ad_clk]
-set_property PACKAGE_PIN U18 [get_ports i_clk_50m]
+set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[8]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[9]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[10]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[11]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[12]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[13]}]
+
+# Pins
 set_property PACKAGE_PIN J19 [get_ports o_da_clk]
 set_property PACKAGE_PIN K19 [get_ports o_da_wrt]
+
 set_property PACKAGE_PIN K18 [get_ports {o_da_data[0]}]
 set_property PACKAGE_PIN K17 [get_ports {o_da_data[1]}]
 set_property PACKAGE_PIN M20 [get_ports {o_da_data[2]}]
@@ -1375,22 +1438,14 @@ set_property PACKAGE_PIN F20 [get_ports {o_da_data[10]}]
 set_property PACKAGE_PIN F19 [get_ports {o_da_data[11]}]
 set_property PACKAGE_PIN F17 [get_ports {o_da_data[12]}]
 set_property PACKAGE_PIN F16 [get_ports {o_da_data[13]}]
-set_property PACKAGE_PIN N15 [get_ports i_rst]
-# Input clock constraint
-create_clock -period 20.000 -name i_clk_50m [get_ports i_clk_50m]
 
-# False path between ADC clock domain (5.12MHz) and PS clock domain (100MHz)
-# These are handled by the async FIFO, no need for strict timing check
-set_false_path -from [get_clocks clk_pll_deg_PLL_AD] -to [get_clocks clk_fpga_0]
-set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks clk_pll_deg_PLL_AD]
+####################################################################################
+# DAC Channel B
+####################################################################################
 
-#############################################################################
-# DUAL CHANNEL DAC (rev 0.09/0.04): CHB constraints (DB0-13, BCLK, WR2)
-# Pin numbers per the AX7020 EX_IO2 expansion header table, as identified
-# by the user for the AD9767 module's CHB connector.
-#############################################################################
 set_property IOSTANDARD LVCMOS33 [get_ports o_da_clk_b]
 set_property IOSTANDARD LVCMOS33 [get_ports o_da_wrt_b]
+
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[1]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[2]}]
@@ -1406,11 +1461,9 @@ set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[11]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[12]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[13]}]
 
-# WR2 (PIN19) / BCLK (PIN20)
-set_property PACKAGE_PIN H20 [get_ports o_da_wrt_b]
 set_property PACKAGE_PIN J20 [get_ports o_da_clk_b]
+set_property PACKAGE_PIN H20 [get_ports o_da_wrt_b]
 
-# DB0-13, following the PIN33,34,31,32,29,30,27,28,25,26,23,24,21,22 order
 set_property PACKAGE_PIN G15 [get_ports {o_da_data_b[0]}]
 set_property PACKAGE_PIN H15 [get_ports {o_da_data_b[1]}]
 set_property PACKAGE_PIN H17 [get_ports {o_da_data_b[2]}]
@@ -1426,11 +1479,27 @@ set_property PACKAGE_PIN M17 [get_ports {o_da_data_b[11]}]
 set_property PACKAGE_PIN L17 [get_ports {o_da_data_b[12]}]
 set_property PACKAGE_PIN L16 [get_ports {o_da_data_b[13]}]
 
+####################################################################################
+# Clock Constraints
+####################################################################################
+
+create_clock -period 20.000 -name i_clk_50m [get_ports i_clk_50m]
+
+####################################################################################
+# False Path
+####################################################################################
+
+set_false_path -from [get_clocks clk_pll_deg_PLL_AD] -to [get_clocks clk_fpga_0]
+set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks clk_pll_deg_PLL_AD]
+
+####################################################################################
+# ILA Debug
+####################################################################################
 
 set_false_path -to [get_pins -hierarchical -filter {NAME =~ *ila_debug*/*/D}]
-
-# 万一第一句没完全盖住，加上下面这句通配符，彻底切断所有 Vivado 自动生成的 ILA 时序阻断
 set_false_path -to [get_pins -hierarchical -filter {NAME =~ *u_ila*/*/D}]
+
+
 
 #############################################################################
 # AD9767 forwarded-clock output timing
