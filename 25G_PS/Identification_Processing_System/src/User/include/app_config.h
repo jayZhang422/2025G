@@ -9,6 +9,10 @@
 
 #include "xparameters.h"
 
+#ifndef XPAR_XUARTPS_1_DEVICE_ID
+#error "The HMI UART requires the regenerated BSP with UART0 enabled."
+#endif
+
 #ifndef APP_PI
 #define APP_PI 3.14159265358979f
 #endif
@@ -92,6 +96,11 @@
 #define APP_BUTTON_ACTIVE_LEVEL      0U
 #define APP_BUTTON_DEBOUNCE_US       20000U
 #define APP_BUTTON_POLL_US           1000U
+
+/* UART0 is the dedicated 3.3 V HMI link; UART1 remains the COM8 console. */
+#define APP_HMI_UART_DEVICE_ID        XPAR_XUARTPS_1_DEVICE_ID
+#define APP_HMI_UART_BAUD_RATE        9600U
+#define APP_HMI_MAX_FRAMES_PER_SERVICE 8U
 
 #ifndef APP_BASIC34_INITIAL_FREQUENCY_HZ
 #define APP_BASIC34_INITIAL_FREQUENCY_HZ 1000.0f

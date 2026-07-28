@@ -1,0 +1,61 @@
+﻿WINDOW	hwnd=0xB0D9C	children=14	name=DataGridView
+0xB0D9C	depth=0	role=24	state=1048576	rect=1495,640,207,352	name=DataGridView	value=
+0xB0D9C/1	depth=1	role=28	state=2097152	rect=1497,642,204,23	name=行 0	value=type;121
+0xB0D9C/1/1	depth=2	role=29	state=3145728	rect=1497,642,80,23	name=属性 行 0	value=type
+0xB0D9C/1/2	depth=2	role=29	state=3145728	rect=1577,642,123,23	name=值 行 0	value=121
+0xB0D9C/2	depth=1	role=28	state=2097152	rect=1497,665,204,23	name=行 1	value=id;0
+0xB0D9C/2/1	depth=2	role=29	state=3145728	rect=1497,665,80,23	name=属性 行 1	value=id
+0xB0D9C/2/2	depth=2	role=29	state=3145728	rect=1577,665,123,23	name=值 行 1	value=0
+0xB0D9C/3	depth=1	role=28	state=2097152	rect=1497,688,204,23	name=行 2	value=vscope;私有
+0xB0D9C/3/1	depth=2	role=29	state=3145728	rect=1497,688,80,23	name=属性 行 2	value=vscope
+0xB0D9C/3/2	depth=2	role=29	state=3145728	rect=1577,688,123,23	name=值 行 2	value=私有
+0xB0D9C/4	depth=1	role=28	state=2097152	rect=1497,711,204,23	name=行 3	value=effect;立即加载
+0xB0D9C/4/1	depth=2	role=29	state=3145728	rect=1497,711,80,23	name=属性 行 3	value=effect
+0xB0D9C/4/2	depth=2	role=29	state=3145728	rect=1577,711,123,23	name=值 行 3	value=立即加载
+0xB0D9C/5	depth=1	role=28	state=2097152	rect=1497,734,204,23	name=行 4	value=up;255
+0xB0D9C/5/1	depth=2	role=29	state=3145728	rect=1497,734,80,23	name=属性 行 4	value=up
+0xB0D9C/5/2	depth=2	role=29	state=3145728	rect=1577,734,123,23	name=值 行 4	value=255
+0xB0D9C/6	depth=1	role=28	state=2097152	rect=1497,757,204,23	name=行 5	value=down;255
+0xB0D9C/6/1	depth=2	role=29	state=3145728	rect=1497,757,80,23	name=属性 行 5	value=down
+0xB0D9C/6/2	depth=2	role=29	state=3145728	rect=1577,757,123,23	name=值 行 5	value=255
+0xB0D9C/7	depth=1	role=28	state=2097152	rect=1497,780,204,23	name=行 6	value=left;255
+0xB0D9C/7/1	depth=2	role=29	state=3145728	rect=1497,780,80,23	name=属性 行 6	value=left
+0xB0D9C/7/2	depth=2	role=29	state=3145728	rect=1577,780,123,23	name=值 行 6	value=255
+0xB0D9C/8	depth=1	role=28	state=2097152	rect=1497,803,204,23	name=行 7	value=right;255
+0xB0D9C/8/1	depth=2	role=29	state=3145728	rect=1497,803,80,23	name=属性 行 7	value=right
+0xB0D9C/8/2	depth=2	role=29	state=3145728	rect=1577,803,123,23	name=值 行 7	value=255
+0xB0D9C/9	depth=1	role=28	state=2097152	rect=1497,826,204,23	name=行 8	value=sta;单色
+0xB0D9C/9/1	depth=2	role=29	state=3145728	rect=1497,826,80,23	name=属性 行 8	value=sta
+0xB0D9C/9/2	depth=2	role=29	state=3145728	rect=1577,826,123,23	name=值 行 8	value=单色
+0xB0D9C/10	depth=1	role=28	state=2097152	rect=1497,849,204,23	name=行 9	value=bco;65535
+0xB0D9C/10/1	depth=2	role=29	state=3145728	rect=1497,849,80,23	name=属性 行 9	value=bco
+0xB0D9C/10/2	depth=2	role=29	state=3145728	rect=1577,849,123,23	name=值 行 9	value=65535
+0xB0D9C/11	depth=1	role=28	state=2097152	rect=1497,872,204,23	name=行 10	value=x;0
+0xB0D9C/11/1	depth=2	role=29	state=3145728	rect=1497,872,80,23	name=属性 行 10	value=x
+0xB0D9C/11/2	depth=2	role=29	state=3145728	rect=1577,872,123,23	name=值 行 10	value=0
+0xB0D9C/12	depth=1	role=28	state=2097152	rect=1497,895,204,23	name=行 11	value=y;0
+0xB0D9C/12/1	depth=2	role=29	state=3145728	rect=1497,895,80,23	name=属性 行 11	value=y
+0xB0D9C/12/2	depth=2	role=29	state=3145728	rect=1577,895,123,23	name=值 行 11	value=0
+0xB0D9C/13	depth=1	role=28	state=2097152	rect=1497,918,204,23	name=行 12	value=w;800
+0xB0D9C/13/1	depth=2	role=29	state=3145728	rect=1497,918,80,23	name=属性 行 12	value=w
+0xB0D9C/13/2	depth=2	role=29	state=3145728	rect=1577,918,123,23	name=值 行 12	value=800
+0xB0D9C/14	depth=1	role=28	state=2097152	rect=1497,941,204,23	name=行 13	value=h;480
+0xB0D9C/14/1	depth=2	role=29	state=3145728	rect=1497,941,80,23	name=属性 行 13	value=h
+0xB0D9C/14/2	depth=2	role=29	state=3145734	rect=1577,941,123,23	name=值 行 13	value=480
+WINDOW	hwnd=0x120DC6	children=15	name=DotNetBar Bar
+0x120DC6	depth=0	role=22	state=262144	rect=0,75,369,25	name=DotNetBar Bar	value=
+0x120DC6/1	depth=1	role=43	state=1048576	rect=8,76,24,22	name=buttonItem43	value=
+0x120DC6/2	depth=1	role=43	state=1048576	rect=32,76,24,22	name=buttonItem44	value=
+0x120DC6/3	depth=1	role=43	state=1048576	rect=56,76,24,22	name=buttonItem23	value=
+0x120DC6/4	depth=1	role=43	state=1048576	rect=80,76,24,22	name=buttonItem24	value=
+0x120DC6/5	depth=1	role=43	state=1048576	rect=104,76,24,22	name=buttonItem25	value=
+0x120DC6/6	depth=1	role=43	state=1048576	rect=128,76,24,22	name=buttonItem27	value=
+0x120DC6/7	depth=1	role=43	state=1048576	rect=152,76,24,22	name=buttonItem28	value=
+0x120DC6/8	depth=1	role=43	state=1048576	rect=176,76,24,22	name=buttonItem30	value=
+0x120DC6/9	depth=1	role=43	state=1048576	rect=200,76,24,22	name=buttonItem36	value=
+0x120DC6/10	depth=1	role=43	state=1048576	rect=224,76,24,22	name=buttonItem36	value=
+0x120DC6/11	depth=1	role=43	state=1048576	rect=248,76,24,22	name=buttonItem36	value=
+0x120DC6/12	depth=1	role=43	state=1048576	rect=272,76,24,22	name=buttonItem36	value=
+0x120DC6/13	depth=1	role=43	state=1048576	rect=296,76,24,22	name=buttonItem36	value=
+0x120DC6/14	depth=1	role=43	state=1048576	rect=320,76,24,22	name=buttonItem36	value=
+0x120DC6/15	depth=1	role=43	state=1048576	rect=344,76,24,22	name=buttonItem36	value=

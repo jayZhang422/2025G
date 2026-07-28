@@ -1353,7 +1353,7 @@ set_property PACKAGE_PIN W14 [get_ports {i_ad_data[1]}]
 set_property PACKAGE_PIN Y14 [get_ports {i_ad_data[2]}]
 set_property PACKAGE_PIN N17 [get_ports {i_ad_data[3]}]
 set_property PACKAGE_PIN P18 [get_ports {i_ad_data[4]}]
-set_property PACKAGE_PIN V14 [get_ports {i_ad_data[5]}]
+set_property PACKAGE_PIN U14 [get_ports {i_ad_data[5]}]
 set_property PACKAGE_PIN U15 [get_ports {i_ad_data[6]}]
 set_property PACKAGE_PIN P15 [get_ports {i_ad_data[7]}]
 set_property PACKAGE_PIN P16 [get_ports {i_ad_data[8]}]
@@ -1366,7 +1366,7 @@ set_property PACKAGE_PIN V17 [get_ports {i_ad_data[11]}]
 ####################################################################################
 
 # IO Standard
-set_property IOSTANDARD LVCMOS33 [get_ports o_ad_clk]
+set_property IOSTANDARD LVCMOS33 [get_ports o_ad_clk_b]
 
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[1]}]
@@ -1382,7 +1382,7 @@ set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[10]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {i_ad_data_b[11]}]
 
 # Pins
-set_property PACKAGE_PIN T14 [get_ports o_ad_clk]
+set_property PACKAGE_PIN T14 [get_ports o_ad_clk_b]
 
 set_property PACKAGE_PIN T15 [get_ports {i_ad_data_b[0]}]
 set_property PACKAGE_PIN U13 [get_ports {i_ad_data_b[1]}]

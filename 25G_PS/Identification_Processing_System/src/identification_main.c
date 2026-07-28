@@ -31,6 +31,7 @@
 #include "User/include/app_runtime.h"
 #include "User/include/app_state_machine.h"
 #include "User/include/basic_output_ui.h"
+#include "User/include/hmi_uart.h"
 #include "User/algorithms/basic_output.h"
 #include "User/algorithms/dac_vpp_calibration.h"
 #endif
@@ -81,6 +82,7 @@ static app_state_machine_t g_app_state_machine;
 static basic_output_ui_t g_basic_output_ui;
 static dds_channel_config_t g_basic_channel_a;
 static dds_channel_config_t g_basic_channel_b;
+static hmi_uart_t g_hmi_uart;
 
 /* Measured at 1 kHz after setting the final adjustable DAC gain. */
 static const dac_vpp_calibration_curve_t g_basic_dac_calibration = {
@@ -183,9 +185,137 @@ static int prvBasicOutputStart( void )
 	return XST_SUCCESS;
 }
 
+static void prvBasicOutputStopBack( void )
+{
+	int status;
+
+	if (g_app_state_machine.state == APP_STATE_BASIC) {
+		status = dds_control_commit( &g_app_runtime.dds,
+									 &g_basic_channel_a, &g_basic_channel_b, 0, 0 );
+		basic_output_ui_handle( &g_basic_output_ui, BASIC_OUTPUT_UI_RESET );
+		app_state_machine_dispatch( &g_app_state_machine,
+									APP_EVENT_COMPLETE, 0 );
+		xil_printf( status == XST_SUCCESS ?
+					"BASIC34 stopped\r\n" : "BASIC34 stop failed\r\n" );
+	} else if (g_app_state_machine.state == APP_STATE_LEARN ||
+			   g_app_state_machine.state == APP_STATE_INFER) {
+		app_state_machine_dispatch( &g_app_state_machine, APP_EVENT_RESET, 0 );
+		xil_printf( "HMI pending mode returned to menu\r\n" );
+	} else {
+		xil_printf( "BASIC34 menu\r\n" );
+	}
+}
+
+static void prvBasicOutputReset( void )
+{
+	if (g_basic_output_ui.running) {
+		dds_control_commit( &g_app_runtime.dds,
+						   &g_basic_channel_a, &g_basic_channel_b, 0, 0 );
+	}
+	basic_output_ui_handle( &g_basic_output_ui, BASIC_OUTPUT_UI_RESET );
+	app_state_machine_init( &g_app_state_machine );
+	app_state_machine_dispatch( &g_app_state_machine, APP_EVENT_INIT_OK, 0 );
+	xil_printf( "BASIC34 reset to menu\r\n" );
+	prvBasicOutputReportSettings();
+}
+
+static void prvBasicOutputSetFrequency( u32 frequency_hz )
+{
+	float previous = g_basic_output_ui.request.frequency_hz;
+
+	if (g_basic_output_ui.running) {
+		xil_printf( "HMI frequency ignored while running\r\n" );
+		return;
+	}
+
+	g_basic_output_ui.request.frequency_hz = (float)frequency_hz;
+	if (basic_output_validate_request( &g_basic_output_ui.request ) != 0) {
+		g_basic_output_ui.request.frequency_hz = previous;
+		xil_printf( "HMI frequency rejected: %d Hz\r\n", (int)frequency_hz );
+		return;
+	}
+	prvBasicOutputReportSettings();
+}
+
+static void prvBasicOutputSetTargetVpp( u32 target_vpp_mv )
+{
+	float previous = g_basic_output_ui.request.target_output_vpp;
+
+	if (g_basic_output_ui.running) {
+		xil_printf( "HMI Vpp ignored while running\r\n" );
+		return;
+	}
+
+	g_basic_output_ui.request.target_output_vpp =
+		(float)target_vpp_mv / 1000.0f;
+	if (basic_output_validate_request( &g_basic_output_ui.request ) != 0) {
+		g_basic_output_ui.request.target_output_vpp = previous;
+		xil_printf( "HMI Vpp rejected: %d mV\r\n", (int)target_vpp_mv );
+		return;
+	}
+	prvBasicOutputReportSettings();
+}
+
+static void prvBasicOutputHandleHmiFrame( const hmi_protocol_frame_t *frame )
+{
+	if (frame == 0 || !hmi_protocol_mode_is_valid( frame->mode )) {
+		xil_printf( "HMI frame rejected\r\n" );
+		return;
+	}
+
+	switch (frame->command) {
+	case HMI_PROTOCOL_CMD_ENTER:
+		xil_printf( "HMI enter mode=%d\r\n", (int)frame->mode );
+		break;
+
+	case HMI_PROTOCOL_CMD_START:
+		if ((frame->mode == HMI_PROTOCOL_MODE_SIGNAL_SOURCE ||
+			 frame->mode == HMI_PROTOCOL_MODE_AMPLITUDE_CONTROL) &&
+			g_app_state_machine.state == APP_STATE_MENU) {
+			if (prvBasicOutputStart() == XST_SUCCESS) {
+				basic_output_ui_handle( &g_basic_output_ui,
+									BASIC_OUTPUT_UI_START );
+				app_state_machine_dispatch( &g_app_state_machine,
+									APP_EVENT_START_BASIC, 0 );
+			}
+		} else {
+			xil_printf( "HMI start pending for mode=%d\r\n",
+						(int)frame->mode );
+		}
+		break;
+
+	case HMI_PROTOCOL_CMD_STOP:
+	case HMI_PROTOCOL_CMD_BACK:
+		prvBasicOutputStopBack();
+		break;
+
+	case HMI_PROTOCOL_CMD_RESET:
+		prvBasicOutputReset();
+		break;
+
+	case HMI_PROTOCOL_CMD_FREQUENCY_HZ:
+		prvBasicOutputSetFrequency( frame->data );
+		break;
+
+	case HMI_PROTOCOL_CMD_VPP_MV:
+		prvBasicOutputSetTargetVpp( frame->data );
+		break;
+
+	case HMI_PROTOCOL_CMD_PHASE:
+		xil_printf( "HMI phase pending: %d\r\n", (int)frame->data );
+		break;
+
+	default:
+		xil_printf( "HMI command rejected: %d\r\n", (int)frame->command );
+		break;
+	}
+}
+
 static void prvBasicOutputTask( void *pvParameters )
 {
 	int status;
+	u32 handled_frames;
+	hmi_protocol_frame_t frame;
 
 	( void )pvParameters;
 	app_state_machine_init( &g_app_state_machine );
@@ -211,24 +341,28 @@ static void prvBasicOutputTask( void *pvParameters )
 	}
 
 	app_state_machine_dispatch( &g_app_state_machine, APP_EVENT_INIT_OK, 0 );
+	status = hmi_uart_init( &g_hmi_uart );
+	if (status != XST_SUCCESS) {
+		xil_printf( "HMI UART0 init failed; buttons remain active\r\n" );
+	} else {
+		xil_printf( "HMI UART0 ready: 9600 8N1\r\n" );
+	}
 	xil_printf( "BASIC34 ready: START runs, STOP/BACK stops, LEARN requests learning, RESET resets\r\n" );
 	prvBasicOutputReportSettings();
 
 	for ( ;; ) {
+		for (handled_frames = 0U;
+			 handled_frames < APP_HMI_MAX_FRAMES_PER_SERVICE &&
+			 hmi_uart_poll( &g_hmi_uart, &frame ) > 0;
+			 handled_frames++) {
+			prvBasicOutputHandleHmiFrame( &frame );
+		}
+
 		if (button_input_take_system_reset_press( &g_app_runtime.buttons )) {
-			if (g_basic_output_ui.running) {
-				dds_control_commit( &g_app_runtime.dds,
-									&g_basic_channel_a, &g_basic_channel_b, 0, 0 );
-			}
-			basic_output_ui_handle( &g_basic_output_ui, BASIC_OUTPUT_UI_RESET );
-			app_state_machine_init( &g_app_state_machine );
-			app_state_machine_dispatch( &g_app_state_machine,
-									APP_EVENT_INIT_OK, 0 );
-			xil_printf( "BASIC34 reset to menu\r\n" );
-			prvBasicOutputReportSettings();
+			prvBasicOutputReset();
 		} else if (g_app_state_machine.state == APP_STATE_MENU) {
 			if (button_input_take_stop_back_press( &g_app_runtime.buttons )) {
-				xil_printf( "BASIC34 menu\r\n" );
+				prvBasicOutputStopBack();
 			} else if (button_input_take_learn_press( &g_app_runtime.buttons )) {
 				app_state_machine_dispatch( &g_app_state_machine,
 											APP_EVENT_START_LEARN, 0 );
@@ -243,20 +377,11 @@ static void prvBasicOutputTask( void *pvParameters )
 			}
 		} else if (g_app_state_machine.state == APP_STATE_BASIC) {
 			if (button_input_take_stop_back_press( &g_app_runtime.buttons )) {
-				status = dds_control_commit( &g_app_runtime.dds,
-										 &g_basic_channel_a, &g_basic_channel_b, 0, 0 );
-				basic_output_ui_handle( &g_basic_output_ui,
-										BASIC_OUTPUT_UI_RESET );
-				app_state_machine_dispatch( &g_app_state_machine,
-											APP_EVENT_COMPLETE, 0 );
-				xil_printf( status == XST_SUCCESS ?
-							"BASIC34 stopped\r\n" : "BASIC34 stop failed\r\n" );
+				prvBasicOutputStopBack();
 			}
 		} else if (g_app_state_machine.state == APP_STATE_LEARN) {
 			if (button_input_take_stop_back_press( &g_app_runtime.buttons )) {
-				app_state_machine_dispatch( &g_app_state_machine,
-											APP_EVENT_RESET, 0 );
-				xil_printf( "LEARN cancelled: menu\r\n" );
+				prvBasicOutputStopBack();
 			}
 		}
 
