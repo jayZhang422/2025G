@@ -9,6 +9,17 @@ proc require_file {path description} {
     }
 }
 
+proc sha256_file {path} {
+    require_file $path "SHA-256 input"
+    if {[catch {exec certutil.exe -hashfile [file nativename $path] SHA256 2>@1} output]} {
+        error "Could not calculate SHA-256 for $path: $output"
+    }
+    if {![regexp -nocase {[0-9a-f]{64}} $output digest]} {
+        error "Could not read SHA-256 from certutil output for $path: $output"
+    }
+    return [string toupper $digest]
+}
+
 proc progress {message} {
     puts "[clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S}] PS platform: $message"
     flush stdout
@@ -54,8 +65,23 @@ platform config -updatehw $xsa_file
 # GUI 'Revert BSP Sources' maps to regenerating sources from the active BSP settings.
 progress "regenerating BSP sources from active settings"
 bsp regenerate
+progress "cleaning stale platform products"
+platform clean
 progress "building regenerated platform products"
 platform generate
+set platform_dir [ps_automation::platform_directory $workspace $platform_name]
+set platform_xsa_files [glob -nocomplain -types f [file join $platform_dir hw *.xsa]]
+if {[llength $platform_xsa_files] != 1} {
+    error "Expected exactly one generated Platform hardware XSA in $platform_dir/hw; found: $platform_xsa_files"
+}
+set platform_xsa [lindex $platform_xsa_files 0]
+progress "verifying source and Platform hardware XSA SHA-256"
+set source_xsa_sha256 [sha256_file $xsa_file]
+set platform_xsa_sha256 [sha256_file $platform_xsa]
+if {$source_xsa_sha256 ne $platform_xsa_sha256} {
+    error "Platform hardware XSA hash mismatch: source $xsa_file = $source_xsa_sha256; generated $platform_xsa = $platform_xsa_sha256"
+}
+progress "verified XSA SHA-256 $source_xsa_sha256"
 progress "checking application BSP link"
 ps_automation::ensure_bsp_link $workspace $platform_name $app_debug_dir
 if {![file isfile [file join $app_debug_dir src subdir.mk]]} {

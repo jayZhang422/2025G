@@ -21,6 +21,15 @@
 #define APP_FIFO_MONITOR_BASEADDR \
     XPAR_AD_FIFO_MONITOR_AXI_0_AD_FIFO_MONITOR_AXI_BASEADDR
 
+/* The current DDC bitstream emits one interleaved I/Q frame per TLAST. */
+#ifndef XPAR_DDC_STREAM_0_BASEADDR
+#error "The active BSP does not contain ddc_stream_0"
+#endif
+#define APP_DDC_BASEADDR             XPAR_DDC_STREAM_0_BASEADDR
+#define APP_DDC_FRAME_COMPLEX_SAMPLES 4096U
+#define APP_DDC_FRAME_IQ_WORDS       (APP_DDC_FRAME_COMPLEX_SAMPLES * 2U)
+#define APP_DDC_RX_FRAME_BYTES       (APP_DDC_FRAME_IQ_WORDS * sizeof(s16))
+
 /* DDS control BRAM address and ten-word PL register protocol. */
 #define APP_DDS_BRAM_BASEADDR       XPAR_AXI_BRAM_CTRL_0_S_AXI_BASEADDR
 #define APP_DDS_CLOCK_HZ            125000000.0f
