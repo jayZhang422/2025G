@@ -16,8 +16,13 @@
 #define APP_SAMPLE_RATE_HZ          5120060.0f
 #define APP_RX_FRAME_BYTES          (APP_ADC_FRAME_SAMPLES * sizeof(u16))
 
-/* The exported hardware platform has exactly one simple-mode S2MM DMA. */
+/* The exported hardware platform has exactly one SG S2MM DMA and IRQ. */
 #define APP_DMA_RX_DEV_ID           XPAR_AXI_DMA_ADC_DEVICE_ID
+#ifndef XPAR_FABRIC_AXI_DMA_ADC_S2MM_INTROUT_INTR
+#error "The active BSP does not contain the AXI DMA S2MM interrupt"
+#endif
+#define APP_DMA_RX_INTR_ID \
+    XPAR_FABRIC_AXI_DMA_ADC_S2MM_INTROUT_INTR
 #define APP_FIFO_MONITOR_BASEADDR \
     XPAR_AD_FIFO_MONITOR_AXI_0_AD_FIFO_MONITOR_AXI_BASEADDR
 

@@ -1,0 +1,14 @@
+2026-07-28 14:40:01 PS platform: checking latest PL XSA
+2026-07-28 14:40:01 PS platform: opening platform Identification_platform in the isolated automation workspace
+Loading the sw platform from E:/7020_Project/25G/25G_PS/Identification_platform/platform.spr
+Reading the platform  : "Identification_platform"
+INFO: [Hsi 55-2053] elapsed time for repository (D:/FPGA/Xilinx/Vitis/2020.2/data\embeddedsw) loading 0 seconds
+2026-07-28 14:40:04 PS platform: updating platform hardware specification from E:/7020_Project/25G/25G_PL/top.xsa
+Opening the hardware design, this may take few seconds.
+
+
+Note: BSP Settings for the domain zynq_fsbl are synced with the hw change.
+
+
+Note: BSP Settings for the domain freertos10_xilinx_domain are synced with the hw change.
+Opening the hardware design, this may take few seconds.

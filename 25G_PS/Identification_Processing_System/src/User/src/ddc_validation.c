@@ -1,7 +1,7 @@
 /******************************************************************************
  * ddc_validation.c
  *
- * Validates ddc_stream -> AXIS FIFO -> Simple S2MM DMA one frame at a time.
+ * Validates ddc_stream -> AXIS FIFO -> SG S2MM DMA one frame at a time.
  * This deliberately measures preserved I/Q features; it does not classify a
  * modulation type or estimate contest parameters.
  ******************************************************************************/
@@ -143,33 +143,6 @@ static int ddc_wait_first_frame(const ddc_validation_config_t *config)
                        (unsigned int)ddc_read(DDC_OUTPUT_COUNT_OFFSET));
             return XST_FAILURE;
         }
-    }
-    return XST_SUCCESS;
-}
-
-static int dma_wait_complete(XAxiDma *dma,
-                             const ddc_validation_config_t *config,
-                             u32 *dma_status)
-{
-    XTime start;
-
-    XTime_GetTime(&start);
-    while (XAxiDma_Busy(dma, XAXIDMA_DEVICE_TO_DMA)) {
-        if (timeout_expired(start, config->timeout_ms)) {
-            *dma_status = XAxiDma_ReadReg(
-                dma->RegBase + XAXIDMA_RX_OFFSET, XAXIDMA_SR_OFFSET);
-            xil_printf("[DDC VALIDATE] FAIL: DMA timeout\r\n");
-            dma_dump_s2mm_regs("[DDC VALIDATE] DMA timeout:", dma);
-            return XST_FAILURE;
-        }
-    }
-
-    *dma_status = XAxiDma_ReadReg(
-        dma->RegBase + XAXIDMA_RX_OFFSET, XAXIDMA_SR_OFFSET);
-    if ((*dma_status & XAXIDMA_ERR_ALL_MASK) != 0U) {
-        xil_printf("[DDC VALIDATE] FAIL: DMA status error, SR=0x%08x\r\n",
-                   (unsigned int)*dma_status);
-        return XST_FAILURE;
     }
     return XST_SUCCESS;
 }
@@ -397,9 +370,8 @@ static int ddc_capture_one_frame(XAxiDma *dma,
     memset(g_ddc_iq_buffer, 0xA5, sizeof(g_ddc_iq_buffer));
     Xil_DCacheFlushRange((UINTPTR)g_ddc_iq_buffer,
                          APP_DDC_RX_FRAME_BYTES);
-    if (XAxiDma_SimpleTransfer(dma, (UINTPTR)g_ddc_iq_buffer,
-                               APP_DDC_RX_FRAME_BYTES,
-                               XAXIDMA_DEVICE_TO_DMA) != XST_SUCCESS) {
+    if (dma_submit_frame(dma, g_ddc_iq_buffer,
+                         APP_DDC_RX_FRAME_BYTES) != XST_SUCCESS) {
         xil_printf("[DDC VALIDATE] FAIL: DMA start\r\n");
         return XST_FAILURE;
     }
@@ -416,7 +388,9 @@ static int ddc_capture_one_frame(XAxiDma *dma,
      * later DMA buffer. */
     ddc_write(DDC_CTRL_OFFSET, 0U);
     if (ddc_wait_config_idle(config) != XST_SUCCESS ||
-        dma_wait_complete(dma, config, &dma_status) != XST_SUCCESS) {
+        dma_wait_frame(dma, config->timeout_ms,
+                       &dma_status) != XST_SUCCESS) {
+        xil_printf("[DDC VALIDATE] FAIL: DMA completion\r\n");
         return XST_FAILURE;
     }
 
@@ -511,5 +485,9 @@ int ddc_validation_run(const ddc_validation_config_t *config)
 stop_ddc:
     ddc_write(DDC_CTRL_OFFSET, 0U);
     (void)ddc_wait_config_idle(config);
+    if (dma_shutdown_s2mm(&dma) != XST_SUCCESS) {
+        xil_printf("[DDC VALIDATE] FAIL: DMA shutdown\r\n");
+        result = XST_FAILURE;
+    }
     return result;
 }
