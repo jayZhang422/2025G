@@ -69,27 +69,9 @@ set_false_path -from [get_clocks clk_pll_phase_PLL_AD] -to [get_clocks clk_fpga_
 set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks clk_pll_phase_PLL_AD]
 
 ################################################################################
-# AD9767 forwarded-clock output timing
+# DAC board export retired
 #
-# Values are unchanged from the board-tested baseline. WRT is driven in phase
-# with the forwarded DAC clock. Data launches on the preceding falling edge,
-# giving a nominal 4 ns setup window at 125 MHz. The delays assume matched
-# FPGA-to-module clock/data board routing.
+# H_top keeps its internal DDS/DAC interface names for compatibility, but the
+# final integration does not export DAC pins. The former source-synchronous DAC
+# pin timing constraints therefore no longer apply at the synthesis top.
 ################################################################################
-
-create_generated_clock -name dac_clk_a_forwarded -source [get_pins u_h_top/dac_clk_a_forward/C] -divide_by 1 [get_ports o_da_clk]
-create_generated_clock -name dac_wrt_a_forwarded -source [get_pins u_h_top/dac_wrt_a_forward/C] -divide_by 1 [get_ports o_da_wrt]
-create_generated_clock -name dac_clk_b_forwarded -source [get_pins u_h_top/dac_clk_b_forward/C] -divide_by 1 [get_ports o_da_clk_b]
-create_generated_clock -name dac_wrt_b_forwarded -source [get_pins u_h_top/dac_wrt_b_forward/C] -divide_by 1 [get_ports o_da_wrt_b]
-
-set_property IOB TRUE [get_cells -hierarchical -regexp {.*u_dac_dds(/.*)?/da_data_a_reg\[[0-9]+\]$}]
-set_property IOB TRUE [get_cells -hierarchical -regexp {.*u_dac_dds(/.*)?/da_data_b_reg\[[0-9]+\]$}]
-
-set_output_delay -clock dac_clk_a_forwarded -max 2.000 [get_ports {o_da_data[*]}]
-set_output_delay -clock dac_clk_a_forwarded -min -1.500 [get_ports {o_da_data[*]}]
-set_output_delay -clock dac_wrt_a_forwarded -max -add_delay 2.000 [get_ports {o_da_data[*]}]
-set_output_delay -clock dac_wrt_a_forwarded -min -add_delay -1.500 [get_ports {o_da_data[*]}]
-set_output_delay -clock dac_clk_b_forwarded -max 2.000 [get_ports {o_da_data_b[*]}]
-set_output_delay -clock dac_clk_b_forwarded -min -1.500 [get_ports {o_da_data_b[*]}]
-set_output_delay -clock dac_wrt_b_forwarded -max -add_delay 2.000 [get_ports {o_da_data_b[*]}]
-set_output_delay -clock dac_wrt_b_forwarded -min -add_delay -1.500 [get_ports {o_da_data_b[*]}]

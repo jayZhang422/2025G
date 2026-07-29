@@ -11,7 +11,8 @@ run-output files.
 
 - The project IP repository is `25G_PL/ip_core`.
 - `top.v` is the synthesis top. `H_top.v` contains the ADC/FIFO, AXIS, IQ
-  observation, BRAM, and DAC integration wiring.
+  observation, BRAM, and retained internal DAC wiring. The active UART
+  candidate no longer exports physical DAC pins from `top.v`.
 - The active BD wrapper is generated at
   `25G_PL.gen/sources_1/bd/system/hdl/system_wrapper.v`. The legacy copy in
   `25G_PL.srcs/sources_1/imports` is intentionally not in `sources_1`.
@@ -48,12 +49,27 @@ run-output files.
 | `axi_dma_adc` | AXI DMA 7.1 | Simple S2MM-only ADC DMA: 16-bit AXIS input and 64-bit memory interface. |
 | `axis_data_fifo_0` | AXIS Data FIFO 2.0 | Buffers `ADC_STREAM_IN` before DMA S2MM. |
 | `smartconnect_0` | SmartConnect 1.0 | Routes the DMA memory master to PS HP0 and PS GP0 slave path. |
-| `axi_interconnect_0` | AXI Interconnect 2.1 | Routes PS GP0 AXI-Lite control to DMA, DDS BRAM controller, IQ, and FIFO monitor. |
+| `axi_interconnect_0` | AXI Interconnect 2.1 | Routes PS GP0 AXI-Lite control to DMA, DDS BRAM controller, IQ, FIFO monitor, DDC, and PL HMI UART. |
 | `axi_bram_ctrl_0` | AXI BRAM Controller 4.1 | PS AXI-Lite access to the DDS control BRAM. |
 | `blk_PS_TO_PL` | Block Memory Generator 8.4 | True dual-port 2048 x 32 BRAM: PS uses port A; the DAC IP uses port B. |
 | `iq_demodulator_0` | Local custom `iq_demodulator` 1.0 | IQ control/status at `0x43C0_0000`; ADC-domain sample inputs are exported through the generated wrapper; `o_irq` drives PS `IRQ_F2P`. |
 | `fifo_monitor_axi_0` | Local custom `ad_fifo_monitor_axi` 1.0 | Read-only snapshot/status registers at `0x43C1_0000`; CONTROL provides snapshot and sticky-clear pulses. |
+| `pl_hmi_uart_0/axi_uartlite_core` | AXI UARTLite 2.0 | `M05_AXI` target at `0x43C3_0000`, fixed 115200 8N1 on FCLK0; interrupt unconnected for polling. |
 | `xbar`, `auto_pc` | AXI Crossbar / Protocol Converter | Generated internal support cells for the AXI interconnect. |
+
+## PL HMI UART Contract
+
+- Wrapper: `PL_HMI_UART_rxd` and `PL_HMI_UART_txd`.
+- Top-level: `i_hmi_uart_rx` on F16/J11 pin 4 and `o_hmi_uart_tx` on
+  F17/J11 pin 3, both LVCMOS33; J11 pin 1 is signal ground.
+- AXI: `axi_interconnect_0/M05_AXI`, FCLK0 100 MHz,
+  `proc_sys_reset_0/peripheral_aresetn`.
+- BSP: use generated `XPAR_UARTLITE_0_*` macros; never hard-code the base or
+  device ID in application code.
+- Electrical: BANK35 is 3.3 V. Verify or level-shift the TJC TX voltage before
+  connecting it to F16.
+- Reset: reinitialize UARTLite and resynchronize the display protocol after
+  the shared FCLK0 peripheral reset is asserted.
 
 ## IQ Control Contract
 

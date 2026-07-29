@@ -6,7 +6,7 @@ This is the baseline knowledge base for the 2023H Vivado project. Future changes
 
 ### Purpose and Platform
 
-This is a Zynq-7020 PS+PL acquisition and waveform-output design targeting `xc7z020clg400-2`. PL samples a 12-bit AD9226 input, sends framed samples to PS DDR through AXI Stream and AXI DMA, and produces independently controlled A/B DDS waveforms for a 14-bit AD9767-style dual DAC. The 2026-07-18 corrections passed the active Vivado 2020.2 XSIM behavioral regression; board validation is pending.
+This is a Zynq-7020 PS+PL acquisition design targeting `xc7z020clg400-2`. PL samples a 12-bit AD9226 input and sends framed samples to PS DDR through AXI Stream and AXI DMA. The internal A/B DDS/DAC hierarchy is retained, but the active PL HMI UART candidate no longer exports physical DAC pins because J11 F16/F17 now carry UART RX/TX. The 2026-07-18 DDS corrections passed the active Vivado 2020.2 XSIM behavioral regression; DAC board validation is not applicable to the current top-level boundary.
 
 The application-side PS source code is not in this Vivado workspace. Hardware exposes two PS contracts: a DMA destination in DDR and a ten-word BRAM control block for the DDS.
 
@@ -16,12 +16,13 @@ The application-side PS source code is not in this Vivado workspace. Hardware ex
 | --- | --- |
 | ADC | AD9226, 12-bit parallel input, 5.1208 MHz sampling |
 | Acquisition | independent-clock FIFO, AXIS FIFO, AXI DMA S2MM, PS HP0 DDR |
-| DDS/DAC | Two 32-bit DDS states, four single-port ROM instances, 14-bit AD9767 A/B outputs; XSIM behavioral regression passed, hardware verification pending |
-| PS | PS7 DDR, FCLK0 100 MHz, M_AXI_GP0, S_AXI_HP0, UART1 MIO 48/49, three EMIO GPIO inputs |
+| DDS/DAC | Two 32-bit DDS states and four ROM instances remain internal; physical DAC outputs are open at `top.v` in the UART candidate |
+| PS | PS7 DDR, FCLK0 100 MHz, M_AXI_GP0, S_AXI_HP0, UART1 MIO 48/49, SD0 MIO40..45/CD47, three EMIO GPIO inputs |
+| HMI transport | AXI UARTLite 115200 8N1 on FCLK0; RX F16/J11 pin 4, TX F17/J11 pin 3; polled first integration |
 | Debug | `fifo_monitor_axi_0` publishes FIFO/AXIS snapshots to PS through AXI4-Lite; `ila_0` remains uninstantiated |
 | Tooling | Vivado 2020.2, Questa is the selected target simulator |
 
-PL owns sampling, FIFO CDC, AXIS framing, DDS, ROM lookup, amplitude scaling, and DAC pins. PS owns DMA configuration, DDR, and writes DDS control BRAM. Fabric interrupt capability is enabled in PS7 configuration, but no DMA IRQ connection is present in the BD.
+PL owns sampling, FIFO CDC, AXIS framing, DDS/ROM internals, and the PL HMI UART pins. PS owns DMA configuration, DDR, DDS control BRAM writes, and polled UARTLite access. The physical DAC boundary is retired without renaming the established `H_top` DAC interfaces.
 
 ## 2. Top-Level Structure
 
@@ -44,6 +45,7 @@ top
       |- axis_data_fifo_0
       |- smartconnect_0
       |- axi_interconnect_0 -> xbar, auto_pc
+      |- pl_hmi_uart_0 -> axi_uartlite_core
       |- axi_bram_ctrl_0
       `- blk_PS_TO_PL                           (true dual-port BRAM)
 ```
@@ -92,6 +94,9 @@ ad9767 BRAM poll -> A/B shadow registers -> COMMIT_SEQ apply event
 ```
 
 `ad9767` polls ten 32-bit words continuously, one selection per DAC clock:
+
+The active UART candidate keeps this internal hierarchy for compatibility but
+leaves all `H_top` DAC outputs open in `top.v`; no DAC package pin is driven.
 
 | Offset | Field | Behavior |
 | --- | --- | --- |
@@ -144,7 +149,7 @@ Current post-route timing: WNS 0.398 ns, TNS 0, WHS 0.009 ns, THS 0. All user ti
 | `w_rst_safe` | active low, `i_rst & w_ad_valid` | FIFO wrapper input, holds FIFO until ADC is valid |
 | `rst_fifo_n` | active-high release flag in FIFO write domain | after 15 write clocks, drives FIFO Generator reset as `~rst_fifo_n` |
 | `FCLK_RESET0_N` | active low PS7 output | `proc_sys_reset_0.ext_reset_in` and `Pll_DA.resetn` |
-| `peripheral_aresetn` | active low reset block output | DMA, AXIS FIFO S side, interconnect, SmartConnect, BRAM Controller |
+| `peripheral_aresetn` | active low reset block output | DMA, AXIS FIFO S side, interconnect, SmartConnect, BRAM Controller, UARTLite |
 
 Custom RTL uses asynchronous active-low resets. FIFO IP has internal CDC reset handling. BRAM Port B reset is derived from `i_rst`, not the PS peripheral reset.
 
@@ -162,10 +167,11 @@ active-low XGpioPs pins 54/55/56.
 | `axi_dma_adc` | simple S2MM DMA | AXIS FIFO to SmartConnect/HP0 |
 | `axis_data_fifo_0` | AXIS FIFO | `ADC_STREAM_IN` to DMA S2MM |
 | `smartconnect_0` | DMA memory path | S00 from DMA; M00 to HP0; M01 to PS S_AXI_GP0 |
-| `axi_interconnect_0` | PS control fanout | GP0 to DMA AXI-Lite and BRAM Controller |
+| `axi_interconnect_0` | PS control fanout | GP0 to DMA, BRAM, IQ, monitor, DDC, and UARTLite (`M05_AXI`) |
 | `xbar`, `auto_pc` | AXI interconnect internals | generated support cells |
 | `axi_bram_ctrl_0` | AXI4-Lite to BRAM | Port A of `blk_PS_TO_PL` |
 | `blk_PS_TO_PL` | true dual-port BRAM | Port A PS; Port B DDS |
+| `pl_hmi_uart_0` | AXI UARTLite hierarchy | 115200 8N1 at `0x43C3_0000`; interrupt deliberately unconnected |
 
 Generated child BD `bd_919a` implements SmartConnect internals: AXI-to-SC and SC-to-AXI adapters, entry/exit pipelines, nodes, switchboards, clock map, and two MI paths. It is a generated implementation detail, not a second user BD.
 
@@ -175,10 +181,13 @@ Generated child BD `bd_919a` implements SmartConnect internals: AXI-to-SC and SC
 | --- | --- | ---: | ---: |
 | `processing_system7_0/Data` | BRAM Controller memory | `0x4000_0000` | 8 KiB |
 | `processing_system7_0/Data` | DMA AXI-Lite registers | `0x4040_0000` | 64 KiB |
+| `processing_system7_0/Data` | IQ demodulator registers | `0x43C0_0000` | 64 KiB |
 | `processing_system7_0/Data` | FIFO monitor AXI-Lite registers | `0x43C1_0000` | 64 KiB |
+| `processing_system7_0/Data` | DDC stream registers | `0x43C2_0000` | 4 KiB |
+| `processing_system7_0/Data` | PL HMI UARTLite registers | `0x43C3_0000` | 64 KiB |
 | `axi_dma_adc/Data_S2MM` | PS HP0 DDR/OCM | `0x0000_0000` | 1 GiB |
 
-DMA mappings to GP0 IOP (`0xE0000000`, 4 MiB) and GP0 master space (`0x40000000`, 1 GiB) are explicitly excluded. No DMA interrupt net is in the BD connection list.
+DMA mappings to GP0 IOP (`0xE0000000`, 4 MiB) and GP0 master space (`0x40000000`, 1 GiB) are explicitly excluded. DMA S2MM interrupt remains on `xlconcat_0/In0`, IQ remains on `In1`, and the concat output drives PS `IRQ_F2P`.
 
 ## 7. IP Inventory
 
@@ -198,9 +207,10 @@ Configure source IPs through Vivado IP customization or BD editing, then regener
 | `system_axi_dma_0_0.xci` | axi_dma 7.1; S2MM, 16-bit AXIS, 64-bit memory, no SG | active BD |
 | `system_axis_data_fifo_0_0.xci` | axis_data_fifo 2.0; depth 4096, TLAST, async, 16-bit | active BD |
 | `system_smartconnect_0_0.xci` | smartconnect 1.0; two MI | active BD |
-| `system_axi_interconnect_0_0.xci` | axi_interconnect 2.1; 2 SI/2 MI | active control plane |
-| `system_xbar_0.xci` | axi_crossbar 2.1; 32-bit AXI-Lite, 2 SI/2 MI | active child |
+| `system_axi_interconnect_0_0.xci` | axi_interconnect 2.1; 2 SI/6 MI | active control plane |
+| `system_xbar_0.xci` | axi_crossbar 2.1; 32-bit AXI-Lite, 2 SI/6 MI | active child |
 | `system_auto_pc_0.xci` | axi_protocol_converter 2.1; 32-bit | active child |
+| `system_axi_uartlite_core_0.xci` | axi_uartlite 2.0; 115200, 8 data bits, no parity, 100 MHz AXI clock | active under `pl_hmi_uart_0` |
 | `system_axi_bram_ctrl_0_0.xci` | axi_bram_ctrl 4.1; AXI4-Lite, single-port, 32-bit, latency 1 | active BD |
 | `system_blk_mem_gen_0_0.xci` | blk_mem_gen 8.4; true dual-port 2048x32, Port B 125 MHz | active control BRAM |
 
@@ -210,7 +220,7 @@ The workspace contains 101 physical XCI files: 17 source configurations, 49 cach
 
 | File / module | Role, state, dependencies, standalone simulation |
 | --- | --- |
-| `top.v` / `top` | synthesis top; physical ADC/DAC/DDR/PS pins; instantiates `H_top` and generated wrapper; forwards passive FIFO/AXIS observation signals into the BD AXI monitor |
+| `top.v` / `top` | synthesis top; physical ADC, PL HMI UART, DDR, and PS pins; instantiates `H_top` and generated wrapper; leaves the established internal DAC outputs open |
 | `H_top.v` / `H_top` | PL integration; `ad_fifo_wrapper_0`, AXIS, BRAM, and `DDS_DAC` wiring plus 12-bit TLAST counter; simulated by `tb_H_top` |
 | `ad9226.v` / `ad9226` | AD capture/clock wrapper; 7-bit 64-cycle stabilization counter and `stable` flag; depends on `PLL_AD` |
 | `fifo.v` / `fifo` | 5.12 MHz write to 100 MHz read wrapper; 4-bit reset counter; depends on `fifo_generator_0` |
@@ -242,16 +252,16 @@ Both have 12-bit addresses through `phase_acc[31:20]`. XCI output products gener
 
 ## 12. Current Risks
 
-1. AD9767 DA/DB now has source-synchronous output-delay constraints relative
-   to the forwarded CLK and WRT ports. They use the 2 ns setup and 1.5 ns hold
-   requirements with a matched-board-delay assumption; board trace skew and
-   AD9226 input timing remain unverified.
+1. The physical DAC timing constraints are retired with the top-level DAC
+   ports. AD9226 input timing remains unverified because the available module
+   manual does not provide a complete output maximum/hold specification.
 2. `i_rst` is asynchronously deasserted in several custom clock domains; `w_rst_safe` originates in ADC domain and resets the FIFO wrapper. Review reset deassertion when changing clocks or FIFO settings.
 3. The ten-word shadow/commit protocol passes the one-clock BRAM behavioral model, but it still needs hardware validation against the generated true-dual-port BRAM and PS AXI writes.
-4. FIFO/AXIS counters and sticky status are visible through Hardware Manager
-   debug nets but are not PS-readable registers.
+4. FIFO/AXIS counters and sticky status are PS-readable through the passive
+   monitor, but the inherited full-design CDC report still requires review.
 5. AXIS FIFO asynchronous configuration is redundant with its present common FCLK0 ports and should be explicitly justified or revised.
-6. PS fabric IRQ capability is enabled but DMA IRQ is not wired; software must poll unless the BD changes.
+6. DMA and IQ fabric IRQs are wired. UARTLite is deliberately not in the IRQ
+   concat and must be polled during first bring-up.
 7. Active simulation does not prove DMA/DDR, TLAST cadence, FIFO stress, or reset release across all clocks.
 8. Disabled RAM, ILA, and legacy testbench assets create maintenance ambiguity.
 9. The dual DDS source passed XSIM behavioral simulation only. The test does not prove board-level DAC timing, analogue amplitude calibration, or PS AXI write ordering under real hardware load.
@@ -261,7 +271,8 @@ Both have 12-bit addresses through `phase_acc[31:20]`. XCI output products gener
 1. Add converter- and board-derived input/output delay constraints.
 2. Run and inspect the ten-word atomic DDS shadow-register and commit/version protocol in Questa and on hardware.
 3. Decide whether BD AXIS FIFO must remain asynchronous.
-4. Wire DMA completion/error interrupt or document polling behavior.
+4. Keep UARTLite polling for first bring-up; evaluate an interrupt/ring buffer
+   only after physical loopback and TJC burst behavior are measured.
 5. Add test coverage for 4096-beat TLAST, back-pressure, FIFO overflow, reset, stop/midscale, independent A/B waveform and amplitude, phase reload, phase-continuous tracking, triangle mode, and DMA/DDR integration.
 6. Decide whether disabled RAM, ILA, and legacy testbench are retained or removed after deliberate review.
 7. Integrate PS control software only after board-level verification of the dual-DDS outputs.
@@ -339,3 +350,24 @@ snapshot and independent single-tone DDS states. Since it has no streaming I/Q
 baseband input, interpolation, pulse shaping, or quadrature up-converter, it is
 not an IQ modulator. IP-specific use documents are maintained in
 `ip_core/*/usage/README.md`.
+
+## 17. PL HMI UART Integration Candidate
+
+The active `calvin-uart-integration` candidate adds
+`pl_hmi_uart_0/axi_uartlite_core` as `axi_interconnect_0/M05_AXI`. Its AXI
+clock is PS FCLK0 at 100 MHz and its active-low reset is
+`proc_sys_reset_0/peripheral_aresetn`. The serial interface is fixed at 115200
+baud, 8 data bits, no parity, and one stop bit. UART interrupt remains
+unconnected, so DMA stays on `xlconcat_0/In0`, IQ stays on `In1`, and the
+concat output remains the only connection to `IRQ_F2P`.
+
+The generated wrapper ports are `PL_HMI_UART_rxd` and `PL_HMI_UART_txd`.
+`top.v` maps them without renaming to `i_hmi_uart_rx` and
+`o_hmi_uart_tx`. Active constraints map RX to J11 pin 4/F16 and TX to J11
+pin 3/F17, both LVCMOS33. Post-place `report_io` confirms those assignments.
+
+Vivado 2020.2 implementation passed with WNS `+3.358 ns`, WHS `+0.036 ns`,
+zero DRC errors, and minimum bus-skew slack `+8.352 ns`. The full inherited
+design still has 147 DRC warnings and CDC Critical findings outside UARTLite.
+The only UART CDC entry is `CDC-3 Info` for the core's RX double-register
+synchronizer. Physical F17-to-F16 loopback and TJC tests remain pending.
