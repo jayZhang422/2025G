@@ -1,5 +1,9 @@
 # 26G HMI J11 Integration
 
+Chinese quick-start, file ownership, wiring, programming, and board-test
+instructions are in the repository root `README.md` and
+`Doc/26G_HMI_J11_BOARD_TEST.md`.
+
 This handoff integrates the final 2026 G-question TJC display with the
 team-leader project without changing the existing algorithm, DDC/FIR, DMA, or
 `H_top` interface names. Vivado and Vitis 2020.2 are required.
@@ -18,9 +22,10 @@ team-leader project without changing the existing algorithm, DDC/FIR, DMA, or
 | Signal ground | J11 pin 1 |
 | UART interrupt | Deliberately unconnected |
 
-The former external DAC pins are retired because F16/F17 are required by the
-display. The existing `H_top` DAC interface names and internal logic are kept
-unchanged and left open at `top.v`.
+This project does not require a DAC. The former external DAC pins are retired
+because F16/F17 are required by the display. The existing `H_top` DAC
+interface names and internal logic are kept unchanged and left open at
+`top.v` for interface compatibility only.
 
 J11 BANK35 is 3.3 V. Cross the serial signals (`J11 TX -> display RX`,
 `display TX -> J11 RX`) and connect ground. Do not power the display from J11.
@@ -183,26 +188,33 @@ The portable BD hierarchy can be checked independently with:
 
 ## 6. Current Verification Boundary
 
-The last offline candidate was built with Vivado/Vitis 2020.2:
+The reproducible offline candidate was built from source commit
+`5b6ecdf27767cbd1aafda96ecba92069a024c922` with Vivado/Vitis 2020.2:
 
-- bitstream SHA-256
-  `B8B4C2DBD24D6070407A1C95C8DB064CB9807929DBFF4314127E42A299F0B212`;
-- XSA SHA-256
-  `75828541BE0DC8E9EEB0E77E68AE63B810A10F9371CFBB8DAE8E2BB531F79001`;
-- the bit embedded in the XSA matches the standalone bitstream;
-- ELF SHA-256
-  `999197A1601E3748FD8BBFC65DC12AE76B99814FD066DAFCA0A8897EA5DF449D`;
+- bitstream `25g_2026g_hmi_j11.bit`: 4,045,663 bytes, SHA-256
+  `4DD2EB78924B75C59FCCCE057F498259DB5313661C59232B461AE3EAE501ADEF`;
+- XSA `25g_2026g_hmi_j11.xsa`: 841,150 bytes, SHA-256
+  `1F848289D326ED229101076766660BC64DD8E76E406ECA18B022ECE408A3C14C`;
+- the bit embedded in the XSA matches the standalone bitstream exactly;
+- ELF `hmi_candidate_app.elf`: 2,203,076 bytes, SHA-256
+  `7C4B8BE03253911F571FECECB91F530316143D5942A81F32742D9AD430748D16`;
+- matching `ps7_init.tcl`: 34,511 bytes, SHA-256
+  `3C4A9FF99EC83AB9C4A8CB98B21C3952AF484E809E050AA075FB151642BCB74D`;
 - implementation WNS `+0.752 ns`, WHS `+0.035 ns`, DRC 0 errors,
   117 warnings and 2 advisories; minimum bus-skew slack `+8.337 ns`;
+- standalone BD validation, active integration, full PL build, and Vitis build
+  logs contain 0 Critical Warning and 0 Error;
 - UART CDC contributes one `CDC-3 Info` RX synchronizer entry. The inherited
   design still has non-UART CDC critical findings and is not a clean CDC
   result;
 - host HMI parser/render/session regression passed, and the Vitis application
   compiled and linked successfully.
 
-This evidence proves offline build/implementation only. It does not prove
-direct TJC communication, drawing correctness on the physical display, the
-required amplitude accuracy, or the less-than-2-second start-to-final-display
-time. Measure that full interval during the first screen test; 601 individual
-`add` commands consume about 0.73 s of line time at 115200 before display-side
-parsing and rendering are included.
+This evidence proves offline build/implementation only. An earlier J11
+UARTLite transport candidate passed one 1024-byte F17-to-F16 physical loopback,
+but that result does not board-verify these final bit/XSA/ELF files or the TJC.
+The final candidate still needs direct TJC communication, drawing correctness,
+the required amplitude accuracy, and the less-than-2-second
+start-to-final-display test. Measure that full interval during the first screen
+test; 601 individual `add` commands consume about 0.73 s of line time at
+115200 before display-side parsing and rendering are included.
