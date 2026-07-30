@@ -1,0 +1,653 @@
+Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+----------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2020.2 (win64) Build 3064766 Wed Nov 18 09:12:45 MST 2020
+| Date         : Fri Jul 31 01:12:57 2026
+| Host         : Calvin running 64-bit major release  (build 9200)
+| Command      : report_drc -file D:/DianSai/2026_calvin/tmp/hardware/jay_2026g_hmi_final_repro_5b6ecdf/drc.rpt
+| Design       : top
+| Device       : xc7z020clg400-2
+| Speed File   : -2
+| Design State : Fully Routed
+----------------------------------------------------------------------------------------------------------------
+
+Report DRC
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: impl_1
+      Design limits: <entire design considered>
+           Ruledeck: default
+             Max violations: <unlimited>
+             Violations found: 119
++-----------+----------+----------------------------+------------+
+| Rule      | Severity | Description                | Violations |
++-----------+----------+----------------------------+------------+
+| DPIP-1    | Warning  | Input pipelining           | 6          |
+| DPOP-1    | Warning  | PREG Output pipelining     | 2          |
+| DPOP-2    | Warning  | MREG Output pipelining     | 2          |
+| DPOR-1    | Warning  | Asynchronous load check    | 96         |
+| REQP-1839 | Warning  | RAMB36 async control check | 10         |
+| RTSTAT-10 | Warning  | No routable loads          | 1          |
+| REQP-165  | Advisory | writefirst                 | 1          |
+| REQP-181  | Advisory | writefirst                 | 1          |
++-----------+----------+----------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+DPIP-1#1 Warning
+Input pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 input u_system/system_i/iq_demodulator_0/inst/i_acc0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#2 Warning
+Input pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 input u_system/system_i/iq_demodulator_0/inst/i_acc0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#3 Warning
+Input pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 input u_system/system_i/iq_demodulator_0/inst/i_acc0/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#4 Warning
+Input pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 input u_system/system_i/iq_demodulator_0/inst/q_acc0/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#5 Warning
+Input pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 input u_system/system_i/iq_demodulator_0/inst/q_acc0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#6 Warning
+Input pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 input u_system/system_i/iq_demodulator_0/inst/q_acc0/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPOP-1#1 Warning
+PREG Output pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output u_system/system_i/iq_demodulator_0/inst/i_acc0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#2 Warning
+PREG Output pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output u_system/system_i/iq_demodulator_0/inst/q_acc0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-2#1 Warning
+MREG Output pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 multiplier stage u_system/system_i/iq_demodulator_0/inst/i_acc0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#2 Warning
+MREG Output pipelining  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 multiplier stage u_system/system_i/iq_demodulator_0/inst/q_acc0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOR-1#1 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[0]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#2 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[10]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#3 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[11]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#4 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[12]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#5 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[13]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#6 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[14]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#7 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[15]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#8 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[16]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#9 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[17]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#10 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[18]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#11 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[19]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#12 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[1]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#13 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[20]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#14 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[21]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#15 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[22]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#16 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[23]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#17 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[24]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#18 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[25]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#19 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[26]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#20 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[27]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#21 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[28]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#22 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[29]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#23 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[2]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#24 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[30]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#25 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[31]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#26 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[32]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#27 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[33]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#28 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[34]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#29 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[35]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#30 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[36]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#31 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[37]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#32 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[38]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#33 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[39]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#34 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[3]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#35 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[40]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#36 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[41]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#37 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[42]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#38 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[43]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#39 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[44]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#40 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[45]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#41 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[46]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#42 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[47]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#43 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[4]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#44 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[5]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#45 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[6]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#46 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[7]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#47 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[8]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#48 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/i_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_i_sum_reg[9]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#49 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[0]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#50 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[10]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#51 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[11]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#52 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[12]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#53 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[13]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#54 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[14]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#55 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[15]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#56 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[16]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#57 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[17]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#58 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[18]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#59 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[19]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#60 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[1]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#61 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[20]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#62 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[21]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#63 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[22]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#64 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[23]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#65 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[24]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#66 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[25]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#67 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[26]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#68 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[27]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#69 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[28]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#70 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[29]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#71 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[2]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#72 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[30]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#73 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[31]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#74 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[32]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#75 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[33]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#76 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[34]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#77 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[35]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#78 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[36]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#79 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[37]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#80 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[38]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#81 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[39]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#82 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[3]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#83 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[40]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#84 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[41]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#85 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[42]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#86 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[43]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#87 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[44]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#88 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[45]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#89 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[46]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#90 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[47]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#91 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[4]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#92 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[5]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#93 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[6]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#94 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[7]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#95 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[8]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+DPOR-1#96 Warning
+Asynchronous load check  
+DSP u_system/system_i/iq_demodulator_0/inst/q_acc0 output is connected to registers with an asynchronous reset (u_system/system_i/iq_demodulator_0/inst/o_q_sum_reg[9]). This is preventing the possibility of merging these registers in to the DSP Block since the DSP block registers only possess synchronous reset capability.  It is suggested to recode or change these registers to remove the reset or use a synchronous reset to get the best optimization for performance, power and area.
+Related violations: <none>
+
+REQP-1839#1 Warning
+RAMB36 async control check  
+The RAMB36E1 u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmgb.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM36.ram has an input control pin u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmgb.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM36.ram/ENARDEN (net: u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmgb.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/ram_wr_en) which is driven by a register (u_h_top/u_ad_fifo/inst/u_ad9226/stable_reg) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#2 Warning
+RAMB36 async control check  
+The RAMB36E1 u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmgb.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM36.ram has an input control pin u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmgb.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.NO_BMM_INFO.SDP.SIMPLE_PRIM36.ram/ENARDEN (net: u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmgb.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/ram_wr_en) which is driven by a register (u_h_top/u_ad_fifo/inst/u_ad9226/stable_reg) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#3 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[4] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/addrb[0]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[0]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#4 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[5] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/addrb[1]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[1]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#5 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[6] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/addrb[2]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[2]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#6 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[7] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/addrb[3]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[3]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#7 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[4] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/addrb[0]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[0]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#8 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[5] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/addrb[1]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[1]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#9 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[6] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/addrb[2]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[2]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#10 Warning
+RAMB36 async control check  
+The RAMB36E1 u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram has an input control pin u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/DEVICE_7SERIES.WITH_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.TDP_SP36_NO_ECC_ATTR.ram/ADDRBWRADDR[7] (net: u_system/system_i/blk_PS_TO_PL/U0/inst_blk_mem_gen/gnbram.gnative_mem_map_bmg.native_mem_map_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_noinit.ram/addrb[3]) which is driven by a register (u_h_top/u_dac_dds/inst/cfg_sel_reg[3]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+RTSTAT-10#1 Warning
+No routable loads  
+32 net(s) have no routable loads. The problem bus(es) and/or net(s) are dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD1/ctl_reg_en_2[1],
+dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i,
+dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gras.rsts/ram_empty_i,
+dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwhf.whf/overflow,
+dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwas.wsts/ram_full_i,
+dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwhf.whf/overflow,
+dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_CTL/ctl_reg[2:0],
+dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_CTL/ctl_reg_en_2[1],
+dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_switch/m_bscan_capture[0],
+dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_switch/m_bscan_drck[0],
+dbg_hub/inst/BSCANID.u_xsdbm_id/SWITCH_N_EXT_BSCAN.bscan_switch/m_bscan_runtest[0],
+u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i,
+u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/empty_fwft_i,
+u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gras.rsts/ram_empty_i,
+u_h_top/u_ad_fifo/inst/u_fifo/my_fifo_ip/U0/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmgb.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/ENA_dly_D
+ (the first 15 of 26 listed).
+Related violations: <none>
+
+REQP-165#1 Advisory
+writefirst  
+Synchronous clocking is detected for BRAM (u_system/system_i/axi_dma_adc/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/GEN_ENABLE_INDET_BTT_SF.I_INDET_BTT/I_DATA_FIFO/BLK_MEM.I_SYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_sync_inst/xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/gen_wr_a.gen_word_narrow.mem_reg_1) in SDP mode with WRITE_FIRST write-mode. This is the preferred mode for best power characteristics, however it may exhibit address collisions if the same address appears on both read and write ports resulting in unknown or corrupted read data. It is suggested to confirm via simulation that an address collision never occurs and if so it is suggested to try and avoid this situation. If address collisions cannot be avoided, the write-mode may be set to READ_FIRST which guarantees that the read data is the prior contents of the memory at the cost of additional power in the design. See the FPGA Memory Resources User Guide for additional information.
+Related violations: <none>
+
+REQP-181#1 Advisory
+writefirst  
+Synchronous clocking is detected for BRAM (u_system/system_i/axi_dma_adc/U0/I_PRMRY_DATAMOVER/GEN_S2MM_FULL.I_S2MM_FULL_WRAPPER/GEN_ENABLE_INDET_BTT_SF.I_INDET_BTT/I_DATA_FIFO/BLK_MEM.I_SYNC_FIFOGEN_FIFO/xpm_fifo_instance.xpm_fifo_sync_inst/xpm_fifo_base_inst/gen_sdpram.xpm_memory_base_inst/gen_wr_a.gen_word_narrow.mem_reg_0) in SDP mode with WRITE_FIRST write-mode. This is the preferred mode for best power characteristics, however it may exhibit address collisions if the same address appears on both read and write ports resulting in unknown or corrupted read data. It is suggested to confirm via simulation that an address collision never occurs and if so it is suggested to try and avoid this situation. If address collisions cannot be avoided, the write-mode may be set to READ_FIRST which guarantees that the read data is the prior contents of the memory at the cost of additional power in the design. See the FPGA Memory Resources User Guide for additional information.
+Related violations: <none>
+
+

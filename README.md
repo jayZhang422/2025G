@@ -77,6 +77,31 @@ git switch --create codex/hmi-final-j11 --track origin/codex/hmi-final-j11
 此后的提交只允许补充交付文档、manifest 和板测证据；若 RTL、XDC、BD 参数或
 PS 功能源码发生变化，原 bit/XSA/ELF 就不再与源码对应，必须重新构建并更新哈希。
 
+本分支内可直接下载的冻结移交目录为：
+
+`release/26G_HMI_J11_5b6ecdf/`
+
+进入该目录后先运行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\verify_release.ps1
+```
+
+再按其中的 `README_移交.md` 上板。
+
+### 与队长最新算法主线的边界
+
+本移交打包时，远端 `origin/main` 已到 `39c3066`，它不是本冻结候选的祖先，且
+包含算法标定和默认换算参数变化。串口屏负责人没有把这项队长算法改动并入本分支，
+也没有据此替换已经完成对应性审计的 bit/XSA/ELF。
+
+- 只验证串口屏负责人部分：直接使用冻结 release 中五个匹配制品。
+- 合入队长最新算法：以队长主线为基线移植本分支的 UART/HMI 文件，解决
+  `g26_measurement_app.c` 的共同改动后，重新构建并重新板测；此时不得继续使用本
+  release 的 ELF，也不得沿用旧哈希宣称制品对应。
+
+这条边界避免把“J11/HMI 最终版本”误解成“全队算法主线的最新版本”。
+
 ## 4. 新文件分别做什么
 
 | 路径 | 用途 | 是否需要交给队长 |
