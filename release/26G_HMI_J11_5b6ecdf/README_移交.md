@@ -87,5 +87,8 @@ Error。继承设计仍有非 UART CDC Critical，不能宣称全系统 CDC clea
 bit/XSA/ELF 与实际 TJC 的双向触摸、绘图和 2 秒端到端显示仍必须按
 `docs/26G_HMI_J11_BOARD_TEST.md` 留证。
 
+本次交付前没有连接 AX7020、JTAG、串口屏或 CP210x，因此尚未开始板级测试；
+这不是工程失败。接线、供电和电平检查完成后，再执行第 4 节的下载步骤。
+
 队长最新算法主线在本包冻结后另有改动。若把这些 HMI 文件移植到更新主线，必须
 重新构建 ELF；只要 RTL、XDC、BD 或 IP 参数变化，还必须重新构建 bit/XSA。

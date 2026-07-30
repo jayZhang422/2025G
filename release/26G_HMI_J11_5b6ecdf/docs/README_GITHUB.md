@@ -242,3 +242,6 @@ XSA 内嵌 bit 的 SHA-256 与独立 bit 完全一致。
 `+0.035 ns`，DRC 0 Error，构建日志 0 Critical Warning/0 Error。继承设计仍有
 非 UART CDC Critical，不能宣称整个系统 CDC clean。最终 bit/XSA/ELF 尚未完成
 与实际 TJC 的板级验收；请按 `Doc/26G_HMI_J11_BOARD_TEST.md` 留证后再交队长。
+
+本次交付前没有连接 AX7020、JTAG、串口屏或 CP210x，板级测试尚未开始；这不是
+工程或硬件枚举失败。连接设备并完成 F16 电平检查后，再执行上板步骤。
