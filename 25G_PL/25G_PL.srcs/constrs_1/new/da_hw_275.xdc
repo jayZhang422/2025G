@@ -1,75 +1,19 @@
 ################################################################################
-# DAC5672 channel A
+# AX7020 J11 PL HMI UART
+#
+# The legacy filename remains active in the project so the constraints file
+# set does not need to be renamed. The former external DAC boundary is retired.
 ################################################################################
 
-set_property IOSTANDARD LVCMOS33 [get_ports o_da_clk]
-set_property IOSTANDARD LVCMOS33 [get_ports o_da_wrt]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[0]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[1]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[2]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[3]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[4]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[5]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[6]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[7]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[8]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[9]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[10]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[11]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[12]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data[13]}]
+if {[llength [get_ports -quiet o_hmi_uart_tx]] != 1} {
+    error "Expected exactly one o_hmi_uart_tx port before applying J11 TX constraint"
+}
+if {[llength [get_ports -quiet i_hmi_uart_rx]] != 1} {
+    error "Expected exactly one i_hmi_uart_rx port before applying J11 RX constraint"
+}
 
-set_property PACKAGE_PIN J20 [get_ports o_da_clk]
-set_property PACKAGE_PIN H20 [get_ports o_da_wrt]
-set_property PACKAGE_PIN K17 [get_ports {o_da_data[0]}]
-set_property PACKAGE_PIN K18 [get_ports {o_da_data[1]}]
-set_property PACKAGE_PIN M19 [get_ports {o_da_data[2]}]
-set_property PACKAGE_PIN M20 [get_ports {o_da_data[3]}]
-set_property PACKAGE_PIN L19 [get_ports {o_da_data[4]}]
-set_property PACKAGE_PIN L20 [get_ports {o_da_data[5]}]
-set_property PACKAGE_PIN J18 [get_ports {o_da_data[6]}]
-set_property PACKAGE_PIN H18 [get_ports {o_da_data[7]}]
-set_property PACKAGE_PIN G19 [get_ports {o_da_data[8]}]
-set_property PACKAGE_PIN G20 [get_ports {o_da_data[9]}]
-set_property PACKAGE_PIN F19 [get_ports {o_da_data[10]}]
-set_property PACKAGE_PIN F20 [get_ports {o_da_data[11]}]
-set_property PACKAGE_PIN F16 [get_ports {o_da_data[12]}]
-set_property PACKAGE_PIN F17 [get_ports {o_da_data[13]}]
+set_property PACKAGE_PIN F17 [get_ports o_hmi_uart_tx]
+set_property IOSTANDARD LVCMOS33 [get_ports o_hmi_uart_tx]
 
-################################################################################
-# DAC5672 channel B
-################################################################################
-
-set_property IOSTANDARD LVCMOS33 [get_ports o_da_clk_b]
-set_property IOSTANDARD LVCMOS33 [get_ports o_da_wrt_b]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[0]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[1]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[2]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[3]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[4]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[5]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[6]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[7]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[8]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[9]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[10]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[11]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[12]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_da_data_b[13]}]
-
-set_property PACKAGE_PIN L17 [get_ports o_da_wrt_b]
-set_property PACKAGE_PIN L16 [get_ports o_da_clk_b]
-set_property PACKAGE_PIN K14 [get_ports {o_da_data_b[0]}]
-set_property PACKAGE_PIN J14 [get_ports {o_da_data_b[1]}]
-set_property PACKAGE_PIN H15 [get_ports {o_da_data_b[2]}]
-set_property PACKAGE_PIN G15 [get_ports {o_da_data_b[3]}]
-set_property PACKAGE_PIN H16 [get_ports {o_da_data_b[4]}]
-set_property PACKAGE_PIN H17 [get_ports {o_da_data_b[5]}]
-set_property PACKAGE_PIN G17 [get_ports {o_da_data_b[6]}]
-set_property PACKAGE_PIN G18 [get_ports {o_da_data_b[7]}]
-set_property PACKAGE_PIN E18 [get_ports {o_da_data_b[8]}]
-set_property PACKAGE_PIN E19 [get_ports {o_da_data_b[9]}]
-set_property PACKAGE_PIN D19 [get_ports {o_da_data_b[10]}]
-set_property PACKAGE_PIN D20 [get_ports {o_da_data_b[11]}]
-set_property PACKAGE_PIN M17 [get_ports {o_da_data_b[12]}]
-set_property PACKAGE_PIN M18 [get_ports {o_da_data_b[13]}]
+set_property PACKAGE_PIN F16 [get_ports i_hmi_uart_rx]
+set_property IOSTANDARD LVCMOS33 [get_ports i_hmi_uart_rx]
