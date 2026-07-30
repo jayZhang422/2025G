@@ -1,7 +1,8 @@
 /******************************************************************************
  * app_buffers.c
  *
- * Shared buffers for one 4096-sample processing frame.
+ * Shared buffers for one 4096-sample processing frame. The DMA buffer keeps
+ * its legacy u16 declaration while the active 26G path interprets it as s16.
  ******************************************************************************/
 
 #include "../include/app_buffers.h"

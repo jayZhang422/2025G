@@ -11,10 +11,16 @@
 #include "xil_types.h"
 #include "xparameters.h"
 
-/* The PL emits one 4096-sample, 16-bit AXIS frame per TLAST. */
+/* The DMA frame is the PL FIR /3 output, not the high-aligned raw ADC stream. */
 #define APP_ADC_FRAME_SAMPLES       4096U
-#define APP_SAMPLE_RATE_HZ          5120060.0f
-#define APP_RX_FRAME_BYTES          (APP_ADC_FRAME_SAMPLES * sizeof(u16))
+#define APP_ADC_SAMPLE_RATE_HZ      5120060.0f
+#define APP_FIR_DECIMATION          3.0f
+#define APP_ANALYSIS_SAMPLE_RATE_HZ \
+    (APP_ADC_SAMPLE_RATE_HZ / APP_FIR_DECIMATION)
+#define APP_RX_FRAME_BYTES          (APP_ADC_FRAME_SAMPLES * sizeof(s16))
+
+/* Legacy separator/IQ code still models the pre-FIR ADC clock. */
+#define APP_SAMPLE_RATE_HZ          APP_ADC_SAMPLE_RATE_HZ
 
 /* The exported hardware platform has exactly one SG S2MM DMA and IRQ. */
 #define APP_DMA_RX_DEV_ID           XPAR_AXI_DMA_ADC_DEVICE_ID
@@ -58,7 +64,7 @@
 
 /* PL IQ detector address and ADC-domain reference clock. */
 #define APP_IQ_BASEADDR             XPAR_IQ_DEMODULATOR_0_BASEADDR
-#define APP_IQ_ADC_CLOCK_HZ         APP_SAMPLE_RATE_HZ
+#define APP_IQ_ADC_CLOCK_HZ         APP_ADC_SAMPLE_RATE_HZ
 
 /* FIFO monitor exposes an explicit version register in its BSP contract. */
 #define APP_FIFO_MONITOR_PROTOCOL_VERSION AD_FIFO_MONITOR_AXI_VERSION

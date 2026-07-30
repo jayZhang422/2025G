@@ -10,6 +10,7 @@
 
 #include "../config/hardware_config.h"
 #include "../include/dma_utils.h"
+#include "../include/modulation_analysis.h"
 
 #include <math.h>
 #include <string.h>
@@ -352,6 +353,48 @@ static void ddc_print_statistics(u32 frame_index,
                (unsigned int)statistics->dma_error);
 }
 
+static void ddc_print_modulation_result(const modulation_result_t *result)
+{
+    u32 confidence_milli = round_to_u32(result->confidence * 1000.0f);
+    s32 carrier_offset_hz = round_to_s32(result->carrier_offset_hz);
+
+    xil_printf("[MOD] type=%s confidence=%u/1000 carrier_offset=%d Hz\r\n",
+               modulation_type_name(result->type),
+               (unsigned int)confidence_milli, (int)carrier_offset_hz);
+    switch (result->type) {
+    case MODULATION_AM:
+        xil_printf("[MOD] F=%d Hz ma=%u/1000\r\n",
+                   (int)round_to_s32(result->modulation_frequency_hz),
+                   (unsigned int)round_to_u32(result->am_index * 1000.0f));
+        break;
+    case MODULATION_FM:
+        xil_printf("[MOD] F=%d Hz deviation=%d Hz mf=%u/1000\r\n",
+                   (int)round_to_s32(result->modulation_frequency_hz),
+                   (int)round_to_s32(result->frequency_deviation_hz),
+                   (unsigned int)round_to_u32(result->fm_index * 1000.0f));
+        break;
+    case MODULATION_2ASK:
+    case MODULATION_2PSK:
+        xil_printf("[MOD] Rb=%u bps symbol_phase=%u/1000 samples\r\n",
+                   (unsigned int)result->bit_rate_bps,
+                   (unsigned int)round_to_u32(
+                       result->symbol_phase_samples * 1000.0f));
+        break;
+    case MODULATION_2FSK:
+        xil_printf("[MOD] Rb=%u bps low=%d Hz high=%d Hz h=%u/1000 "
+                   "symbol_phase=%u/1000 samples\r\n",
+                   (unsigned int)result->bit_rate_bps,
+                   (int)round_to_s32(result->fsk_low_offset_hz),
+                   (int)round_to_s32(result->fsk_high_offset_hz),
+                   (unsigned int)round_to_u32(result->fsk_index * 1000.0f),
+                   (unsigned int)round_to_u32(
+                       result->symbol_phase_samples * 1000.0f));
+        break;
+    default:
+        break;
+    }
+}
+
 static int ddc_capture_one_frame(XAxiDma *dma,
                                  const ddc_validation_config_t *config,
                                  u32 adc_sample_rate_hz,
@@ -359,6 +402,11 @@ static int ddc_capture_one_frame(XAxiDma *dma,
                                  ddc_frame_statistics_t *statistics)
 {
     u32 dma_status = 0U;
+    u32 ddc_status;
+    u32 ddc_output_count;
+    u32 ddc_frame_count;
+    u32 dma_length_bytes;
+    modulation_result_t modulation;
 
     ddc_write(DDC_PINC_OFFSET, config->nco_phase_increment);
     ddc_write(DDC_CTRL_OFFSET, DDC_CTRL_RESTART | DDC_CTRL_CLEAR_FAULT);
@@ -396,6 +444,26 @@ static int ddc_capture_one_frame(XAxiDma *dma,
 
     Xil_DCacheInvalidateRange((UINTPTR)g_ddc_iq_buffer,
                               APP_DDC_RX_FRAME_BYTES);
+
+    ddc_status = ddc_read(DDC_STATUS_OFFSET);
+    ddc_output_count = ddc_read(DDC_OUTPUT_COUNT_OFFSET);
+    ddc_frame_count = ddc_read(DDC_FRAME_COUNT_OFFSET);
+    dma_length_bytes = dma_last_s2mm_length_bytes(dma);
+    if ((ddc_status & (DDC_STATUS_RUNNING | DDC_STATUS_FAULT)) != 0U ||
+        (dma_status & XAXIDMA_ERR_ALL_MASK) != 0U ||
+        ddc_output_count != config->complex_samples_per_frame ||
+        ddc_frame_count != 1U ||
+        dma_length_bytes != APP_DDC_RX_FRAME_BYTES) {
+        xil_printf("[DDC VALIDATE] FAIL: frame contract STATUS=0x%08x "
+                   "OUT=%u FRAME=%u DMA_LEN=%u DMA_SR=0x%08x\r\n",
+                   (unsigned int)ddc_status,
+                   (unsigned int)ddc_output_count,
+                   (unsigned int)ddc_frame_count,
+                   (unsigned int)dma_length_bytes,
+                   (unsigned int)dma_status);
+        return XST_FAILURE;
+    }
+
     if (ddc_validation_analyze_frame(
             g_ddc_iq_buffer, config->complex_samples_per_frame,
             adc_sample_rate_hz, decimation, config,
@@ -404,10 +472,10 @@ static int ddc_capture_one_frame(XAxiDma *dma,
         return XST_FAILURE;
     }
 
-    statistics->ddc_status = ddc_read(DDC_STATUS_OFFSET);
-    statistics->ddc_output_count = ddc_read(DDC_OUTPUT_COUNT_OFFSET);
-    statistics->ddc_frame_count = ddc_read(DDC_FRAME_COUNT_OFFSET);
-    statistics->dma_length_bytes = dma_last_s2mm_length_bytes(dma);
+    statistics->ddc_status = ddc_status;
+    statistics->ddc_output_count = ddc_output_count;
+    statistics->ddc_frame_count = ddc_frame_count;
+    statistics->dma_length_bytes = dma_length_bytes;
     statistics->dma_status = dma_status;
     statistics->ddc_fault =
         ((statistics->ddc_status & DDC_STATUS_FAULT) != 0U);
@@ -415,15 +483,18 @@ static int ddc_capture_one_frame(XAxiDma *dma,
         ((statistics->dma_status & XAXIDMA_ERR_ALL_MASK) != 0U);
     ddc_print_statistics(1U, statistics);
 
-    if ((statistics->ddc_status & DDC_STATUS_RUNNING) != 0U ||
-        statistics->ddc_fault != 0U || statistics->dma_error != 0U ||
-        statistics->ddc_output_count != config->complex_samples_per_frame ||
-        statistics->ddc_frame_count != 1U ||
-        statistics->dma_length_bytes != APP_DDC_RX_FRAME_BYTES ||
-        statistics->saturation_count != 0U) {
-        xil_printf("[DDC VALIDATE] FAIL: frame contract\r\n");
+    if (statistics->saturation_count != 0U) {
+        xil_printf("[DDC VALIDATE] FAIL: saturated I/Q frame\r\n");
         return XST_FAILURE;
     }
+    if (modulation_analyze_frame(
+            g_ddc_iq_buffer, config->complex_samples_per_frame,
+            (float)adc_sample_rate_hz / (float)decimation,
+            &modulation) != XST_SUCCESS) {
+        xil_printf("[DDC VALIDATE] FAIL: modulation analysis\r\n");
+        return XST_FAILURE;
+    }
+    ddc_print_modulation_result(&modulation);
 
     return XST_SUCCESS;
 }
@@ -447,8 +518,7 @@ int ddc_validation_run(const ddc_validation_config_t *config)
     if (ddc_validation_self_test(config) != XST_SUCCESS) {
         return XST_FAILURE;
     }
-
-    xil_printf("\r\n[DDC VALIDATE] one-frame complex-baseband matrix helper\r\n");
+    xil_printf("\r\n[DDC VALIDATE] one-frame complex-baseband analyzer\r\n");
     xil_printf("[DDC VALIDATE] base=0x%08x samples=%u bytes=%u\r\n",
                (unsigned int)APP_DDC_BASEADDR,
                (unsigned int)config->complex_samples_per_frame,

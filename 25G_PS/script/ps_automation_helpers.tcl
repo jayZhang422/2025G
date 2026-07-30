@@ -193,6 +193,37 @@ proc ps_automation::build_application {build_dir clean_first} {
     if {$failed} { error $output }
 }
 
+proc ps_automation::require_valid_fsbl {fsbl_file} {
+    if {![file isfile $fsbl_file]} { error "Platform FSBL not found: $fsbl_file" }
+    set failed [catch {exec arm-none-eabi-nm $fsbl_file 2>@1} symbols]
+    if {$failed} { error "Could not inspect Platform FSBL $fsbl_file: $symbols" }
+    foreach symbol {_vector_table main} {
+        set pattern [format {^[[:xdigit:]]+[[:space:]]+[A-Za-z][[:space:]]+%s$} $symbol]
+        if {![regexp -line $pattern $symbols]} {
+            error "Platform FSBL is missing defined symbol $symbol: $fsbl_file"
+        }
+    }
+}
+
+proc ps_automation::run_serial_make {directory targets} {
+    set failed [catch {exec make -j 1 -C $directory {*}$targets 2>@1} output]
+    puts $output
+    if {$failed} { error $output }
+}
+
+proc ps_automation::rebuild_platform_fsbl {platform_dir export_file} {
+    set fsbl_dir [file join $platform_dir zynq_fsbl]
+    set bsp_dir [file join $fsbl_dir zynq_fsbl_bsp]
+    set built_file [file join $fsbl_dir fsbl.elf]
+
+    file delete -force $built_file
+    run_serial_make $bsp_dir [list clean seq_libs par_libs archive]
+    run_serial_make $fsbl_dir [list all]
+    require_valid_fsbl $built_file
+    file copy -force $built_file $export_file
+    require_valid_fsbl $export_file
+}
+
 proc ps_automation::build_system_package {workspace platform_name system_name elf_file} {
     set platform_dir [platform_directory $workspace $platform_name]
     set bit_files [glob -nocomplain -types f [file join $platform_dir hw *.bit]]
@@ -200,6 +231,11 @@ proc ps_automation::build_system_package {workspace platform_name system_name el
     set fsbl_files [glob -nocomplain -types f \
         [file join $platform_dir export $platform_name sw $platform_name boot fsbl.elf]]
     set fsbl_file [unique $fsbl_files "platform FSBL" --platform]
+    if {[catch {require_valid_fsbl $fsbl_file} reason]} {
+        puts "Platform FSBL is invalid; rebuilding it serially: $reason"
+        rebuild_platform_fsbl $platform_dir $fsbl_file
+    }
+    require_valid_fsbl $fsbl_file
 
     set system_dir [system_directory $workspace $system_name]
     set configuration [file tail [file dirname $elf_file]]

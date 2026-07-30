@@ -14,11 +14,12 @@
 #include "xil_cache.h"
 #include "xil_printf.h"
 
+#define DMA_RX_BD_COUNT 2U
+
 static u16 g_dma_discard_buffer[APP_ADC_FRAME_SAMPLES]
     __attribute__((aligned(64)));
-/* ponytail: one in-flight BD preserves the current one-frame API; expand the
- * ring with owned buffers when continuous capture is implemented. */
-static u8 g_dma_bd_space[XAXIDMA_BD_MINIMUM_ALIGNMENT]
+/* Alternate descriptors so hardware never refetches the BD it just completed. */
+static u8 g_dma_bd_space[XAXIDMA_BD_MINIMUM_ALIGNMENT * DMA_RX_BD_COUNT]
     __attribute__((aligned(XAXIDMA_BD_MINIMUM_ALIGNMENT)));
 static XAxiDma *g_dma_instance;
 static TaskHandle_t g_dma_wait_task;
@@ -87,7 +88,8 @@ void dma_dump_s2mm_regs(const char *tag, XAxiDma *dma)
                                       XAXIDMA_TDESC_OFFSET);
 
     xil_printf("%s CR=0x%08x SR=0x%08x | halted=%d idle=%d "
-               "interr=%d slverr=%d decerr=%d | active=%d "
+               "interr=%d slverr=%d decerr=%d "
+               "sginterr=%d sgslverr=%d sgdecerr=%d | active=%d "
                "free=%d hw=%d post=%d cdesc=0x%08x tdesc=0x%08x\r\n",
                tag,
                (unsigned int)cr, (unsigned int)sr,
@@ -96,6 +98,9 @@ void dma_dump_s2mm_regs(const char *tag, XAxiDma *dma)
                (int)((sr >> 4) & 1U),
                (int)((sr >> 5) & 1U),
                (int)((sr >> 6) & 1U),
+               (int)((sr >> 8) & 1U),
+               (int)((sr >> 9) & 1U),
+               (int)((sr >> 10) & 1U),
                (int)g_dma_active,
                ring->FreeCnt, ring->HwCnt, ring->PostCnt,
                (unsigned int)current_descriptor,
@@ -151,7 +156,7 @@ int dma_init_s2mm(XAxiDma *dma, u16 device_id)
     XAxiDma_BdRingIntDisable(ring, XAXIDMA_IRQ_ALL_MASK);
     status = XAxiDma_BdRingCreate(
         ring, (UINTPTR)g_dma_bd_space, (UINTPTR)g_dma_bd_space,
-        XAXIDMA_BD_MINIMUM_ALIGNMENT, 1);
+        XAXIDMA_BD_MINIMUM_ALIGNMENT, DMA_RX_BD_COUNT);
     if (status != XST_SUCCESS) {
         xil_printf("[DMA] ERROR: RX BD ring create failed (%d)\r\n", status);
         return XST_FAILURE;
@@ -264,9 +269,12 @@ int dma_submit_frame(XAxiDma *dma, void *buffer, u32 length_bytes)
         return status;
     }
 
-    status = XAxiDma_BdRingStart(ring);
-    if (status != XST_SUCCESS) {
-        xil_printf("[DMA] ERROR: RX BD ring start failed (%d)\r\n", status);
+    if (ring->RunState == AXIDMA_CHANNEL_HALTED) {
+        status = XAxiDma_BdRingStart(ring);
+        if (status != XST_SUCCESS) {
+            xil_printf("[DMA] ERROR: RX BD ring start failed (%d)\r\n",
+                       status);
+        }
     }
     return status;
 }
@@ -358,6 +366,7 @@ static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
         return XST_FAILURE;
     }
 
+    g_dma_last_length_bytes = 0U;
     g_dma_needs_realign = 0;
     dma_dump_s2mm_regs("[DMA] S2MM realigned:", dma);
     return XST_SUCCESS;

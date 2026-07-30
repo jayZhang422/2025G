@@ -1,88 +1,31 @@
-# PS Func 使用入口
+# 25G PS 功能文档
 
-本目录描述 `Identification_Processing_System/src` 下当前真实存在、已纳入
-Vitis `-O2` 构建的 PS 自研代码。若文档示例与源码不一致，以
-`User/include/signal_api.h` 的声明为准。
+本文档集描述 2026 G 题当前活动的 PS 单次测量基线。PL 保持冻结：每帧向 PS 提供 4096 个 `s16` 滤波后样点，PS 完成频谱候选搜索、谐波联合拟合和结果计算。
 
-## 从哪里开始
+## 当前范围
 
-新业务代码只需要先包含统一入口：
+- KEY1 启动一次测量：DMA 对齐，丢弃 3 帧，再采集 1 帧正式数据；正式帧必须严格为 8192 byte。
+- 正式帧为 4096 个有符号 16 位样点，采样率为 `5120060 / 3 Hz`。
+- CMSIS 4096 点 RFFT 用于候选搜索，时域联合 `sin/cos` 最小二乘用于最终参数估计。
+- 支持题目规定的 2 个或 3 个整数谐波分量，基波位于 500 Hz 栅格。
+- KEY2 清除本次结果并重新进入 `ARMED`；之后可再次按 KEY1 测量。
+- 正式帧期间 `blocked_reset` 计数增长会拒绝结果；`blocked_high_watermark` 仅作为单 BD 间歇采集的反压告警。
+- 当前只提供串口结果和可供后续显示使用的波形生成 API，不包含 HMI 传输或连续刷新。
 
-```c
-#include "User/include/signal_api.h"
-```
+## 文档入口
 
-现有完整调用链是：
+| 文档 | 内容 |
+| --- | --- |
+| [函数索引](函数索引.md) | 当前活动接口、数据契约和复用的驱动接口 |
+| [信号分析算法](信号分析算法.md) | RFFT 候选、谐波联合拟合、Upp/RMS 与标定边界 |
+| [硬件接口与任务流程](硬件接口与任务流程.md) | PL/PS 数据路径、KEY1/KEY2 状态机、DMA 与缓存约束 |
 
-```text
-identification_main.c
-  -> signal_separator_task()
-    -> signal_separator_run()             现有比赛模式
-      -> signal_api.h / signal_api.c       统一公共入口
-        -> dma_utils / fifo_monitor / iq_demodulator / dds_control
-        -> signal_analysis / app_buffers
-```
+## 非活动历史模块
 
-阅读顺序建议：
+仓库中旧的 signal separator、DDC/IQ 解调、DDS 和 modulation analysis 代码不属于本题当前主链路，仅保留作历史参考。除非后续需求明确改变，不应把这些模块接回 `main()`，也不应据此描述当前数据流。
 
-1. `函数索引.md`：直接查初始化、profile、采集、分析、IQ、DDS、状态和传参示例。
-2. `硬件接口与任务流程.md`：理解 PS/PL 边界、Cache、首次帧对齐和状态机。
-3. `信号分析算法.md`：只在修改现有双分量正弦/三角识别器时阅读。
+## 验证状态
 
-## 当前分层
-
-| 层次 | 文件 | 作用 |
-| --- | --- | --- |
-| FreeRTOS 入口 | `identification_main.c`、`signal_separator_task.c` | 创建任务、启动调度器 |
-| 比赛模式 | `signal_separator_app.c` | 描述 `ARMED -> LOCKING -> RUNNING`，不直接操作寄存器或 Cache |
-| 统一 API | `User/include/signal_api.h`、`User/src/signal_api.c` | 组合初始化、对齐、采集、识别、IQ、DDS、按键、状态和恢复 |
-| 公共类型/错误 | `signal_types.h`、`signal_errors.h` | 帧、结果、质量标志和第一失败点 |
-| 驱动 | `dma_utils`、`fifo_monitor`、`iq_demodulator`、`dds_control`、`button_input` | 操作现有 PS/PL 接口 |
-| 算法 | `signal_analysis.c`、`signal_processing.c` | 4096 点 FFT、双分量搜索和拟合 |
-| 配置 | `hardware_config.h`、`algorithm_config.h`、`signal_profiles.c/.h` | 硬件契约、算法固定值、题目 profile |
-| 静态缓冲 | `app_buffers.c/.h` | DMA 缓冲和 FFT 工作区；不占任务栈 |
-
-## 最小使用骨架
-
-```c
-signal_api_t api;
-signal_frame_t frame;
-signal_analysis_result_t result;
-const signal_profile_t *profile = signal_profile_default();
-signal_error_t error;
-
-error = signal_api_init(&api, profile);
-if (error != SIGNAL_OK) {
-    xil_printf("init: %s\r\n", signal_error_string(error));
-    return;
-}
-
-/* 开始一次新的快照测量前执行一次，不要每个分析帧都执行。 */
-if (signal_align_capture(&api) != SIGNAL_OK) {
-    signal_recover(&api);
-    return;
-}
-
-if (signal_capture(&api, &frame) == SIGNAL_OK &&
-    signal_identify_components(&api, &frame, &result) == SIGNAL_OK) {
-    /* result.channel_a / channel_b / normalized_residual 可用。 */
-}
-```
-
-`signal_api_t`、`signal_frame_t` 和结果结构都由调用者声明，不使用动态内存。
-4096 点 DMA 与 FFT 大数组仍由 `app_buffers.c` 静态持有，不能复制到任务栈。
-
-## 本次整理的边界
-
-已完成：
-
-- 单一 `signal_api.h` 公共入口和 `signal_api_t` 运行对象；
-- 统一 `signal_error_t`；
-- KEY1 后首次正式采集前显式 reset/丢弃至 `TLAST`；
-- 每帧 monitor 前后快照、实际 DMA 长度和采集/错误/对齐计数；
-- 旧题锁定阈值、超时、允许波形、DDS 幅度和相位参数进入 profile；
-- 现有比赛模式改用统一 API，原 FFT/IQ/DDS 功能保持不变。
-
-没有实现：通用 DC/RMS/Vpp、AM/ASK/FSK/FM、CLI、连续 DMA、双缓冲、
-校准或任何新 PL 逻辑。`general_measure`、`weak_signal`、`am`、`ask`、
-`2fsk`、`fm` 仍是零参数占位 profile，不能直接传给 `signal_api_init()`。
+- Cortex-A9 算法回归：ARM GCC `-O2 -Wall -Wextra -Werror` 构建后，Xilinx Zynq QEMU 运行内置自检通过。
+- Vitis 构建：两个新源均由生成规则以 `-O2` 编译，Debug ELF 链接成功，Bootgen 已生成 `BOOT.BIN`。
+- 板级采集、端到端幅相标定及测量精度：尚未宣称通过。

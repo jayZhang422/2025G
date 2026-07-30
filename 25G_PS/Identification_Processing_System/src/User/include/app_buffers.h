@@ -23,9 +23,11 @@ extern float32_t g_fft_magnitude_buffer[APP_SPEC_LEN]; /**< 非负频率半谱�
 extern float32_t g_model_buffer[APP_FFT_LEN]; /**< 双分量重建和残差计算工作区。 */
 
 /*
- * The ADC DMA writes g_adc_raw_buffer. The other buffers are CPU workspaces.
+ * The active 26G DMA writes signed FIR samples into g_adc_raw_buffer's bytes.
+ * Its legacy u16 type is retained for the older separator sources; 26G casts
+ * each word to s16 and never applies the former raw-ADC >> 4 decoding.
  * The DDS is configured through BRAM words, so no DAC sample stream exists.
  */
-extern u16 g_adc_raw_buffer[APP_FFT_LEN]; /**< DMA 写入、下一帧会覆盖的 ADC 原始码。 */
+extern u16 g_adc_raw_buffer[APP_FFT_LEN]; /**< DMA 写入、下一帧会覆盖的 16 位采样字。 */
 
 #endif /* USER_INCLUDE_APP_BUFFERS_H_ */

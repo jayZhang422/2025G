@@ -40,6 +40,10 @@ module top (
     wire        adc_tvalid;
     wire        adc_tready;
     wire        adc_tlast;
+    wire [15:0] fir_tdata;
+    wire        fir_tvalid;
+    wire        fir_tready;
+    wire        fir_tlast;
     wire [15:0] ddc_tdata;
     wire        ddc_tvalid;
     wire        ddc_tready;
@@ -57,7 +61,7 @@ module top (
     wire        bram_en;
     wire [3:0]  bram_we;
 
-    assign adc_tready = 1'b0;
+    assign ddc_tready = 1'b0;
 
     H_top u_h_top (
         .i_clk_50m     (i_clk_50m),
@@ -90,11 +94,23 @@ module top (
         .bram_dout     (bram_dout)
     );
 
+    adc_fir_axis u_adc_fir (
+        .aclk          (fclk),
+        .aresetn       (i_rst),
+        .s_axis_tdata  (adc_tdata),
+        .s_axis_tvalid (adc_tvalid),
+        .s_axis_tready (adc_tready),
+        .m_axis_tdata  (fir_tdata),
+        .m_axis_tvalid (fir_tvalid),
+        .m_axis_tready (fir_tready),
+        .m_axis_tlast  (fir_tlast)
+    );
+
     system_wrapper u_system (
-        .ADC_STREAM_IN_tdata  (ddc_tdata),
-        .ADC_STREAM_IN_tlast  (ddc_tlast),
-        .ADC_STREAM_IN_tready (ddc_tready),
-        .ADC_STREAM_IN_tvalid (ddc_tvalid),
+        .ADC_STREAM_IN_tdata  (fir_tdata),
+        .ADC_STREAM_IN_tlast  (fir_tlast),
+        .ADC_STREAM_IN_tready (fir_tready),
+        .ADC_STREAM_IN_tvalid (fir_tvalid),
         .BRAM_DATA_addr       (bram_addr),
         .BRAM_DATA_clk        (clk_dac),
         .BRAM_DATA_din        (32'd0),
@@ -146,4 +162,13 @@ module top (
         .pl_key_i             (pl_key_i),
         .rst_n_0              (i_rst)
     );
+    ila_0 ila_debug (
+	.clk(fclk), // input wire clk
+	.probe0(fir_tlast), // input wire [0:0]  probe0  
+	.probe1(fir_tdata[11:0]), // input wire [11:0]  probe1 
+	.probe2(fir_tready), // input wire [0:0]  probe2 
+	.probe3(fir_tvalid), // input wire [0:0]  probe3 
+	.probe4(i_rst) // input wire [0:0]  probe4
+);
+
 endmodule
