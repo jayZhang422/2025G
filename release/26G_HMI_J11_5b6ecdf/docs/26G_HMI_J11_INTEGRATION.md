@@ -35,7 +35,7 @@ USB-UART isolation has been proven. The display TX level must be safe for a
 
 ## 2. Portable UART IP
 
-`25G_PL/script/pl_hmi_uart_bd.tcl` defines
+`25G_PL/ip_core/pl_hmi_uart/src/pl_hmi_uart_bd.tcl` defines
 `create_pl_hmi_uart_subsystem`. The hierarchy exposes:
 
 - `S_AXI`, `s_axi_aclk`, and `s_axi_aresetn` to the parent design;
@@ -52,7 +52,7 @@ AXI UARTLite has a build-time baud rate; software cannot change it at runtime.
 To change the baud rate later, update it as one coordinated change:
 
 1. Change the `baud_rate` argument/default in
-   `25G_PL/script/pl_hmi_uart_bd.tcl` and the matching assertions in the PL
+   `25G_PL/ip_core/pl_hmi_uart/src/pl_hmi_uart_bd.tcl` and the matching assertions in the PL
    integration/build scripts.
 2. Regenerate the BD, rerun implementation, and export a new XSA containing
    the new bitstream.
@@ -185,6 +185,11 @@ The portable BD hierarchy can be checked independently with:
   -mode batch -nojournal -nolog `
   -source 25G_PL/script/pl_validate_hmi_uart_bd.tcl
 ```
+
+The portable PL source is organized like the teammate project under
+`25G_PL/ip_core/pl_hmi_uart/{src,usage}`. The old
+`25G_PL/script/pl_hmi_uart_bd.tcl` is only a compatibility entry point and
+loads the source from `ip_core`; it is not a second implementation.
 
 ## 6. Current Verification Boundary
 

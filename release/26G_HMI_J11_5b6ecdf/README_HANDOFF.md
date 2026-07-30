@@ -71,6 +71,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 
 - `artifacts/`：严格匹配的 bit、XSA、ELF 和 `ps7_init.tcl`。
 - `hmi/26G.HMI`：最终串口屏工程。
+- `source_tree/25G_PL/ip_core/pl_hmi_uart/`：按队友工程结构整理的可移植 PL 串口
+  IP 源码、usage 说明和 `README.md`；实际核心是官方 `axi_uartlite:2.0`，没有伪造
+  的 `component.xml`。
 - `source_tree/`：串口 IP 集成、顶层/XDC、PS HMI 代码、测试和构建脚本的路径化
   副本；完整工程以 GitHub `codex/hmi-final-j11` 分支为准。
 - `reports/`：最终实现的时序、DRC、CDC、I/O、bus skew、资源报告。

@@ -1,7 +1,7 @@
 # Standalone structural validation of the portable UART hierarchy.
 
 set script_dir [file dirname [file normalize [info script]]]
-set uart_script [file join $script_dir pl_hmi_uart_bd.tcl]
+set uart_script [file normalize [file join $script_dir .. ip_core pl_hmi_uart src pl_hmi_uart_bd.tcl]]
 set original_dir [pwd]
 set work_dir [file normalize [file join $::env(TEMP) "pl_hmi_uart_validation_[pid]"]]
 

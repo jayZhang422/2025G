@@ -87,7 +87,7 @@ PS 功能源码发生变化，原 bit/XSA/ELF 就不再与源码对应，必须�
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\verify_release.ps1
 ```
 
-再按其中的 `README_移交.md` 上板。
+再按其中的 `README_HANDOFF.md` 上板。
 
 ### 与队长最新算法主线的边界
 
@@ -106,7 +106,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\verify_release.ps1
 
 | 路径 | 用途 | 是否需要交给队长 |
 | --- | --- | --- |
-| `25G_PL/script/pl_hmi_uart_bd.tcl` | 创建可移植 AXI UARTLite 层级，固定 115200 8N1/100 MHz | 是，串口 IP 的可复现定义 |
+| `25G_PL/ip_core/pl_hmi_uart/src/pl_hmi_uart_bd.tcl` | 创建可移植 AXI UARTLite 层级，固定 115200 8N1/100 MHz | 是，串口 IP 的可复现定义 |
+| `25G_PL/ip_core/pl_hmi_uart/usage/README.md` | 说明队友可复用的 IP 合同、接口和 J11 外部边界 | 是 |
 | `25G_PL/script/pl_integrate_hmi_uart.tcl` | 将 UARTLite 接到现有 BD 的 `M05_AXI`，检查原 M00..M04 和 SD0 后再集成 | 是 |
 | `25G_PL/script/pl_validate_hmi_uart_bd.tcl` | 不依赖完整工程的独立 BD 结构检查 | 是 |
 | `25G_PL/script/pl_build_hmi_uart_candidate.tcl` | 完整综合、实现、报告、bit/XSA 导出 | 是 |

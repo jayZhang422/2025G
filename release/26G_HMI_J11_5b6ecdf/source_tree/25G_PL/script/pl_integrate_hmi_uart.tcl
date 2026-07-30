@@ -25,7 +25,7 @@ set project_file [file join $project_dir 25G_PL.xpr]
 set bd_file [file join $project_dir 25G_PL.srcs sources_1 bd system system.bd]
 set wrapper_file [file join $project_dir 25G_PL.gen sources_1 bd system hdl system_wrapper.v]
 set bd_tcl_file [file join $project_dir system.tcl]
-set uart_source [file join $script_dir pl_hmi_uart_bd.tcl]
+set uart_source [file normalize [file join $project_dir ip_core pl_hmi_uart src pl_hmi_uart_bd.tcl]]
 set board_xdc [file join $project_dir 25G_PL.srcs constrs_1 new da_hw_275.xdc]
 
 require_file $project_file "Vivado project"
