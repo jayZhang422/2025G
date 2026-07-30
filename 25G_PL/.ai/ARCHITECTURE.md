@@ -1,27 +1,31 @@
 # 2023H Vivado Project Architecture
 
+> Current 2026 G acquisition override: see section 17 and
+> `../../Doc/26G_当前架构与实测状态.md`. Earlier DDS/IQ sections describe
+> retained project capabilities, not the active G26 PS application.
+
 This is the baseline knowledge base for the 2023H Vivado project. Future changes must update this document incrementally and retain established facts.
 
 ## 1. Project Overview
 
 ### Purpose and Platform
 
-This is a Zynq-7020 PS+PL acquisition and waveform-output design targeting `xc7z020clg400-2`. PL samples a 12-bit AD9226 input, sends framed samples to PS DDR through AXI Stream and AXI DMA, and produces independently controlled A/B DDS waveforms for a 14-bit AD9767-style dual DAC. The 2026-07-18 corrections passed the active Vivado 2020.2 XSIM behavioral regression; board validation is pending.
+This is a Zynq-7020 PS+PL acquisition and waveform-output design targeting `xc7z020clg400-2`. For the active 2026 G path, PL samples a 12-bit AD9226 input, applies a 39-tap decimating FIR, and sends 4096-sample `signed16` frames to PS DDR through AXI Stream and SG AXI DMA. The retained hardware can also produce independently controlled A/B DDS waveforms for a 14-bit AD9767-style dual DAC.
 
-The application-side PS source code is not in this Vivado workspace. Hardware exposes two PS contracts: a DMA destination in DDR and a ten-word BRAM control block for the DDS.
+The adjacent `25G_PS` workspace owns the active software. Hardware exposes the FIR/DMA acquisition contract, FIFO diagnostics, retained IQ registers, and a ten-word BRAM control block for the retained DDS path.
 
 ### System Composition
 
 | Area | Current implementation |
 | --- | --- |
-| ADC | AD9226, 12-bit parallel input, 5.1208 MHz sampling |
-| Acquisition | independent-clock FIFO, AXIS FIFO, AXI DMA S2MM, PS HP0 DDR |
+| ADC | AD9226, 12-bit parallel input, 5.12006 MHz sampling |
+| Acquisition | independent-clock FIFO, `adc_fir_axis`, 39-tap FIR /3, AXIS FIFO, SG AXI DMA S2MM, PS HP0 DDR |
 | DDS/DAC | Two 32-bit DDS states, four single-port ROM instances, 14-bit AD9767 A/B outputs; XSIM behavioral regression passed, hardware verification pending |
 | PS | PS7 DDR, FCLK0 100 MHz, M_AXI_GP0, S_AXI_HP0, UART1 MIO 48/49, three EMIO GPIO inputs |
 | Debug | `fifo_monitor_axi_0` publishes FIFO/AXIS snapshots to PS through AXI4-Lite; `ila_0` remains uninstantiated |
 | Tooling | Vivado 2020.2, Questa is the selected target simulator |
 
-PL owns sampling, FIFO CDC, AXIS framing, DDS, ROM lookup, amplitude scaling, and DAC pins. PS owns DMA configuration, DDR, and writes DDS control BRAM. Fabric interrupt capability is enabled in PS7 configuration, but no DMA IRQ connection is present in the BD.
+PL owns sampling, FIFO CDC, FIR filtering/decimation, post-FIR AXIS framing, retained DDS logic, ROM lookup, amplitude scaling, and DAC pins. PS owns SG DMA configuration, DDR, and the retained DDS control BRAM. DMA completion/error reaches PS through the fabric interrupt path.
 
 ## 2. Top-Level Structure
 
@@ -35,12 +39,14 @@ top
 |  |  |- ad9226 u_ad9226
 |  |  `- fifo -> fifo_generator_0 my_fifo_ip
 |  `- DDS_DAC u_dac_dds                         (local user IP)
+|- adc_fir_axis u_adc_fir
+|  `- fir_compiler_0                            (39 taps, decimation 3)
 `- system_wrapper u_system                      (generated from system.bd)
    `- system system_i
       |- processing_system7_0                   (Zynq PS7)
       |- proc_sys_reset_0
       |- Pll_DA                                 (125 MHz Clocking Wizard)
-      |- axi_dma_adc                            (S2MM DMA)
+      |- axi_dma_adc                            (SG S2MM DMA)
       |- axis_data_fifo_0
       |- smartconnect_0
       |- axi_interconnect_0 -> xbar, auto_pc
@@ -61,19 +67,22 @@ i_ad_data[11:0]
  -> fifo_generator_0 write port
  -> {ADC[11:0], 4'b0} as 16-bit data
  -> FIFO read in FCLK0 domain
- -> H_top AXIS source
+ -> H_top raw AXIS source
+ -> adc_fir_axis: centered signed -> 39-tap FIR /3 -> signed16
+ -> regenerated 4096-output TLAST
  -> ADC_STREAM_IN -> axis_data_fifo_0 -> axi_dma_adc S_AXIS_S2MM
  -> smartconnect_0 -> PS S_AXI_HP0 -> DDR
 ```
 
-The first FIFO is the intended 5.12 MHz to 100 MHz CDC boundary. `fifo.v` blocks writes on `prog_full` and reads on `prog_empty`/reset-busy. `H_top` emits `TLAST` on every 4096th accepted AXIS beat. Its counter, `tvalid`, `tready`, and `tlast` are all in the 100 MHz FCLK0 domain.
+The first FIFO is the intended 5.12 MHz to 100 MHz CDC boundary. `fifo.v` blocks writes on `prog_full` and reads on `prog_empty`/reset-busy. `H_top` retains a raw-stream TLAST counter, but the active top-level path does not forward that raw TLAST to the BD. `adc_fir_axis` regenerates the formal TLAST on every 4096th accepted decimated output in the 100 MHz FCLK0 domain.
 
 BD `fifo_monitor_axi_0` observes this path without feeding any signal back into
 it. PS writes AXI4-Lite control bits to request a snapshot or clear sticky faults,
 then reads the published counters at `0x43C1_0000`. The monitor ignores FIFO
 `full` while `wr_rst_busy` is active because the FIFO Generator intentionally
 resets its full flag to one. Its AXIS counters describe acceptance into the BD
-AXIS FIFO, not completion of the downstream DMA write.
+observation point before the top-level FIR, not completion of the post-FIR DMA
+write.
 
 The second stage is BD `axis_data_fifo_0`: depth 4096, 16-bit AXIS and TLAST. It is configured asynchronous even though both its ports currently use FCLK0.
 
@@ -115,7 +124,7 @@ phase accumulators.
 
 ### AXI, DMA, PS, and ILA
 
-The BD external AXIS port `ADC_STREAM_IN` is a 16-bit input to the BD from PL; it has TREADY and TLAST, but no TKEEP/TSTRB/TID/TDEST/TUSER. DMA is simple mode S2MM only: no MM2S and no scatter-gather. Its stream width is 16 bits and memory AXI width is 64 bits. PS writes its AXI-Lite registers and DMA transfers to DDR through HP0.
+The BD external AXIS port `ADC_STREAM_IN` is the 16-bit post-FIR input from `adc_fir_axis`; it has TREADY and TLAST, but no TKEEP/TSTRB/TID/TDEST/TUSER. DMA is SG S2MM only with no MM2S. Its stream width is 16 bits and memory AXI width is 64 bits. PS writes its AXI-Lite registers; the S2MM and descriptor masters reach DDR through HP0, and the completion/error interrupt reaches PS IRQ_F2P.
 
 `ila_0` is uninstantiated. Its saved configuration has six probes of widths 12, 1, 1, 12, 12, and 14; depth is 4096 with advanced trigger and storage qualification enabled.
 
@@ -125,8 +134,8 @@ The BD external AXIS port `ADC_STREAM_IN` is a 16-bit input to the BD from PL; i
 | --- | --- | ---: | --- |
 | `i_clk_50m` | pin U18 | 50 MHz | `PLL_AD` input |
 | `clk_pll_out` | PLL_AD output 1 | 65 MHz | exported by `ad9226`, unused otherwise |
-| `clk_pll_ad` / `o_ad_clk` | PLL_AD output 2, 0 deg | 5.1208 MHz | physical ADC clock only |
-| `clk_pll_deg` | PLL_AD output 3, requested 181.8 deg | 5.1208 MHz | ADC capture and FIFO write |
+| `clk_pll_ad` / `o_ad_clk` | PLL_AD output 2, 0 deg | 5.12006 MHz | physical ADC clock only |
+| `clk_pll_deg` | PLL_AD output 3, requested 181.8 deg | 5.12006 MHz | ADC capture and FIFO write |
 | `FCLK_CLK0_0` / `clk_fpga_0` | PS7 | 100 MHz | FIFO read, AXIS, DMA, AXI control |
 | `clk_dac` | BD Pll_DA | 125 MHz | DDS, ROMs, DAC, BRAM Port B |
 
@@ -140,7 +149,7 @@ Current post-route timing: WNS 0.398 ns, TNS 0, WHS 0.009 ns, THS 0. All user ti
 
 | Reset | Polarity and source | Propagation |
 | --- | --- | --- |
-| `i_rst` | active low top-level input | AD capture, DDS/DAC, TLAST counter, BRAM Port-B reset inversion |
+| `i_rst` | active low top-level input | AD capture, DDS/DAC, raw and post-FIR TLAST counters, FIR reset, BRAM Port-B reset inversion |
 | `w_rst_safe` | active low, `i_rst & w_ad_valid` | FIFO wrapper input, holds FIFO until ADC is valid |
 | `rst_fifo_n` | active-high release flag in FIFO write domain | after 15 write clocks, drives FIFO Generator reset as `~rst_fifo_n` |
 | `FCLK_RESET0_N` | active low PS7 output | `proc_sys_reset_0.ext_reset_in` and `Pll_DA.resetn` |
@@ -159,7 +168,7 @@ active-low XGpioPs pins 54/55/56.
 | `processing_system7_0` | PS7, DDR, FCLK, AXI | FCLK0, M_AXI_GP0, S_AXI_HP0, UART1 |
 | `proc_sys_reset_0` | FCLK reset fanout | creates peripheral active-low reset |
 | `Pll_DA` | 100 MHz to 125 MHz | output is `clk_dac` |
-| `axi_dma_adc` | simple S2MM DMA | AXIS FIFO to SmartConnect/HP0 |
+| `axi_dma_adc` | SG S2MM DMA | AXIS FIFO plus S2MM/SG masters to SmartConnect/HP0; IRQ to PS |
 | `axis_data_fifo_0` | AXIS FIFO | `ADC_STREAM_IN` to DMA S2MM |
 | `smartconnect_0` | DMA memory path | S00 from DMA; M00 to HP0; M01 to PS S_AXI_GP0 |
 | `axi_interconnect_0` | PS control fanout | GP0 to DMA AXI-Lite and BRAM Controller |
@@ -177,8 +186,9 @@ Generated child BD `bd_919a` implements SmartConnect internals: AXI-to-SC and SC
 | `processing_system7_0/Data` | DMA AXI-Lite registers | `0x4040_0000` | 64 KiB |
 | `processing_system7_0/Data` | FIFO monitor AXI-Lite registers | `0x43C1_0000` | 64 KiB |
 | `axi_dma_adc/Data_S2MM` | PS HP0 DDR/OCM | `0x0000_0000` | 1 GiB |
+| `axi_dma_adc/Data_SG` | PS HP0 DDR/OCM | `0x0000_0000` | 1 GiB |
 
-DMA mappings to GP0 IOP (`0xE0000000`, 4 MiB) and GP0 master space (`0x40000000`, 1 GiB) are explicitly excluded. No DMA interrupt net is in the BD connection list.
+DMA S2MM/SG mappings to GP0 IOP (`0xE0000000`, 4 MiB) and GP0 master space (`0x40000000`, 1 GiB) are explicitly excluded.
 
 ## 7. IP Inventory
 
@@ -188,6 +198,7 @@ Configure source IPs through Vivado IP customization or BD editing, then regener
 | --- | --- | --- |
 | `PLL_AD.xci` | clk_wiz 6.0; 50 -> 65, 5.12@0 deg, 5.12@181.8 deg | active in `ad9226` |
 | `fifo_generator_0.xci` | FIFO Generator 13.2; native 16-bit, independent-clock BRAM | active in `fifo` |
+| `fir_compiler_0.xci` | FIR Compiler; 39 taps Q1.17, decimation 3, 0..500 kHz passband | active in `adc_fir_axis` |
 | `blk_rom_sine.xci` | blk_mem_gen 8.4; single-port 4096x14 ROM | active, sine COE |
 | `blk_rom_triangle.xci` | blk_mem_gen 8.4; single-port 4096x14 ROM | active, triangle COE |
 | `blk_mem_gen_0.xci` | blk_mem_gen 8.4; simple dual-port 4096x16 RAM | disabled, `ram.sv` only |
@@ -195,7 +206,7 @@ Configure source IPs through Vivado IP customization or BD editing, then regener
 | `system_processing_system7_0_0.xci` | processing_system7 5.5; FCLK0=100 MHz, GP0/HP0/UART1 enabled | active BD PS |
 | `system_proc_sys_reset_0_0.xci` | proc_sys_reset 5.0 | active reset fabric |
 | `system_clk_wiz_0_0.xci` | clk_wiz 6.0; 125 MHz output | active Pll_DA |
-| `system_axi_dma_0_0.xci` | axi_dma 7.1; S2MM, 16-bit AXIS, 64-bit memory, no SG | active BD |
+| `system_axi_dma_adc_0.xci` | axi_dma 7.1; SG S2MM, 16-bit AXIS, 64-bit memory | active BD |
 | `system_axis_data_fifo_0_0.xci` | axis_data_fifo 2.0; depth 4096, TLAST, async, 16-bit | active BD |
 | `system_smartconnect_0_0.xci` | smartconnect 1.0; two MI | active BD |
 | `system_axi_interconnect_0_0.xci` | axi_interconnect 2.1; 2 SI/2 MI | active control plane |
@@ -210,8 +221,9 @@ The workspace contains 101 physical XCI files: 17 source configurations, 49 cach
 
 | File / module | Role, state, dependencies, standalone simulation |
 | --- | --- |
-| `top.v` / `top` | synthesis top; physical ADC/DAC/DDR/PS pins; instantiates `H_top` and generated wrapper; forwards passive FIFO/AXIS observation signals into the BD AXI monitor |
-| `H_top.v` / `H_top` | PL integration; `ad_fifo_wrapper_0`, AXIS, BRAM, and `DDS_DAC` wiring plus 12-bit TLAST counter; simulated by `tb_H_top` |
+| `top.v` / `top` | synthesis top; instantiates `H_top`, `adc_fir_axis`, and generated wrapper; only the post-FIR AXIS reaches the BD |
+| `adc_fir_axis.v` / `adc_fir_axis` | centers raw ADC codes, wraps `fir_compiler_0`, rounds/saturates to signed16, and emits a 4096-output TLAST |
+| `H_top.v` / `H_top` | raw ADC/FIFO integration, BRAM and retained `DDS_DAC` wiring; its raw AXIS feeds `adc_fir_axis` |
 | `ad9226.v` / `ad9226` | AD capture/clock wrapper; 7-bit 64-cycle stabilization counter and `stable` flag; depends on `PLL_AD` |
 | `fifo.v` / `fifo` | 5.12 MHz write to 100 MHz read wrapper; 4-bit reset counter; depends on `fifo_generator_0` |
 | `ad9767.sv` / `ad9767` | dual DDS/DAC driver; ten-word BRAM polling, A/B shadow/running registers, two phase accumulators, four ROM instances, and independent DAC registers; source is under review |
@@ -305,9 +317,9 @@ detection, and the interactive `0` / `--keep` no-write path. `system.tcl`,
 `top.xsa`, `top.bit`, and `2023H_pl.xpr` were not modified during these checks.
 <!-- SYNC: PL_AUTOMATION_CONTRACT_END -->
 
-## 15. IQ Integration Status
+## 15. Retained IQ Integration Status
 
-The active IQ data path is now:
+The physically integrated IQ data path is:
 
 ```text
 AD9226 registered sample and stable valid
@@ -319,7 +331,8 @@ AD9226 registered sample and stable valid
  -> AXI-Lite result/control registers and IRQ_F2P
 ```
 
-`iq_demodulator_0` is controlled from `0x43C0_0000`. It runs its DSP and DDS
+`iq_demodulator_0` is retained at `0x43C0_0000`, but the current G26 PS
+application does not configure or consume it. It runs its DSP and DDS
 in the ADC phase-clock domain, while its AXI-Lite control/status interface
 runs on FCLK0. Its configuration and result paths include CDC handshakes;
 the top-level must not substitute raw ADC pins or FCLK0 for the four IQ
@@ -327,8 +340,9 @@ wrapper ports. See `.ai/ip_rep.md` for the maintained port and IP inventory.
 
 ## 16. PS/PL Architecture Synchronization
 
-The maintained cross-system record is `../../25G_系统当前架构.md`; the PS-side
-software view is `../../25G_PS/.ai/architecture.md`. The active IQ capability is
+The maintained cross-system record is
+`../../Doc/26G_当前架构与实测状态.md`; the PS-side software view is
+`../../25G_PS/.ai/architecture.md`. The retained IQ capability is
 **IQ demodulation**, not IQ modulation: ADC-domain registered samples are mixed
 with an ADC-domain DDS sin/cos pair and accumulated into I/Q windows. The PS only
 configures and reads this IP through AXI-Lite. The existing ADC-to-DMA-to-PS FFT
@@ -339,3 +353,43 @@ snapshot and independent single-tone DDS states. Since it has no streaming I/Q
 baseband input, interpolation, pulse shaping, or quadrature up-converter, it is
 not an IQ modulator. IP-specific use documents are maintained in
 `ip_core/*/usage/README.md`.
+
+## 17. 2026 G Active Acquisition Path
+
+The active contest input path is now:
+
+```text
+AD9226 at 5,120,060 samples/s
+ -> H_top raw 16-bit AXIS
+ -> adc_fir_axis at FCLK0
+      |- 12-bit offset-binary to centered signed
+      |- fir_compiler_0, 39 taps, Q1.17, decimation 3
+      |- symmetric right-shift rounding and signed16 saturation
+      `- TLAST every 4096 accepted output samples
+ -> generated system_wrapper ADC_STREAM_IN
+ -> axis_data_fifo_0
+ -> axi_dma_adc SG S2MM
+ -> PS DDR
+```
+
+The FIR design contract is:
+
+| Item | Value |
+| --- | ---: |
+| Raw sample rate | `5,120,060 Hz` |
+| Output sample rate | `1,706,686.667 Hz` |
+| Passband | `0..500 kHz` |
+| 500 kHz | `-0.008071 dB` |
+| Stopband start | `1 MHz` |
+| 1 MHz | `-67.630308 dB` |
+| Stopband maximum | `-67.149421 dB` |
+| Output frame | `4096 x signed16 / 8192 byte` |
+
+`top.v` connects `H_top` to `adc_fir_axis`, then connects only the FIR output
+to `system_wrapper.ADC_STREAM_IN`. `ddc_tready` is held low. The IQ and DAC
+hardware remain in the project but are not used by `g26_measurement_task`.
+
+Current board evidence covers correct signed/Fs decoding, stable 8192-byte SG
+captures, 10..500 kHz amplitude calibration, and 1/1.5/2 MHz interference.
+The raw-ADC alias window at `4.62006..5.62006 MHz` remains an analog-front-end
+validation item rather than a PL FIR task.
