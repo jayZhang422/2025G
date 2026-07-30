@@ -372,13 +372,45 @@ static int dma_recover_s2mm(XAxiDma *dma, u16 device_id)
     return XST_SUCCESS;
 }
 
-/** 显式重置接收通道并丢弃至下一个 TLAST，供首次正式采集前建立边界。 */
+/** 丢弃至下一个 TLAST，供首次正式采集前建立边界。 */
 int dma_align_s2mm(XAxiDma *dma, u16 device_id)
 {
+    int status;
+    u32 discarded_bytes;
+
     if (dma == NULL) {
         return XST_FAILURE;
     }
-    return dma_recover_s2mm(dma, device_id);
+    if (g_dma_needs_realign) {
+        return dma_recover_s2mm(dma, device_id);
+    }
+
+    xil_printf("[DMA] ALIGN: submit discard BD\r\n");
+    Xil_DCacheFlushRange((UINTPTR)g_dma_discard_buffer,
+                         APP_RX_FRAME_BYTES);
+    status = dma_submit_frame(dma, g_dma_discard_buffer,
+                              APP_RX_FRAME_BYTES);
+    if (status == XST_SUCCESS) {
+        dma_dump_s2mm_regs("[DMA] ALIGN submitted:", dma);
+        status = dma_wait_frame(dma, APP_DMA_CAPTURE_TIMEOUT_MS, NULL);
+    }
+    Xil_DCacheInvalidateRange((UINTPTR)g_dma_discard_buffer,
+                              APP_RX_FRAME_BYTES);
+
+    discarded_bytes = dma_last_s2mm_length_bytes(dma);
+    if (status != XST_SUCCESS || discarded_bytes == 0U ||
+        discarded_bytes > APP_RX_FRAME_BYTES) {
+        xil_printf("[DMA] ERROR: frame alignment failed (%d), bytes=%u\r\n",
+                   status, (unsigned int)discarded_bytes);
+        dma_dump_s2mm_regs("[DMA] ALIGN failed:", dma);
+        g_dma_needs_realign = 1;
+        return XST_FAILURE;
+    }
+
+    xil_printf("[DMA] ALIGN complete: discarded=%u bytes\r\n",
+               (unsigned int)discarded_bytes);
+    g_dma_last_length_bytes = 0U;
+    return XST_SUCCESS;
 }
 
 /** 提交一帧 ADC SG S2MM 传输并等待中断；失败后尝试恢复 DMA。 */

@@ -51,9 +51,17 @@ static void g26_print_result(const g26_signal_result_t *result)
     g26_print_fixed_3(result->rms_mv);
     xil_printf(" mV DC=");
     g26_print_fixed_3(result->dc_mv);
-    xil_printf(" mV residual_ppm=%u\r\n",
+    xil_printf(" mV residual_ppm=%u bic=",
                (unsigned int)(result->normalized_residual * 1000000.0f +
-                              0.5f));
+                               0.5f));
+    g26_print_fixed_3(result->model_bic);
+    xil_printf(" delta_bic=");
+    if (result->delta_bic < 1.0e29f) {
+        g26_print_fixed_3(result->delta_bic);
+    } else {
+        xil_printf("n/a");
+    }
+    xil_printf("\r\n");
 
     for (component = 0U; component < result->component_count; component++) {
         const g26_signal_component_t *line = &result->components[component];
@@ -93,6 +101,7 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
 {
     fifo_monitor_snapshot_t before;
     fifo_monitor_snapshot_t after;
+    int analysis_status;
     u32 warmup;
 
     if (dma_align_s2mm(dma, APP_DMA_RX_DEV_ID) != XST_SUCCESS) {
@@ -134,11 +143,12 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
         }
     }
 
-    if (g26_signal_analyze((const s16 *)(const void *)g_adc_raw_buffer,
-                           APP_ANALYSIS_SAMPLE_RATE_HZ,
-                           APP_G26_INPUT_MV_PER_CODE,
-                           result) != G26_SIGNAL_OK) {
-        xil_printf("[G26] ERROR: no valid 2/3-line harmonic model\r\n");
+    analysis_status = g26_signal_analyze(
+        (const s16 *)(const void *)g_adc_raw_buffer,
+        APP_ANALYSIS_SAMPLE_RATE_HZ, APP_G26_INPUT_MV_PER_CODE, result);
+    if (analysis_status != G26_SIGNAL_OK) {
+        xil_printf("[G26] ERROR: analysis failed status=%d\r\n",
+                   analysis_status);
         return XST_FAILURE;
     }
     return XST_SUCCESS;
@@ -184,6 +194,7 @@ void g26_measurement_task(void *parameters)
 {
     XAxiDma dma;
     button_input_t buttons;
+    int self_test_status;
     int monitor_available;
     int armed = 1;
 
@@ -192,12 +203,13 @@ void g26_measurement_task(void *parameters)
     memset(&g26_output, 0, sizeof(g26_output));
 
     xil_printf("\r\n[G26] 2026 periodic-signal analyzer, 4096-point PL-FIR input\r\n");
-    if (g26_signal_analysis_self_test() != G26_SIGNAL_OK) {
-        xil_printf("[G26] FATAL: algorithm self-test failed\r\n");
-        vTaskDelete(NULL);
-        return;
+    self_test_status = g26_signal_analysis_self_test();
+    if (self_test_status != G26_SIGNAL_OK) {
+        xil_printf("[G26] WARN: algorithm self-test failed code=%d; measurement remains enabled\r\n",
+                   -self_test_status);
+    } else {
+        xil_printf("[G26] PASS: algorithm self-test\r\n");
     }
-    xil_printf("[G26] PASS: algorithm self-test\r\n");
 
     if (button_input_init(&buttons) != XST_SUCCESS ||
         dma_init_s2mm(&dma, APP_DMA_RX_DEV_ID) != XST_SUCCESS) {

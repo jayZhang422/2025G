@@ -32,7 +32,7 @@
 /* Select the actual front end, then replace its nominal value by calibration. */
 #define APP_G26_DIRECT_MV_PER_CODE    2.44140625f
 #define APP_G26_AMPLIFIED_MV_PER_CODE 0.1645f
-#define APP_G26_INPUT_MV_PER_CODE     APP_G26_AMPLIFIED_MV_PER_CODE
+#define APP_G26_INPUT_MV_PER_CODE     APP_G26_DIRECT_MV_PER_CODE
 #define APP_IQ_WINDOW_SAMPLES       APP_ADC_FRAME_SAMPLES
 #define APP_IQ_RESULT_TIMEOUT_MS    100U
 

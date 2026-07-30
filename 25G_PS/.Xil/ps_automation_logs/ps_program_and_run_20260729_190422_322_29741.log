@@ -1,0 +1,34 @@
+2026-07-29 19:04:23 PS run: checking programming artifacts
+2026-07-29 19:04:23 PS run: connecting to hardware server
+attempting to launch hw_server
+
+****** Xilinx hw_server v2020.2
+  **** Build date : Nov 18 2020 at 10:01:48
+    ** Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+
+INFO: hw_server application started
+INFO: Use Ctrl-C to exit hw_server application
+
+
+
+****** Xilinx hw_server v2020.2
+
+  **** Build date : Nov 18 2020 at 10:01:48
+
+    ** Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+
+
+
+INFO: hw_server application started
+
+INFO: Use Ctrl-C to exit hw_server application
+
+
+
+
+INFO: To connect to this hw_server instance use url: TCP:127.0.0.1:3121
+
+
+
+2026-07-29 19:04:26 PS run: resetting system
+no targets found with "name =~ "APU*"". available targets: none

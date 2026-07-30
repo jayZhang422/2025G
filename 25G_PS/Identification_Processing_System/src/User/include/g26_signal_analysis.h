@@ -14,7 +14,11 @@
 #define G26_SIGNAL_MAX_COMPONENTS     3U
 
 #define G26_SIGNAL_OK                  0
-#define G26_SIGNAL_ERROR              (-1)
+#define G26_SIGNAL_ERROR_INPUT        (-1)
+#define G26_SIGNAL_ERROR_FFT          (-2)
+#define G26_SIGNAL_ERROR_NO_CANDIDATE (-3)
+#define G26_SIGNAL_ERROR_NO_MODEL     (-4)
+#define G26_SIGNAL_ERROR              G26_SIGNAL_ERROR_INPUT
 
 typedef struct {
     float32_t frequency_hz;
@@ -31,6 +35,9 @@ typedef struct {
     float32_t rms_mv;
     float32_t upp_mv;
     float32_t normalized_residual;
+    float32_t residual_sse;
+    float32_t model_bic;
+    float32_t delta_bic;
 } g26_signal_result_t;
 
 /** Initialize the shared CMSIS 4096-point real FFT instance. */
@@ -57,7 +64,10 @@ int g26_signal_generate_waveform(
     float32_t *output_mv,
     u32 output_count);
 
-/** Run synthetic 2/3-line harmonic and high-density Upp regressions. */
+/**
+ * Run synthetic regressions. A negative result encodes case * 10 + stage;
+ * -100 means FFT initialization failed.
+ */
 int g26_signal_analysis_self_test(void);
 
 #endif /* USER_INCLUDE_G26_SIGNAL_ANALYSIS_H_ */

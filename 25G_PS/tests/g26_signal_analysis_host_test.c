@@ -44,9 +44,18 @@ int main(void)
     int status = g26_signal_analysis_self_test();
 
 #ifdef G26_QEMU_SEMIHOST
-    g26_qemu_write0((status == G26_SIGNAL_OK) ?
-                    "G26 signal analysis self-test passed\n" :
-                    "G26 signal analysis self-test failed\n");
+    char failure[] = "G26 signal analysis self-test failed code=000\n";
+
+    if (status == G26_SIGNAL_OK) {
+        g26_qemu_write0("G26 signal analysis self-test passed\n");
+    } else {
+        unsigned int case_number = (unsigned int)(-status);
+
+        failure[42] = (char)('0' + case_number / 100U % 10U);
+        failure[43] = (char)('0' + case_number / 10U % 10U);
+        failure[44] = (char)('0' + case_number % 10U);
+        g26_qemu_write0(failure);
+    }
 #else
     puts((status == G26_SIGNAL_OK) ?
          "G26 signal analysis self-test passed" :

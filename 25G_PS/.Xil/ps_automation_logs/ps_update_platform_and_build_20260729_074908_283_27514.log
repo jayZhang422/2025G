@@ -1,0 +1,6 @@
+2026-07-29 07:49:09 PS platform: checking latest PL XSA
+2026-07-29 07:49:09 PS platform: opening platform Identification_platform in the isolated automation workspace
+Loading the sw platform from E:/7020_Project/25G/25G_PS/Identification_platform/platform.spr
+Reading the platform  : "Identification_platform"
+INFO: [Hsi 55-2053] elapsed time for repository (D:/FPGA/Xilinx/Vitis/2020.2/data\embeddedsw) loading 1 seconds
+2026-07-29 07:49:13 PS platform: CHECK PASSED: workspace, platform Identification_platform, system Identification_Processing_System_system, and E:/7020_Project/25G/25G_PL/top.xsa are available
