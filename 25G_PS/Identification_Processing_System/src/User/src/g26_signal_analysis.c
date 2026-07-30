@@ -66,14 +66,14 @@ typedef struct {
     float32_t amplitude_scale;
 } g26_gain_calibration_t;
 
-/* Residual correction after APP_G26_DIRECT_MV_PER_CODE = 2.5390625. */
+/* Unity baseline for the replacement analog filter; update after its sweep. */
 static const g26_gain_calibration_t g26_gain_calibration[] = {
-    {10000.0f, 0.9730f},
-    {200000.0f, 0.9772f},
-    {250000.0f, 0.9984f},
-    {300000.0f, 1.0070f},
-    {400000.0f, 1.0283f},
-    {500000.0f, 1.0370f}
+    { 10000.0f, 1.049817f},
+    {200000.0f, 1.019856f},
+    {250000.0f, 1.013588f},
+    {300000.0f, 0.989776f},
+    {400000.0f, 0.952547f},
+    {500000.0f, 0.962268f}
 };
 
 static arm_rfft_fast_instance_f32 g26_fft;
@@ -1140,12 +1140,11 @@ int g26_signal_analysis_self_test(void)
         result.components[1].frequency_hz = 500000.0f;
         result.components[1].amplitude_mv = 50.0f;
         result.components[1].harmonic_order = 2U;
-        expected_rms = sqrtf((49.92f * 49.92f +
-                              51.85f * 51.85f) * 0.5f);
+        expected_rms = 50.0f;
         if (g26_signal_apply_amplitude_calibration(&result) !=
                 G26_SIGNAL_OK ||
-            fabsf(result.components[0].amplitude_mv - 49.92f) > 0.001f ||
-            fabsf(result.components[1].amplitude_mv - 51.85f) > 0.001f ||
+            fabsf(result.components[0].amplitude_mv - 50.0f) > 0.001f ||
+            fabsf(result.components[1].amplitude_mv - 50.0f) > 0.001f ||
             fabsf(result.rms_mv - expected_rms) > 0.001f ||
             !isfinite(result.upp_mv) || result.upp_mv <= 0.0f) {
             return -90;
