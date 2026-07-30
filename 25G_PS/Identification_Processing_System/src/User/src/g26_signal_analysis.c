@@ -495,7 +495,8 @@ static int g26_fundamental_is_significant(
         2.0f * fmaxf(result->residual_sse, G26_EPSILON) /
         (sample_count * degrees_of_freedom));
 
-    return result->components[0].amplitude_mv >= 3.0f * amplitude_sigma;
+    return result->components[0].amplitude_mv >=
+           fmaxf(3.0f * amplitude_sigma, G26_MIN_CANDIDATE_MV);
 }
 
 static void g26_consider_model(const float32_t *frequencies_hz,
@@ -1105,7 +1106,7 @@ int g26_signal_analysis_self_test(void)
         },
         {
             5120060.0f / 3.0f, 0.05f, 10500.0f, -0.2f, 3U, 3U,
-            {{1U, 0.2f, 0.25f},
+            {{1U, 5.0f, 0.25f},
              {3U, 40.0f, -0.60f},
              {4U, 30.0f, 1.10f}}
         },
@@ -1121,6 +1122,19 @@ int g26_signal_analysis_self_test(void)
     if (g26_signal_analysis_init() != G26_SIGNAL_OK) {
         return -100;
     }
+    {
+        g26_signal_result_t result = {0};
+
+        result.component_count = 3U;
+        result.components[0].amplitude_mv = 0.106f;
+        if (g26_fundamental_is_significant(&result)) {
+            return -91;
+        }
+        result.components[0].amplitude_mv = 5.0f;
+        if (!g26_fundamental_is_significant(&result)) {
+            return -91;
+        }
+    }
     for (index = 0U; index < sizeof(cases) / sizeof(cases[0]); index++) {
         int test_status = g26_test_one_case(&cases[index], index == 3U);
 
@@ -1130,6 +1144,8 @@ int g26_signal_analysis_self_test(void)
     }
     {
         g26_signal_result_t result = {0};
+        float32_t expected_first;
+        float32_t expected_second;
         float32_t expected_rms;
 
         result.component_count = 2U;
@@ -1140,11 +1156,16 @@ int g26_signal_analysis_self_test(void)
         result.components[1].frequency_hz = 500000.0f;
         result.components[1].amplitude_mv = 50.0f;
         result.components[1].harmonic_order = 2U;
-        expected_rms = 50.0f;
+        expected_first = 50.0f * g26_gain_correction(250000.0f);
+        expected_second = 50.0f * g26_gain_correction(500000.0f);
+        expected_rms = sqrtf(0.5f * expected_first * expected_first +
+                             0.5f * expected_second * expected_second);
         if (g26_signal_apply_amplitude_calibration(&result) !=
                 G26_SIGNAL_OK ||
-            fabsf(result.components[0].amplitude_mv - 50.0f) > 0.001f ||
-            fabsf(result.components[1].amplitude_mv - 50.0f) > 0.001f ||
+            fabsf(result.components[0].amplitude_mv - expected_first) >
+                0.001f ||
+            fabsf(result.components[1].amplitude_mv - expected_second) >
+                0.001f ||
             fabsf(result.rms_mv - expected_rms) > 0.001f ||
             !isfinite(result.upp_mv) || result.upp_mv <= 0.0f) {
             return -90;
