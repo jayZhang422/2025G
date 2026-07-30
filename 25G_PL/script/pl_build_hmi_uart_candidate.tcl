@@ -148,6 +148,20 @@ if {[get_property STATUS [get_runs impl_1]] ne "write_bitstream Complete!"} {
 }
 
 open_run impl_1
+foreach {port expected_direction expected_pin} [list \
+    i_hmi_uart_rx IN F16 \
+    o_hmi_uart_tx OUT F17 \
+] {
+    set port_object [get_ports -quiet $port]
+    if {[llength $port_object] != 1} {
+        error "Expected exactly one implemented J11 port: $port"
+    }
+    if {[get_property DIRECTION $port_object] ne $expected_direction ||
+        [get_property PACKAGE_PIN $port_object] ne $expected_pin ||
+        [get_property IOSTANDARD $port_object] ne "LVCMOS33"} {
+        error "Implemented J11 constraint mismatch for $port"
+    }
+}
 report_timing_summary -file [file join $candidate_dir timing_summary.rpt]
 report_drc -file [file join $candidate_dir drc.rpt]
 report_cdc -details -file [file join $candidate_dir cdc.rpt]
