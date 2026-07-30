@@ -30,6 +30,8 @@
 #define G26_FREQUENCY_REFINEMENT_ROUNDS 4
 #define G26_UPP_POINTS                 4096U
 #define G26_EPSILON                    1.0e-12f
+#define G26_GAIN_CORRECTION_MIN        0.95f
+#define G26_GAIN_CORRECTION_MAX        1.10f
 
 typedef struct {
     float32_t frequency_hz;
@@ -58,6 +60,21 @@ typedef struct {
     u32 expected_component_count;
     g26_test_component_t components[G26_SIGNAL_MAX_COMPONENTS];
 } g26_test_case_t;
+
+typedef struct {
+    float32_t frequency_hz;
+    float32_t amplitude_scale;
+} g26_gain_calibration_t;
+
+/* Residual correction after APP_G26_DIRECT_MV_PER_CODE = 2.5390625. */
+static const g26_gain_calibration_t g26_gain_calibration[] = {
+    {10000.0f, 0.9730f},
+    {200000.0f, 0.9772f},
+    {250000.0f, 0.9984f},
+    {300000.0f, 1.0070f},
+    {400000.0f, 1.0283f},
+    {500000.0f, 1.0370f}
+};
 
 static arm_rfft_fast_instance_f32 g26_fft;
 static int g26_fft_initialized;
@@ -685,6 +702,61 @@ static void g26_compute_model_metrics(g26_signal_result_t *result)
     result->upp_mv = maximum - minimum;
 }
 
+static float32_t g26_gain_correction(float32_t frequency_hz)
+{
+    u32 point;
+    float32_t correction;
+
+    if (frequency_hz <= g26_gain_calibration[0].frequency_hz) {
+        return g26_gain_calibration[0].amplitude_scale;
+    }
+    for (point = 1U;
+         point < sizeof(g26_gain_calibration) /
+                     sizeof(g26_gain_calibration[0]);
+         point++) {
+        const g26_gain_calibration_t *lower =
+            &g26_gain_calibration[point - 1U];
+        const g26_gain_calibration_t *upper =
+            &g26_gain_calibration[point];
+
+        if (frequency_hz <= upper->frequency_hz) {
+            float32_t fraction = (frequency_hz - lower->frequency_hz) /
+                (upper->frequency_hz - lower->frequency_hz);
+
+            correction = lower->amplitude_scale + fraction *
+                (upper->amplitude_scale - lower->amplitude_scale);
+            return fminf(fmaxf(correction, G26_GAIN_CORRECTION_MIN),
+                         G26_GAIN_CORRECTION_MAX);
+        }
+    }
+    correction = g26_gain_calibration[
+        sizeof(g26_gain_calibration) /
+        sizeof(g26_gain_calibration[0]) - 1U].amplitude_scale;
+    return fminf(fmaxf(correction, G26_GAIN_CORRECTION_MIN),
+                 G26_GAIN_CORRECTION_MAX);
+}
+
+int g26_signal_apply_amplitude_calibration(g26_signal_result_t *result)
+{
+    u32 component;
+
+    if (result == NULL || result->component_count < 2U ||
+        result->component_count > G26_SIGNAL_MAX_COMPONENTS) {
+        return G26_SIGNAL_ERROR_INPUT;
+    }
+    for (component = 0U; component < result->component_count; component++) {
+        g26_signal_component_t *line = &result->components[component];
+
+        if (!isfinite(line->frequency_hz) ||
+            !isfinite(line->amplitude_mv) || line->amplitude_mv < 0.0f) {
+            return G26_SIGNAL_ERROR_INPUT;
+        }
+        line->amplitude_mv *= g26_gain_correction(line->frequency_hz);
+    }
+    g26_compute_model_metrics(result);
+    return G26_SIGNAL_OK;
+}
+
 int g26_signal_analysis_init(void)
 {
     if (arm_rfft_fast_init_f32(&g26_fft, G26_SIGNAL_SAMPLE_COUNT) !=
@@ -1054,6 +1126,29 @@ int g26_signal_analysis_self_test(void)
 
         if (test_status != G26_SIGNAL_OK) {
             return -((int)(index + 1U) * 10 - test_status);
+        }
+    }
+    {
+        g26_signal_result_t result = {0};
+        float32_t expected_rms;
+
+        result.component_count = 2U;
+        result.fundamental_frequency_hz = 250000.0f;
+        result.components[0].frequency_hz = 250000.0f;
+        result.components[0].amplitude_mv = 50.0f;
+        result.components[0].harmonic_order = 1U;
+        result.components[1].frequency_hz = 500000.0f;
+        result.components[1].amplitude_mv = 50.0f;
+        result.components[1].harmonic_order = 2U;
+        expected_rms = sqrtf((49.92f * 49.92f +
+                              51.85f * 51.85f) * 0.5f);
+        if (g26_signal_apply_amplitude_calibration(&result) !=
+                G26_SIGNAL_OK ||
+            fabsf(result.components[0].amplitude_mv - 49.92f) > 0.001f ||
+            fabsf(result.components[1].amplitude_mv - 51.85f) > 0.001f ||
+            fabsf(result.rms_mv - expected_rms) > 0.001f ||
+            !isfinite(result.upp_mv) || result.upp_mv <= 0.0f) {
+            return -90;
         }
     }
     return G26_SIGNAL_OK;

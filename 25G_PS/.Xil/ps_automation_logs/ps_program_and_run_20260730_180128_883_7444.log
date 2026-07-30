@@ -1,0 +1,39 @@
+2026-07-30 18:01:29 PS run: checking programming artifacts
+2026-07-30 18:01:29 PS run: connecting to hardware server
+attempting to launch hw_server
+
+****** Xilinx hw_server v2020.2
+  **** Build date : Nov 18 2020 at 10:01:48
+    ** Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+
+INFO: hw_server application started
+INFO: Use Ctrl-C to exit hw_server application
+
+
+
+****** Xilinx hw_server v2020.2
+
+  **** Build date : Nov 18 2020 at 10:01:48
+
+    ** Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+
+
+
+INFO: hw_server application started
+
+INFO: Use Ctrl-C to exit hw_server application
+
+
+
+
+INFO: To connect to this hw_server instance use url: TCP:127.0.0.1:3121
+
+
+
+2026-07-30 18:01:32 PS run: resetting system
+2026-07-30 18:01:35 PS run: programming PL bitstream E:/7020_Project/25G/25G_PS/Identification_platform/hw/top.bit
+2026-07-30 18:01:39 PS run: loading hardware description
+INFO: [Hsi 55-2053] elapsed time for repository (D:/FPGA/Xilinx/Vitis/2020.2/data\embeddedsw) loading 0 seconds
+2026-07-30 18:01:41 PS run: running PS7 initialization
+2026-07-30 18:01:41 PS run: downloading optimized application ELF E:/7020_Project/25G/25G_PS/Identification_Processing_System/Debug/Identification_Processing_System.elf
+2026-07-30 18:01:44 PS run: starting Cortex-A9 core 0

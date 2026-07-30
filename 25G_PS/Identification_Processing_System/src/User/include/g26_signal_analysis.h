@@ -20,6 +20,8 @@
 #define G26_SIGNAL_ERROR_NO_MODEL     (-4)
 #define G26_SIGNAL_ERROR              G26_SIGNAL_ERROR_INPUT
 
+
+
 typedef struct {
     float32_t frequency_hz;
     float32_t amplitude_mv;
@@ -53,6 +55,9 @@ int g26_signal_analyze(
     float32_t sample_rate_hz,
     float32_t mv_per_code,
     g26_signal_result_t *result);
+
+/** Apply the board's frequency-dependent amplitude calibration once. */
+int g26_signal_apply_amplitude_calibration(g26_signal_result_t *result);
 
 /**
  * Generate one or three complete, phase-aligned AC waveform periods. The first

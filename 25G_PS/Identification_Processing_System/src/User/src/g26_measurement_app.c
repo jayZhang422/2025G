@@ -151,6 +151,10 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
                    analysis_status);
         return XST_FAILURE;
     }
+    if (g26_signal_apply_amplitude_calibration(result) != G26_SIGNAL_OK) {
+        xil_printf("[G26] ERROR: amplitude calibration failed\r\n");
+        return XST_FAILURE;
+    }
     return XST_SUCCESS;
 }
 
