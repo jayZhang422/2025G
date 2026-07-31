@@ -88,15 +88,23 @@ static const g26_phase_calibration_t g26_phase_calibration[] = {
     { 20000.0f,   -5.6f},
     { 40000.0f,  -11.1f},
     { 50000.0f,  -14.5f},
-    {100000.0f,  -28.0f},
-    {150000.0f,  -43.3f},
-    {200000.0f,  -58.0f},
-    {250000.0f,  -73.8f},
-    {300000.0f,  -90.0f},
+    {100000.0f,  -28.6f},
+    {125000.0f,  -36.1f},
+    {150000.0f,  -42.6f},
+    {175000.0f,  -50.5f},
+    {200000.0f,  -58.2f},
+    {225000.0f,  -65.9f},
+    {250000.0f,  -73.4f},
+    {275000.0f,  -81.5f},
+    {300000.0f,  -89.0f},
+    {325000.0f,  -98.0f},
     {350000.0f, -107.0f},
-    {400000.0f, -127.0f},
-    {450000.0f, -147.0f},
-    {500000.0f, -169.6f}
+    {375000.0f, -116.5f},
+    {400000.0f, -125.0f},
+    {425000.0f, -135.5f},
+    {450000.0f, -146.0f},
+    {475000.0f, -157.0f},
+    {500000.0f, -168.0f}
 };
 
 static arm_rfft_fast_instance_f32 g26_fft;
@@ -109,7 +117,7 @@ static void g26_oscillator_init(g26_oscillator_t *oscillator,
     float32_t step = G26_TWO_PI * frequency_hz / sample_rate_hz;
 
     oscillator->sine = 0.0f;
-    oscillator->cosine = 1.0f;
+    oscillator->cosine = 1.0f     ;
     oscillator->sine_step = sinf(step);
     oscillator->cosine_step = cosf(step);
 }
@@ -1215,12 +1223,12 @@ int g26_signal_analysis_self_test(void)
         result.components[0].frequency_hz = 250000.0f;
         result.components[0].amplitude_mv = 50.0f;
         result.components[0].phase_rad = 0.4f -
-            73.8f * G26_DEGREES_TO_RADIANS;
+            73.4f * G26_DEGREES_TO_RADIANS;
         result.components[0].harmonic_order = 1U;
         result.components[1].frequency_hz = 500000.0f;
         result.components[1].amplitude_mv = 50.0f;
         result.components[1].phase_rad = 0.8f -
-            169.6f * G26_DEGREES_TO_RADIANS;
+            168.0f * G26_DEGREES_TO_RADIANS;
         result.components[1].harmonic_order = 2U;
         expected_first = 50.0f * g26_gain_correction(250000.0f);
         expected_second = 50.0f * g26_gain_correction(500000.0f);
@@ -1243,7 +1251,7 @@ int g26_signal_analysis_self_test(void)
                 2.0f * result.components[0].phase_rad)) > 0.001f ||
             fabsf(result.upp_mv - expected_upp) > 0.01f ||
             fabsf(g26_phase_correction_rad(275000.0f) +
-                81.9f * G26_DEGREES_TO_RADIANS) > 0.001f) {
+                81.5f * G26_DEGREES_TO_RADIANS) > 0.001f) {
             return -90;
         }
     }
