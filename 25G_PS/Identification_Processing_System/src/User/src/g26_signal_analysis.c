@@ -15,6 +15,7 @@
 
 #define G26_PI                         3.14159265358979323846f
 #define G26_TWO_PI                     (2.0f * G26_PI)
+#define G26_DEGREES_TO_RADIANS         (G26_PI / 180.0f)
 #define G26_MIN_FREQUENCY_HZ           10000.0f
 #define G26_MAX_FREQUENCY_HZ           500000.0f
 #define G26_PEAK_CAPACITY              16
@@ -66,6 +67,11 @@ typedef struct {
     float32_t amplitude_scale;
 } g26_gain_calibration_t;
 
+typedef struct {
+    float32_t frequency_hz;
+    float32_t phase_degrees;
+} g26_phase_calibration_t;
+
 /* Unity baseline for the replacement analog filter; update after its sweep. */
 static const g26_gain_calibration_t g26_gain_calibration[] = {
     { 10000.0f, 1.049817f},
@@ -74,6 +80,23 @@ static const g26_gain_calibration_t g26_gain_calibration[] = {
     {300000.0f, 0.989776f},
     {400000.0f, 0.952547f},
     {500000.0f, 0.962268f}
+};
+
+/* Measured input-to-ADC phase, kept unwrapped for linear interpolation. */
+static const g26_phase_calibration_t g26_phase_calibration[] = {
+    { 10000.0f,   -2.8f},
+    { 20000.0f,   -5.6f},
+    { 40000.0f,  -11.1f},
+    { 50000.0f,  -14.5f},
+    {100000.0f,  -28.0f},
+    {150000.0f,  -43.3f},
+    {200000.0f,  -58.0f},
+    {250000.0f,  -73.8f},
+    {300000.0f,  -90.0f},
+    {350000.0f, -107.0f},
+    {400000.0f, -127.0f},
+    {450000.0f, -147.0f},
+    {500000.0f, -169.6f}
 };
 
 static arm_rfft_fast_instance_f32 g26_fft;
@@ -737,6 +760,39 @@ static float32_t g26_gain_correction(float32_t frequency_hz)
                  G26_GAIN_CORRECTION_MAX);
 }
 
+static float32_t g26_phase_correction_rad(float32_t frequency_hz)
+{
+    u32 point;
+    float32_t phase_degrees;
+
+    if (frequency_hz <= g26_phase_calibration[0].frequency_hz) {
+        return g26_phase_calibration[0].phase_degrees *
+               G26_DEGREES_TO_RADIANS;
+    }
+    for (point = 1U;
+         point < sizeof(g26_phase_calibration) /
+                     sizeof(g26_phase_calibration[0]);
+         point++) {
+        const g26_phase_calibration_t *lower =
+            &g26_phase_calibration[point - 1U];
+        const g26_phase_calibration_t *upper =
+            &g26_phase_calibration[point];
+
+        if (frequency_hz <= upper->frequency_hz) {
+            float32_t fraction = (frequency_hz - lower->frequency_hz) /
+                (upper->frequency_hz - lower->frequency_hz);
+
+            phase_degrees = lower->phase_degrees + fraction *
+                (upper->phase_degrees - lower->phase_degrees);
+            return phase_degrees * G26_DEGREES_TO_RADIANS;
+        }
+    }
+    return g26_phase_calibration[
+        sizeof(g26_phase_calibration) /
+        sizeof(g26_phase_calibration[0]) - 1U].phase_degrees *
+        G26_DEGREES_TO_RADIANS;
+}
+
 int g26_signal_apply_amplitude_calibration(g26_signal_result_t *result)
 {
     u32 component;
@@ -749,10 +805,14 @@ int g26_signal_apply_amplitude_calibration(g26_signal_result_t *result)
         g26_signal_component_t *line = &result->components[component];
 
         if (!isfinite(line->frequency_hz) ||
-            !isfinite(line->amplitude_mv) || line->amplitude_mv < 0.0f) {
+            !isfinite(line->amplitude_mv) || line->amplitude_mv < 0.0f ||
+            !isfinite(line->phase_rad)) {
             return G26_SIGNAL_ERROR_INPUT;
         }
         line->amplitude_mv *= g26_gain_correction(line->frequency_hz);
+        line->phase_rad = g26_wrap_phase(
+            line->phase_rad -
+            g26_phase_correction_rad(line->frequency_hz));
     }
     g26_compute_model_metrics(result);
     return G26_SIGNAL_OK;
@@ -1144,22 +1204,34 @@ int g26_signal_analysis_self_test(void)
     }
     {
         g26_signal_result_t result = {0};
+        g26_test_case_t expected_waveform = {0};
         float32_t expected_first;
         float32_t expected_second;
         float32_t expected_rms;
+        float32_t expected_upp;
 
         result.component_count = 2U;
         result.fundamental_frequency_hz = 250000.0f;
         result.components[0].frequency_hz = 250000.0f;
         result.components[0].amplitude_mv = 50.0f;
+        result.components[0].phase_rad = 0.4f -
+            73.8f * G26_DEGREES_TO_RADIANS;
         result.components[0].harmonic_order = 1U;
         result.components[1].frequency_hz = 500000.0f;
         result.components[1].amplitude_mv = 50.0f;
+        result.components[1].phase_rad = 0.8f -
+            169.6f * G26_DEGREES_TO_RADIANS;
         result.components[1].harmonic_order = 2U;
         expected_first = 50.0f * g26_gain_correction(250000.0f);
         expected_second = 50.0f * g26_gain_correction(500000.0f);
         expected_rms = sqrtf(0.5f * expected_first * expected_first +
                              0.5f * expected_second * expected_second);
+        expected_waveform.expected_component_count = 2U;
+        expected_waveform.components[0].harmonic_order = 1U;
+        expected_waveform.components[0].amplitude_mv = expected_first;
+        expected_waveform.components[1].harmonic_order = 2U;
+        expected_waveform.components[1].amplitude_mv = expected_second;
+        expected_upp = g26_test_expected_upp(&expected_waveform, 32768U);
         if (g26_signal_apply_amplitude_calibration(&result) !=
                 G26_SIGNAL_OK ||
             fabsf(result.components[0].amplitude_mv - expected_first) >
@@ -1167,7 +1239,11 @@ int g26_signal_analysis_self_test(void)
             fabsf(result.components[1].amplitude_mv - expected_second) >
                 0.001f ||
             fabsf(result.rms_mv - expected_rms) > 0.001f ||
-            !isfinite(result.upp_mv) || result.upp_mv <= 0.0f) {
+            fabsf(g26_wrap_phase(result.components[1].phase_rad -
+                2.0f * result.components[0].phase_rad)) > 0.001f ||
+            fabsf(result.upp_mv - expected_upp) > 0.01f ||
+            fabsf(g26_phase_correction_rad(275000.0f) +
+                81.9f * G26_DEGREES_TO_RADIANS) > 0.001f) {
             return -90;
         }
     }

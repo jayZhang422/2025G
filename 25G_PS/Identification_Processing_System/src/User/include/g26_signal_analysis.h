@@ -56,7 +56,7 @@ int g26_signal_analyze(
     float32_t mv_per_code,
     g26_signal_result_t *result);
 
-/** Apply the board's frequency-dependent amplitude calibration once. */
+/** Apply the board's frequency-dependent amplitude and phase calibration once. */
 int g26_signal_apply_amplitude_calibration(g26_signal_result_t *result);
 
 /**
