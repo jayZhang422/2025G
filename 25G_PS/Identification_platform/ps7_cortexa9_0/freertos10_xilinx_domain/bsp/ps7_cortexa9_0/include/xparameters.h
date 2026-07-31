@@ -410,6 +410,29 @@
 
 /******************************************************************/
 
+/* Definitions for driver UARTLITE */
+#define XPAR_XUARTLITE_NUM_INSTANCES 1U
+
+/* Definitions for peripheral AXI_UARTLITE_0 */
+#define XPAR_AXI_UARTLITE_0_DEVICE_ID 0U
+#define XPAR_AXI_UARTLITE_0_BASEADDR 0x43C30000U
+#define XPAR_AXI_UARTLITE_0_HIGHADDR 0x43C3FFFFU
+#define XPAR_AXI_UARTLITE_0_BAUDRATE 230400U
+#define XPAR_AXI_UARTLITE_0_USE_PARITY 0U
+#define XPAR_AXI_UARTLITE_0_ODD_PARITY 0U
+#define XPAR_AXI_UARTLITE_0_DATA_BITS 8U
+
+/* Canonical definitions for peripheral AXI_UARTLITE_0 */
+#define XPAR_UARTLITE_0_DEVICE_ID 0U
+#define XPAR_UARTLITE_0_BASEADDR 0x43C30000U
+#define XPAR_UARTLITE_0_HIGHADDR 0x43C3FFFFU
+#define XPAR_UARTLITE_0_BAUDRATE 230400U
+#define XPAR_UARTLITE_0_USE_PARITY 0U
+#define XPAR_UARTLITE_0_ODD_PARITY 0U
+#define XPAR_UARTLITE_0_DATA_BITS 8U
+
+
+/******************************************************************/
 /* Definitions for driver UARTPS */
 #define XPAR_XUARTPS_NUM_INSTANCES 1
 

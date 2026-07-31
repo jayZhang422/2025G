@@ -10,6 +10,8 @@
 #include "../include/fifo_monitor.h"
 
 #include "FreeRTOS.h"
+#include "queue.h"
+#include "semphr.h"
 #include "task.h"
 #include "xaxidma.h"
 #include "xil_cache.h"
@@ -19,12 +21,113 @@
 #include <string.h>
 
 #define G26_APP_POLL_MS 5U
+#define G26_REQUEST_QUEUE_LENGTH 4U
+#define G26_EVENT_QUEUE_LENGTH   8U
+#define G26_KEY_GENERATION_FIRST 0x80000000U
+
+typedef struct {
+    u32 generation;
+    u8 source_page;
+} g26_measurement_request_t;
 
 static g26_measurement_output_t g26_output;
+static g26_measurement_output_t g26_staging_output;
+static u32 g26_output_generation;
+static u32 g26_key_generation = G26_KEY_GENERATION_FIRST;
+static QueueHandle_t g26_request_queue;
+static QueueHandle_t g26_event_queue;
+static SemaphoreHandle_t g26_output_mutex;
 
 const g26_measurement_output_t *g26_measurement_output(void)
 {
     return &g26_output;
+}
+
+int g26_measurement_app_init(void)
+{
+    if (g26_request_queue != NULL || g26_event_queue != NULL ||
+        g26_output_mutex != NULL) {
+        return XST_FAILURE;
+    }
+
+    g26_request_queue = xQueueCreate(
+        G26_REQUEST_QUEUE_LENGTH, sizeof(g26_measurement_request_t));
+    g26_event_queue = xQueueCreate(
+        G26_EVENT_QUEUE_LENGTH, sizeof(g26_measurement_event_t));
+    g26_output_mutex = xSemaphoreCreateMutex();
+    if (g26_request_queue == NULL || g26_event_queue == NULL ||
+        g26_output_mutex == NULL) {
+        if (g26_request_queue != NULL) {
+            vQueueDelete(g26_request_queue);
+            g26_request_queue = NULL;
+        }
+        if (g26_event_queue != NULL) {
+            vQueueDelete(g26_event_queue);
+            g26_event_queue = NULL;
+        }
+        if (g26_output_mutex != NULL) {
+            vSemaphoreDelete(g26_output_mutex);
+            g26_output_mutex = NULL;
+        }
+        return XST_FAILURE;
+    }
+
+    memset(&g26_output, 0, sizeof(g26_output));
+    memset(&g26_staging_output, 0, sizeof(g26_staging_output));
+    g26_output_generation = 0U;
+    return XST_SUCCESS;
+}
+
+int g26_measurement_request(u32 generation, u8 source_page)
+{
+    g26_measurement_request_t request;
+
+    if (g26_request_queue == NULL || generation == 0U ||
+        source_page == 0U) {
+        return XST_FAILURE;
+    }
+    request.generation = generation;
+    request.source_page = source_page;
+    return (xQueueSend(g26_request_queue, &request, 0U) == pdPASS) ?
+        XST_SUCCESS : XST_FAILURE;
+}
+
+int g26_measurement_poll_event(g26_measurement_event_t *event)
+{
+    if (event == NULL || g26_event_queue == NULL) {
+        return -1;
+    }
+    return (xQueueReceive(g26_event_queue, event, 0U) == pdPASS) ? 1 : 0;
+}
+
+int g26_measurement_snapshot(g26_measurement_output_t *destination,
+                             u32 *generation)
+{
+    int status = XST_FAILURE;
+
+    if (destination == NULL || generation == NULL ||
+        g26_output_mutex == NULL) {
+        return XST_FAILURE;
+    }
+    if (xSemaphoreTake(g26_output_mutex, portMAX_DELAY) != pdTRUE) {
+        return XST_FAILURE;
+    }
+    if (g26_output.valid) {
+        *destination = g26_output;
+        *generation = g26_output_generation;
+        status = XST_SUCCESS;
+    }
+    (void)xSemaphoreGive(g26_output_mutex);
+    return status;
+}
+
+static void g26_emit_event(const g26_measurement_event_t *event)
+{
+    if (g26_event_queue == NULL ||
+        xQueueSend(g26_event_queue, event, 0U) != pdPASS) {
+        xil_printf("[G26] WARN: screen event queue full type=%u\r\n",
+                   (unsigned int)event->type);
+    }
 }
 
 static void g26_print_fixed_3(float32_t value)
@@ -158,40 +261,106 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
     return XST_SUCCESS;
 }
 
-static int g26_measure_once(XAxiDma *dma, int monitor_available)
+static void g26_publish_invalid(u32 generation)
+{
+    if (xSemaphoreTake(g26_output_mutex, portMAX_DELAY) == pdTRUE) {
+        g26_output.valid = 0;
+        g26_output_generation = generation;
+        (void)xSemaphoreGive(g26_output_mutex);
+    }
+}
+
+static int g26_measure_once(XAxiDma *dma, int monitor_available,
+                            u32 generation)
 {
     g26_signal_result_t result;
 
-    g26_output.valid = 0;
+    g26_publish_invalid(generation);
+    memset(&g26_staging_output, 0, sizeof(g26_staging_output));
     if (g26_capture_measurement(dma, monitor_available, &result) !=
         XST_SUCCESS) {
         return XST_FAILURE;
     }
     if (g26_signal_generate_waveform(
-            &result, 1U, g26_output.one_period_mv,
+            &result, 1U, g26_staging_output.one_period_mv,
             APP_G26_WAVEFORM_POINTS) != G26_SIGNAL_OK ||
         g26_signal_generate_waveform(
-            &result, 3U, g26_output.three_period_mv,
+            &result, 3U, g26_staging_output.three_period_mv,
             APP_G26_WAVEFORM_POINTS) != G26_SIGNAL_OK) {
         xil_printf("[G26] ERROR: waveform reconstruction failed\r\n");
         return XST_FAILURE;
     }
 
-    g26_output.result = result;
-    g26_output.valid = 1;
-    g26_print_result(&g26_output.result);
+    g26_staging_output.result = result;
+    g26_staging_output.valid = 1;
+    if (xSemaphoreTake(g26_output_mutex, portMAX_DELAY) != pdTRUE) {
+        return XST_FAILURE;
+    }
+    g26_output = g26_staging_output;
+    g26_output_generation = generation;
+    (void)xSemaphoreGive(g26_output_mutex);
+
+    g26_print_result(&g26_staging_output.result);
     xil_printf("[G26] HOLD: 1/3-period waveforms ready; press KEY2 to clear\r\n");
     return XST_SUCCESS;
 }
 
 static void g26_clear_result(int monitor_available)
 {
-    g26_output.valid = 0;
-    memset(&g26_output, 0, sizeof(g26_output));
+    g26_measurement_event_t event;
+
+    if (xSemaphoreTake(g26_output_mutex, portMAX_DELAY) == pdTRUE) {
+        memset(&g26_output, 0, sizeof(g26_output));
+        g26_output_generation++;
+        if (g26_output_generation == 0U) {
+            g26_output_generation = 1U;
+        }
+        (void)xSemaphoreGive(g26_output_mutex);
+    }
     if (monitor_available && fifo_monitor_clear_sticky() != XST_SUCCESS) {
         xil_printf("[G26] WARN: FIFO sticky clear failed\r\n");
     }
+    memset(&event, 0, sizeof(event));
+    event.type = G26_MEASUREMENT_CLEARED;
+    event.generation = g26_output_generation;
+    event.started_tick = (u32)xTaskGetTickCount();
+    event.completed_tick = event.started_tick;
+    event.status = XST_SUCCESS;
+    g26_emit_event(&event);
     xil_printf("[G26] ARMED: result cleared; press KEY1 to measure\r\n");
+}
+
+static int g26_run_request(XAxiDma *dma, int monitor_available,
+                           const g26_measurement_request_t *request)
+{
+    g26_measurement_event_t event;
+    TickType_t started_at = xTaskGetTickCount();
+    TickType_t completed_at;
+
+    memset(&event, 0, sizeof(event));
+    event.type = G26_MEASUREMENT_STARTED;
+    event.generation = request->generation;
+    event.source_page = request->source_page;
+    event.started_tick = (u32)started_at;
+    event.status = XST_SUCCESS;
+    g26_emit_event(&event);
+
+    xil_printf("[G26] MEASURING: origin=%s align + %u warm-up + 1 analysis frame\r\n",
+               (request->source_page == 0U) ? "KEY1" : "HMI",
+               (unsigned int)APP_G26_WARMUP_FRAMES);
+    event.status = g26_measure_once(
+        dma, monitor_available, request->generation);
+    completed_at = xTaskGetTickCount();
+    event.type = G26_MEASUREMENT_COMPLETED;
+    event.completed_tick = (u32)completed_at;
+    g26_emit_event(&event);
+
+    xil_printf("[G26] compute_ms=%u generation=%u origin=%s\r\n",
+               (unsigned int)(((u64)(completed_at - started_at) * 1000U) /
+                              configTICK_RATE_HZ),
+               (unsigned int)request->generation,
+               (request->source_page == 0U) ? "KEY1" : "HMI");
+    return event.status;
 }
 
 void g26_measurement_task(void *parameters)
@@ -204,7 +373,12 @@ void g26_measurement_task(void *parameters)
 
     (void)parameters;
     portTASK_USES_FLOATING_POINT();
-    memset(&g26_output, 0, sizeof(g26_output));
+    if (g26_request_queue == NULL || g26_event_queue == NULL ||
+        g26_output_mutex == NULL) {
+        xil_printf("[G26] FATAL: measurement IPC not initialized\r\n");
+        vTaskDelete(NULL);
+        return;
+    }
 
     xil_printf("\r\n[G26] 2026 periodic-signal analyzer, 4096-point PL-FIR input\r\n");
     self_test_status = g26_signal_analysis_self_test();
@@ -235,27 +409,32 @@ void g26_measurement_task(void *parameters)
     xil_printf(" mV/code\r\n[G26] ARMED: KEY1=start KEY2=clear/rearm\r\n");
 
     for (;;) {
-        if (button_input_take_reset_press(&buttons)) {
+        g26_measurement_request_t request;
+
+        if (xQueueReceive(g26_request_queue, &request, 0U) == pdPASS) {
+            (void)g26_run_request(&dma, monitor_available, &request);
+        } else if (button_input_take_reset_press(&buttons)) {
             g26_clear_result(monitor_available);
             armed = 1;
         } else if (armed && button_input_take_start_press(&buttons)) {
-            TickType_t started_at = xTaskGetTickCount();
             int status;
-            u32 elapsed_ms;
 
             armed = 0;
-            xil_printf("[G26] MEASURING: align + %u warm-up + 1 analysis frame\r\n",
-                       (unsigned int)APP_G26_WARMUP_FRAMES);
-            status = g26_measure_once(&dma, monitor_available);
-            elapsed_ms = (u32)(((u64)(xTaskGetTickCount() - started_at) *
-                                1000U) / configTICK_RATE_HZ);
-            xil_printf("[G26] measurement_time=%u ms\r\n",
-                       (unsigned int)elapsed_ms);
+            request.generation = g26_key_generation++;
+            if (g26_key_generation == 0U) {
+                g26_key_generation = G26_KEY_GENERATION_FIRST;
+            }
+            request.source_page = 0U;
+            status = g26_run_request(&dma, monitor_available, &request);
             if (status != XST_SUCCESS) {
                 xil_printf("[G26] FAILED: press KEY1 to retry or KEY2 to clear\r\n");
                 armed = 1;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(G26_APP_POLL_MS));
+        {
+            TickType_t delay_ticks = pdMS_TO_TICKS(G26_APP_POLL_MS);
+
+            vTaskDelay((delay_ticks == 0U) ? 1U : delay_ticks);
+        }
     }
 }

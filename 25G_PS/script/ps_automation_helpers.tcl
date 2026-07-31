@@ -129,11 +129,14 @@ proc ps_automation::activate_platform {workspace platform_name} {
 
 proc ps_automation::ensure_application_makefiles {workspace platform_name app_dir build_dir} {
     set makefile [file join $build_dir src subdir.mk]
-    if {[file isfile $makefile]} { return }
 
+    # Refresh the managed project even when an old makefile exists so newly
+    # added source directories are discovered without editing Debug/*.mk.
     setws $workspace
     platform active $platform_name
     app build -name [project_name $app_dir]
+    # Managed build may recreate Debug/_sdk while refreshing the source tree.
+    ensure_bsp_link $workspace $platform_name $build_dir
 
     if {![file isfile $makefile]} {
         error "Vitis did not regenerate the application makefile: $makefile"
