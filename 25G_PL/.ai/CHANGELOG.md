@@ -1,29 +1,5 @@
 # Change Log
 
-## 2026-07-31 - 2026 G Decimating FIR Active Contract And Board Validation
-
-### Current Architecture
-
-- Recorded the active `H_top -> adc_fir_axis -> system_wrapper` input path.
-- `adc_fir_axis` centers the 12-bit AD9226 samples, drives `fir_compiler_0`,
-  rounds and saturates the Q1.17 result to `signed16`, and emits `TLAST` every
-  4096 accepted decimated outputs.
-- The 39-tap FIR runs at `5,120,060 Hz`, decimates by 3, has a 0..500 kHz
-  passband, `-0.008071 dB` at 500 kHz, and `-67.630308 dB` at 1 MHz.
-- The SG DMA contract remains 4096 `signed16` samples and 8192 byte per frame.
-- IQ/DDC and DDS/DAC hardware remain packaged but are inactive in the current
-  G26 PS application.
-
-### Board Evidence
-
-- PS board measurements using the FIR output are stable across 10..500 kHz.
-- A passive external low-pass contributes about 14 dB attenuation at 1 MHz;
-  together with the FIR, typical 1 MHz cascade attenuation is about 81.6 dB.
-- With 250/500 kHz valid components, adding 200 mVpp interference at 1, 1.5,
-  and 2 MHz changed the reported valid parameters by less than 0.2 mV.
-- The `4.62006..5.62006 MHz` raw-ADC alias window is not yet validated and
-  cannot be delegated to the digital FIR after ADC aliasing.
-
 ## 2026-07-24 - Windows-Compatible FIFO Monitor Driver Packaging
 
 ### Fixed

@@ -20,8 +20,6 @@
 #define G26_SIGNAL_ERROR_NO_MODEL     (-4)
 #define G26_SIGNAL_ERROR              G26_SIGNAL_ERROR_INPUT
 
-
-
 typedef struct {
     float32_t frequency_hz;
     float32_t amplitude_mv;

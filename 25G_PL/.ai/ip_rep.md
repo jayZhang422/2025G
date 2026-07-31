@@ -7,17 +7,11 @@ reference, not a generated-IP cache. Configure vendor IP with Vivado, then
 regenerate its products; do not hand-edit generated XCI, wrapper, cache, or
 run-output files.
 
-For the current G26 application, the active input chain is
-`H_top -> adc_fir_axis/fir_compiler_0 -> system_wrapper -> SG S2MM DMA`.
-IQ/DDC and DDS/DAC remain integrated capabilities but are inactive in the G26
-PS task.
-
 ## Repository And Top-Level Rules
 
 - The project IP repository is `25G_PL/ip_core`.
-- `top.v` is the synthesis top. `H_top.v` contains the ADC/FIFO, raw AXIS, IQ
-  observation, BRAM, and DAC integration wiring. `top.v` inserts
-  `adc_fir_axis` between the raw AXIS and `system_wrapper.ADC_STREAM_IN`.
+- `top.v` is the synthesis top. `H_top.v` contains the ADC/FIFO, AXIS, IQ
+  observation, BRAM, and DAC integration wiring.
 - The active BD wrapper is generated at
   `25G_PL.gen/sources_1/bd/system/hdl/system_wrapper.v`. The legacy copy in
   `25G_PL.srcs/sources_1/imports` is intentionally not in `sources_1`.
@@ -39,7 +33,6 @@ PS task.
 | --- | --- | --- |
 | `PLL_AD` | Clocking Wizard 6.0 | Takes the 50 MHz board clock and produces the ADC 0-degree clock plus the phase-shifted ADC capture clock. The current DDS IQ clock-rate configuration is 5.12006 MHz. |
 | `fifo_generator_0` | FIFO Generator 13.2 | Native 16-bit independent-clock FIFO inside `ad_fifo_wrapper_0`; ADC phase clock writes and FCLK0 reads. |
-| `fir_compiler_0` | FIR Compiler | Active 39-tap Q1.17 real low-pass, decimation 3. Passband is 0..500 kHz; 1 MHz response is `-67.630308 dB`. It is instantiated by authored RTL `adc_fir_axis`, not the BD. |
 | `dds_iq_lo` | DDS Compiler 6.0 | 32-bit programmable phase increment and phase offset, 16-bit signed sine/cosine output, fixed latency 8, no TREADY. Its `aclk` metadata is 5,120,060 Hz and its LO frequency is set at runtime by IQ AXI-Lite configuration, not by this metadata. |
 | `blk_rom_sine` | Block Memory Generator 8.4 | 4096 x 14 single-port sine ROM. Two instances serve DAC A and B. |
 | `blk_rom_triangle` | Block Memory Generator 8.4 | 4096 x 14 single-port triangle ROM. Two instances serve DAC A and B. |
@@ -52,7 +45,7 @@ PS task.
 | `processing_system7_0` | Processing System 7 5.5 | Zynq PS7, DDR, FCLK0, GP0/HP0 AXI, UART, EMIO GPIO, and IRQ_F2P. |
 | `proc_sys_reset_0` | Processor System Reset 5.0 | FCLK0 reset distribution for AXI peripherals. |
 | `Pll_DA` | Clocking Wizard 6.0 | Produces 125 MHz `clk_dac` from FCLK0. |
-| `axi_dma_adc` | AXI DMA 7.1 | SG S2MM-only ADC DMA: 16-bit AXIS input and 64-bit memory interface. The current frame is 4096 `signed16` samples / 8192 byte. |
+| `axi_dma_adc` | AXI DMA 7.1 | Simple S2MM-only ADC DMA: 16-bit AXIS input and 64-bit memory interface. |
 | `axis_data_fifo_0` | AXIS Data FIFO 2.0 | Buffers `ADC_STREAM_IN` before DMA S2MM. |
 | `smartconnect_0` | SmartConnect 1.0 | Routes the DMA memory master to PS HP0 and PS GP0 slave path. |
 | `axi_interconnect_0` | AXI Interconnect 2.1 | Routes PS GP0 AXI-Lite control to DMA, DDS BRAM controller, IQ, and FIFO monitor. |
