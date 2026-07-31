@@ -7,6 +7,12 @@
 #define G26_HMI_PAGE_TIME_DOMAIN 2U
 #define G26_HMI_PAGE_SPECTRUM    3U
 
+/* Board-tunable display thresholds; acquisition and analysis still run. */
+#define G26_HMI_SIGNATURE_COMPONENTS       3U
+#define G26_HMI_CHANGE_FREQUENCY_HZ        100.0f
+#define G26_HMI_CHANGE_VOLTAGE_MV          0.5f
+#define G26_HMI_CHANGE_RELATIVE_PHASE_RAD  0.05f
+
 #define G26_HMI_COMMAND_STOP            0x00U
 #define G26_HMI_COMMAND_START           0x01U
 #define G26_HMI_COMMAND_ONE_PERIOD      0x11U
@@ -58,6 +64,18 @@ typedef struct {
     int snapshot_valid;
 } g26_hmi_session_t;
 
+typedef struct {
+    uint32_t component_count;
+    uint16_t harmonic_order[G26_HMI_SIGNATURE_COMPONENTS];
+    float frequency_hz[G26_HMI_SIGNATURE_COMPONENTS];
+    float amplitude_mv[G26_HMI_SIGNATURE_COMPONENTS];
+    float relative_phase_rad[G26_HMI_SIGNATURE_COMPONENTS];
+    float fundamental_frequency_hz;
+    float dc_mv;
+    float rms_mv;
+    float upp_mv;
+} g26_hmi_measurement_signature_t;
+
 void g26_hmi_session_init(g26_hmi_session_t *session);
 void g26_hmi_session_start(g26_hmi_session_t *session, uint32_t generation,
                            uint8_t source_page, uint8_t active_page);
@@ -69,6 +87,9 @@ int g26_hmi_session_accept_event(const g26_hmi_session_t *session,
                                  uint32_t generation, uint8_t source_page);
 void g26_hmi_session_publish_snapshot(g26_hmi_session_t *session);
 void g26_hmi_session_publish_invalid(g26_hmi_session_t *session);
+int g26_hmi_signature_changed(
+    const g26_hmi_measurement_signature_t *previous,
+    const g26_hmi_measurement_signature_t *current);
 
 uint32_t g26_hmi_frequency_tenths_khz(float frequency_hz);
 uint32_t g26_hmi_frequency_integer_khz(float frequency_hz);

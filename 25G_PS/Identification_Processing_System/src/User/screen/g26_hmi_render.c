@@ -4,6 +4,8 @@
 
 #define G26_HMI_MAX_FREQUENCY_HZ 500000.0f
 #define G26_HMI_RENDER_EPSILON   1.0e-12f
+#define G26_HMI_PI               3.14159265358979f
+#define G26_HMI_TWO_PI           (2.0f * G26_HMI_PI)
 
 void g26_hmi_session_init(g26_hmi_session_t *session)
 {
@@ -82,6 +84,67 @@ void g26_hmi_session_publish_invalid(g26_hmi_session_t *session)
     session->pending_generation = 0U;
     session->source_page = 0U;
     session->snapshot_valid = 0;
+}
+
+static float g26_hmi_absolute(float value)
+{
+    return (value < 0.0f) ? -value : value;
+}
+
+static int g26_hmi_difference_exceeds(float previous, float current,
+                                      float threshold)
+{
+    return g26_hmi_absolute(current - previous) > threshold;
+}
+
+int g26_hmi_signature_changed(
+    const g26_hmi_measurement_signature_t *previous,
+    const g26_hmi_measurement_signature_t *current)
+{
+    uint32_t component;
+
+    if (previous == 0 || current == 0 ||
+        previous->component_count != current->component_count ||
+        current->component_count > G26_HMI_SIGNATURE_COMPONENTS ||
+        g26_hmi_difference_exceeds(
+            previous->fundamental_frequency_hz,
+            current->fundamental_frequency_hz,
+            G26_HMI_CHANGE_FREQUENCY_HZ) ||
+        g26_hmi_difference_exceeds(
+            previous->dc_mv, current->dc_mv,
+            G26_HMI_CHANGE_VOLTAGE_MV) ||
+        g26_hmi_difference_exceeds(
+            previous->rms_mv, current->rms_mv,
+            G26_HMI_CHANGE_VOLTAGE_MV) ||
+        g26_hmi_difference_exceeds(
+            previous->upp_mv, current->upp_mv,
+            G26_HMI_CHANGE_VOLTAGE_MV)) {
+        return 1;
+    }
+    for (component = 0U; component < current->component_count;
+         component++) {
+        float phase_difference = g26_hmi_absolute(
+            current->relative_phase_rad[component] -
+            previous->relative_phase_rad[component]);
+
+        if (phase_difference > G26_HMI_PI) {
+            phase_difference = G26_HMI_TWO_PI - phase_difference;
+        }
+        if (previous->harmonic_order[component] !=
+                current->harmonic_order[component] ||
+            g26_hmi_difference_exceeds(
+                previous->frequency_hz[component],
+                current->frequency_hz[component],
+                G26_HMI_CHANGE_FREQUENCY_HZ) ||
+            g26_hmi_difference_exceeds(
+                previous->amplitude_mv[component],
+                current->amplitude_mv[component],
+                G26_HMI_CHANGE_VOLTAGE_MV) ||
+            phase_difference > G26_HMI_CHANGE_RELATIVE_PHASE_RAD) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 static float g26_hmi_clamp(float value, float minimum, float maximum)

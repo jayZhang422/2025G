@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #define CHECK(condition)                                                     \
     do {                                                                     \
@@ -157,12 +158,56 @@ static int test_render_mapping(void)
     return 0;
 }
 
+static int test_measurement_change_gate(void)
+{
+    g26_hmi_measurement_signature_t previous;
+    g26_hmi_measurement_signature_t current;
+
+    memset(&previous, 0, sizeof(previous));
+    memset(&current, 0, sizeof(current));
+
+    previous.component_count = 2U;
+    previous.harmonic_order[0] = 1U;
+    previous.harmonic_order[1] = 2U;
+    previous.frequency_hz[0] = 100000.0f;
+    previous.frequency_hz[1] = 200000.0f;
+    previous.amplitude_mv[0] = 50.0f;
+    previous.amplitude_mv[1] = 25.0f;
+    previous.relative_phase_rad[1] = 3.13f;
+    previous.fundamental_frequency_hz = 100000.0f;
+    previous.rms_mv = 39.528f;
+    previous.upp_mv = 140.0f;
+    current = previous;
+
+    CHECK(!g26_hmi_signature_changed(&previous, &current));
+    current.frequency_hz[1] += G26_HMI_CHANGE_FREQUENCY_HZ;
+    CHECK(!g26_hmi_signature_changed(&previous, &current));
+    current.frequency_hz[1] += 1.0f;
+    CHECK(g26_hmi_signature_changed(&previous, &current));
+
+    current = previous;
+    current.amplitude_mv[1] += G26_HMI_CHANGE_VOLTAGE_MV + 0.01f;
+    CHECK(g26_hmi_signature_changed(&previous, &current));
+
+    current = previous;
+    current.relative_phase_rad[1] = -3.13f;
+    CHECK(!g26_hmi_signature_changed(&previous, &current));
+    current.relative_phase_rad[1] = -3.0f;
+    CHECK(g26_hmi_signature_changed(&previous, &current));
+
+    current = previous;
+    current.component_count = 3U;
+    CHECK(g26_hmi_signature_changed(&previous, &current));
+    return 0;
+}
+
 int main(void)
 {
     CHECK(test_event_parser() == 0);
     CHECK(test_page_and_transfer_parsers() == 0);
     CHECK(test_session_generation_gate() == 0);
     CHECK(test_render_mapping() == 0);
+    CHECK(test_measurement_change_gate() == 0);
     puts("G26 HMI host tests passed");
     return 0;
 }

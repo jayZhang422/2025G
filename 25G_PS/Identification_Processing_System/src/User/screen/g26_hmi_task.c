@@ -46,17 +46,76 @@
 #define G26_HMI_TASK_POLL_TICKS 1U
 #define G26_HMI_COMMAND_BYTES   64U
 #define G26_HMI_SPECTRUM_COLOR  65504U
+#define G26_HMI_INVALID_CLEAR_COUNT 2U
 
 typedef struct {
     pl_hmi_uart_t uart;
     g26_hmi_session_t session;
+    g26_hmi_measurement_signature_t last_sent_signature;
     u32 next_generation;
     u32 request_tick;
     u8 navigation_lock_page;
+    u8 observed_page;
+    u8 invalid_generation_count;
+    int last_sent_valid;
 } g26_hmi_state_t;
 
 static g26_measurement_output_t g26_hmi_snapshot;
 static uint8_t g26_hmi_waveform_bytes[G26_HMI_WAVEFORM_MAX_POINTS];
+
+static float32_t g26_hmi_wrap_phase(float32_t phase)
+{
+    while (phase > APP_PI) {
+        phase -= 2.0f * APP_PI;
+    }
+    while (phase < -APP_PI) {
+        phase += 2.0f * APP_PI;
+    }
+    return phase;
+}
+
+static void g26_hmi_build_signature(
+    const g26_signal_result_t *result,
+    g26_hmi_measurement_signature_t *signature)
+{
+    float32_t fundamental_phase = 0.0f;
+    u32 component;
+
+    memset(signature, 0, sizeof(*signature));
+    signature->component_count = result->component_count;
+    signature->fundamental_frequency_hz =
+        result->fundamental_frequency_hz;
+    signature->dc_mv = result->dc_mv;
+    signature->rms_mv = result->rms_mv;
+    signature->upp_mv = result->upp_mv;
+
+    for (component = 0U;
+         component < result->component_count &&
+         component < G26_HMI_SIGNATURE_COMPONENTS; component++) {
+        if (result->components[component].harmonic_order == 1U) {
+            fundamental_phase = result->components[component].phase_rad;
+            break;
+        }
+    }
+    for (component = 0U;
+         component < result->component_count &&
+         component < G26_HMI_SIGNATURE_COMPONENTS; component++) {
+        const g26_signal_component_t *line = &result->components[component];
+
+        signature->harmonic_order[component] = line->harmonic_order;
+        signature->frequency_hz[component] = line->frequency_hz;
+        signature->amplitude_mv[component] = line->amplitude_mv;
+        signature->relative_phase_rad[component] = g26_hmi_wrap_phase(
+            line->phase_rad -
+            (float32_t)line->harmonic_order * fundamental_phase);
+    }
+}
+
+static void g26_hmi_reset_display_tracking(g26_hmi_state_t *state)
+{
+    state->last_sent_valid = 0;
+    state->invalid_generation_count = 0U;
+}
 
 static int g26_hmi_send_format(pl_hmi_uart_t *uart,
                                const char *format, ...)
@@ -206,7 +265,7 @@ static int g26_hmi_prepare_page(g26_hmi_state_t *state, u8 page)
 
 /* Return 1 for a result page, 0 for another page, and -1 on link failure. */
 static int g26_hmi_sync_active_result_page(g26_hmi_state_t *state,
-                                           u8 *page)
+                                           u8 *page, int *page_changed)
 {
     uint8_t current_page;
 
@@ -214,11 +273,14 @@ static int g26_hmi_sync_active_result_page(g26_hmi_state_t *state,
             &state->uart, &current_page) != XST_SUCCESS) {
         return -1;
     }
+    *page_changed = (current_page != state->observed_page);
+    state->observed_page = current_page;
     if (current_page != G26_HMI_PAGE_TIME_DOMAIN &&
         current_page != G26_HMI_PAGE_SPECTRUM) {
         return 0;
     }
     if (current_page != state->session.active_page) {
+        *page_changed = 1;
         state->session.active_page = current_page;
         if (g26_hmi_prepare_page(state, current_page) != XST_SUCCESS) {
             return -1;
@@ -541,6 +603,7 @@ static int g26_hmi_start_measurement(g26_hmi_state_t *state, u8 page)
         return XST_SUCCESS;
     }
     generation = g26_hmi_allocate_generation(state);
+    g26_hmi_reset_display_tracking(state);
     g26_hmi_session_start(
         &state->session, generation, page, page);
     state->request_tick = (u32)xTaskGetTickCount();
@@ -568,6 +631,7 @@ static int g26_hmi_stop_page(g26_hmi_state_t *state, u8 page)
 {
     int status;
 
+    g26_hmi_reset_display_tracking(state);
     g26_hmi_session_stop(&state->session);
     state->request_tick = 0U;
     status = g26_hmi_prepare_page(state, page);
@@ -679,6 +743,7 @@ static int g26_hmi_sync_key_start(g26_hmi_state_t *state,
     }
     g26_hmi_session_start(
         &state->session, event->generation, 0U, page);
+    g26_hmi_reset_display_tracking(state);
     state->request_tick = event->started_tick;
     state->navigation_lock_page = page;
     if (g26_hmi_set_navigation_enabled(state, page, 0) != XST_SUCCESS) {
@@ -708,8 +773,11 @@ static int g26_hmi_process_completion(
     u32 generation;
     u32 display_tick;
     u8 page = state->session.active_page;
+    g26_hmi_measurement_signature_t current_signature;
+    int page_changed = 0;
     int page_status;
     int rendered = 0;
+    int render_status = XST_SUCCESS;
     int status = XST_SUCCESS;
 
     if (!g26_hmi_session_accept_event(
@@ -721,18 +789,35 @@ static int g26_hmi_process_completion(
             &g26_hmi_snapshot, &generation) != XST_SUCCESS ||
         generation != event->generation) {
         g26_hmi_session_publish_invalid(&state->session);
-        memset(&g26_hmi_snapshot, 0, sizeof(g26_hmi_snapshot));
-        page_status = g26_hmi_sync_active_result_page(state, &page);
-        if (page_status < 0 ||
-            (page_status == 1 &&
-             g26_hmi_prepare_page(state, page) != XST_SUCCESS)) {
+        if (state->invalid_generation_count < 0xFFU) {
+            state->invalid_generation_count++;
+        }
+        page_status = g26_hmi_sync_active_result_page(
+            state, &page, &page_changed);
+        if (page_status < 0) {
+            status = XST_FAILURE;
+        }
+        if (state->invalid_generation_count ==
+                G26_HMI_INVALID_CLEAR_COUNT) {
+            memset(&g26_hmi_snapshot, 0, sizeof(g26_hmi_snapshot));
+            state->last_sent_valid = 0;
+        } else if (page_status == 1 && page_changed) {
+            state->last_sent_valid = 0;
+        }
+        if (page_status == 1 &&
+            (state->invalid_generation_count ==
+                 G26_HMI_INVALID_CLEAR_COUNT ||
+             (state->invalid_generation_count >
+                  G26_HMI_INVALID_CLEAR_COUNT && page_changed)) &&
+            g26_hmi_prepare_page(state, page) != XST_SUCCESS) {
             status = XST_FAILURE;
         }
         if (g26_hmi_unlock_navigation(state) != XST_SUCCESS) {
             status = XST_FAILURE;
         }
-        xil_printf("[HMI] LIVE_INVALID generation=%u status=%d\r\n",
-                   (unsigned int)event->generation, event->status);
+        xil_printf("[HMI] LIVE_INVALID generation=%u status=%d count=%u\r\n",
+                   (unsigned int)event->generation, event->status,
+                   (unsigned int)state->invalid_generation_count);
         state->request_tick = 0U;
         if (g26_hmi_continue_measurement(state) != XST_SUCCESS) {
             status = XST_FAILURE;
@@ -740,22 +825,34 @@ static int g26_hmi_process_completion(
         return status;
     }
 
+    state->invalid_generation_count = 0U;
+    g26_hmi_build_signature(
+        &g26_hmi_snapshot.result, &current_signature);
     g26_hmi_session_publish_snapshot(&state->session);
-    page_status = g26_hmi_sync_active_result_page(state, &page);
+    page_status = g26_hmi_sync_active_result_page(
+        state, &page, &page_changed);
     if (page_status < 0) {
         status = XST_FAILURE;
-    } else if (page_status == 1) {
+    } else if (page_status == 1 &&
+               (!state->last_sent_valid || page_changed ||
+                g26_hmi_signature_changed(
+                    &state->last_sent_signature, &current_signature))) {
         rendered = 1;
-        if (g26_hmi_with_touch_lock(
-                state, g26_hmi_render_active_page) != XST_SUCCESS) {
+        render_status = g26_hmi_with_touch_lock(
+            state, g26_hmi_render_active_page);
+        if (render_status != XST_SUCCESS) {
             status = XST_FAILURE;
+        } else {
+            state->last_sent_signature = current_signature;
+            state->last_sent_valid = 1;
         }
     }
     if (g26_hmi_unlock_navigation(state) != XST_SUCCESS) {
         status = XST_FAILURE;
     }
     display_tick = (u32)xTaskGetTickCount();
-    if (status == XST_SUCCESS && rendered) {
+    if (status == XST_SUCCESS && rendered &&
+        render_status == XST_SUCCESS) {
         xil_printf("[HMI] TIMING origin=%s generation=%u page=%u compute_ms=%u display_tx_ms=%u total_ms=%u request_to_display_ms=%u\r\n",
                    (event->source_page == 0U) ? "KEY1" : "HMI",
                    (unsigned int)event->generation,
@@ -781,6 +878,7 @@ static int g26_hmi_process_clear(g26_hmi_state_t *state)
     uint8_t page;
     int status;
 
+    g26_hmi_reset_display_tracking(state);
     g26_hmi_session_stop(&state->session);
     memset(&g26_hmi_snapshot, 0, sizeof(g26_hmi_snapshot));
     state->request_tick = 0U;
