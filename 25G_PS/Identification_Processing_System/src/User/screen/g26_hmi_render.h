@@ -61,11 +61,14 @@ typedef struct {
 void g26_hmi_session_init(g26_hmi_session_t *session);
 void g26_hmi_session_start(g26_hmi_session_t *session, uint32_t generation,
                            uint8_t source_page, uint8_t active_page);
+void g26_hmi_session_continue(g26_hmi_session_t *session,
+                              uint32_t generation, uint8_t source_page);
 void g26_hmi_session_stop(g26_hmi_session_t *session);
 int g26_hmi_session_is_pending(const g26_hmi_session_t *session);
 int g26_hmi_session_accept_event(const g26_hmi_session_t *session,
                                  uint32_t generation, uint8_t source_page);
 void g26_hmi_session_publish_snapshot(g26_hmi_session_t *session);
+void g26_hmi_session_publish_invalid(g26_hmi_session_t *session);
 
 uint32_t g26_hmi_frequency_tenths_khz(float frequency_hz);
 uint32_t g26_hmi_frequency_integer_khz(float frequency_hz);

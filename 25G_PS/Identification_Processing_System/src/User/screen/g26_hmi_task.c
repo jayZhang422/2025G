@@ -52,6 +52,7 @@ typedef struct {
     g26_hmi_session_t session;
     u32 next_generation;
     u32 request_tick;
+    u8 navigation_lock_page;
 } g26_hmi_state_t;
 
 static g26_measurement_output_t g26_hmi_snapshot;
@@ -112,6 +113,21 @@ static int g26_hmi_set_navigation_enabled(g26_hmi_state_t *state,
                 enabled ? 1U : 0U) != XST_SUCCESS) {
             status = XST_FAILURE;
         }
+    }
+    return status;
+}
+
+static int g26_hmi_unlock_navigation(g26_hmi_state_t *state)
+{
+    int status;
+
+    if (state->navigation_lock_page == 0U) {
+        return XST_SUCCESS;
+    }
+    status = g26_hmi_set_navigation_enabled(
+        state, state->navigation_lock_page, 1);
+    if (status == XST_SUCCESS) {
+        state->navigation_lock_page = 0U;
     }
     return status;
 }
@@ -186,6 +202,30 @@ static int g26_hmi_prepare_page(g26_hmi_state_t *state, u8 page)
         return g26_hmi_prepare_page3(state);
     }
     return XST_FAILURE;
+}
+
+/* Return 1 for a result page, 0 for another page, and -1 on link failure. */
+static int g26_hmi_sync_active_result_page(g26_hmi_state_t *state,
+                                           u8 *page)
+{
+    uint8_t current_page;
+
+    if (pl_hmi_uart_get_current_page(
+            &state->uart, &current_page) != XST_SUCCESS) {
+        return -1;
+    }
+    if (current_page != G26_HMI_PAGE_TIME_DOMAIN &&
+        current_page != G26_HMI_PAGE_SPECTRUM) {
+        return 0;
+    }
+    if (current_page != state->session.active_page) {
+        state->session.active_page = current_page;
+        if (g26_hmi_prepare_page(state, current_page) != XST_SUCCESS) {
+            return -1;
+        }
+    }
+    *page = current_page;
+    return 1;
 }
 
 static int g26_hmi_confirm_page(g26_hmi_state_t *state, u8 expected_page)
@@ -470,6 +510,27 @@ static u32 g26_hmi_allocate_generation(g26_hmi_state_t *state)
     return generation;
 }
 
+static int g26_hmi_continue_measurement(g26_hmi_state_t *state)
+{
+    u8 page = state->session.active_page;
+    u32 generation;
+
+    if (page != G26_HMI_PAGE_TIME_DOMAIN &&
+        page != G26_HMI_PAGE_SPECTRUM) {
+        return XST_FAILURE;
+    }
+    generation = g26_hmi_allocate_generation(state);
+    g26_hmi_session_continue(&state->session, generation, page);
+    state->request_tick = (u32)xTaskGetTickCount();
+    if (g26_measurement_request(generation, page) != XST_SUCCESS) {
+        state->session.pending_generation = 0U;
+        state->session.source_page = 0U;
+        state->request_tick = 0U;
+        return XST_FAILURE;
+    }
+    return XST_SUCCESS;
+}
+
 static int g26_hmi_start_measurement(g26_hmi_state_t *state, u8 page)
 {
     u32 generation;
@@ -484,12 +545,18 @@ static int g26_hmi_start_measurement(g26_hmi_state_t *state, u8 page)
         &state->session, generation, page, page);
     state->request_tick = (u32)xTaskGetTickCount();
 
-    if (g26_hmi_set_navigation_enabled(state, page, 0) != XST_SUCCESS ||
-        g26_hmi_prepare_page(state, page) != XST_SUCCESS ||
+    state->navigation_lock_page = page;
+    if (g26_hmi_set_navigation_enabled(state, page, 0) != XST_SUCCESS) {
+        g26_hmi_session_stop(&state->session);
+        state->request_tick = 0U;
+        (void)g26_hmi_unlock_navigation(state);
+        return XST_FAILURE;
+    }
+    if (g26_hmi_prepare_page(state, page) != XST_SUCCESS ||
         g26_measurement_request(generation, page) != XST_SUCCESS) {
         g26_hmi_session_stop(&state->session);
         state->request_tick = 0U;
-        (void)g26_hmi_set_navigation_enabled(state, page, 1);
+        (void)g26_hmi_unlock_navigation(state);
         return XST_FAILURE;
     }
     xil_printf("[HMI] MEASUREMENT_REQUEST generation=%u page=%u\r\n",
@@ -504,7 +571,7 @@ static int g26_hmi_stop_page(g26_hmi_state_t *state, u8 page)
     g26_hmi_session_stop(&state->session);
     state->request_tick = 0U;
     status = g26_hmi_prepare_page(state, page);
-    if (g26_hmi_set_navigation_enabled(state, page, 1) != XST_SUCCESS) {
+    if (g26_hmi_unlock_navigation(state) != XST_SUCCESS) {
         status = XST_FAILURE;
     }
     return status;
@@ -613,10 +680,15 @@ static int g26_hmi_sync_key_start(g26_hmi_state_t *state,
     g26_hmi_session_start(
         &state->session, event->generation, 0U, page);
     state->request_tick = event->started_tick;
-    if (g26_hmi_set_navigation_enabled(state, page, 0) != XST_SUCCESS ||
-        g26_hmi_prepare_page(state, page) != XST_SUCCESS) {
+    state->navigation_lock_page = page;
+    if (g26_hmi_set_navigation_enabled(state, page, 0) != XST_SUCCESS) {
         g26_hmi_session_stop(&state->session);
-        (void)g26_hmi_set_navigation_enabled(state, page, 1);
+        (void)g26_hmi_unlock_navigation(state);
+        return XST_FAILURE;
+    }
+    if (g26_hmi_prepare_page(state, page) != XST_SUCCESS) {
+        g26_hmi_session_stop(&state->session);
+        (void)g26_hmi_unlock_navigation(state);
         return XST_FAILURE;
     }
     xil_printf("[HMI] KEY1_SYNC_START generation=%u page=%u\r\n",
@@ -635,31 +707,55 @@ static int g26_hmi_process_completion(
 {
     u32 generation;
     u32 display_tick;
-    u8 page;
-    int status;
+    u8 page = state->session.active_page;
+    int page_status;
+    int rendered = 0;
+    int status = XST_SUCCESS;
 
     if (!g26_hmi_session_accept_event(
             &state->session, event->generation, event->source_page)) {
         return XST_SUCCESS;
     }
-    page = state->session.active_page;
     if (event->status != XST_SUCCESS ||
         g26_measurement_snapshot(
             &g26_hmi_snapshot, &generation) != XST_SUCCESS ||
         generation != event->generation) {
-        g26_hmi_session_stop(&state->session);
+        g26_hmi_session_publish_invalid(&state->session);
+        memset(&g26_hmi_snapshot, 0, sizeof(g26_hmi_snapshot));
+        page_status = g26_hmi_sync_active_result_page(state, &page);
+        if (page_status < 0 ||
+            (page_status == 1 &&
+             g26_hmi_prepare_page(state, page) != XST_SUCCESS)) {
+            status = XST_FAILURE;
+        }
+        if (g26_hmi_unlock_navigation(state) != XST_SUCCESS) {
+            status = XST_FAILURE;
+        }
+        xil_printf("[HMI] LIVE_INVALID generation=%u status=%d\r\n",
+                   (unsigned int)event->generation, event->status);
         state->request_tick = 0U;
-        (void)g26_hmi_set_navigation_enabled(state, page, 1);
-        return XST_FAILURE;
+        if (g26_hmi_continue_measurement(state) != XST_SUCCESS) {
+            status = XST_FAILURE;
+        }
+        return status;
     }
 
     g26_hmi_session_publish_snapshot(&state->session);
-    status = g26_hmi_with_touch_lock(state, g26_hmi_render_active_page);
-    if (g26_hmi_set_navigation_enabled(state, page, 1) != XST_SUCCESS) {
+    page_status = g26_hmi_sync_active_result_page(state, &page);
+    if (page_status < 0) {
+        status = XST_FAILURE;
+    } else if (page_status == 1) {
+        rendered = 1;
+        if (g26_hmi_with_touch_lock(
+                state, g26_hmi_render_active_page) != XST_SUCCESS) {
+            status = XST_FAILURE;
+        }
+    }
+    if (g26_hmi_unlock_navigation(state) != XST_SUCCESS) {
         status = XST_FAILURE;
     }
     display_tick = (u32)xTaskGetTickCount();
-    if (status == XST_SUCCESS) {
+    if (status == XST_SUCCESS && rendered) {
         xil_printf("[HMI] TIMING origin=%s generation=%u page=%u compute_ms=%u display_tx_ms=%u total_ms=%u request_to_display_ms=%u\r\n",
                    (event->source_page == 0U) ? "KEY1" : "HMI",
                    (unsigned int)event->generation,
@@ -674,6 +770,9 @@ static int g26_hmi_process_completion(
                        state->request_tick, display_tick));
     }
     state->request_tick = 0U;
+    if (g26_hmi_continue_measurement(state) != XST_SUCCESS) {
+        status = XST_FAILURE;
+    }
     return status;
 }
 
@@ -695,7 +794,7 @@ static int g26_hmi_process_clear(g26_hmi_state_t *state)
         return XST_SUCCESS;
     }
     status = g26_hmi_prepare_page(state, page);
-    if (g26_hmi_set_navigation_enabled(state, page, 1) != XST_SUCCESS) {
+    if (g26_hmi_unlock_navigation(state) != XST_SUCCESS) {
         status = XST_FAILURE;
     }
     if (status == XST_SUCCESS) {

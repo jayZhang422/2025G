@@ -1,7 +1,7 @@
 /******************************************************************************
  * g26_measurement_app.h
  *
- * KEY1-triggered one-shot measurement application for the 2026 G question.
+ * START-triggered continuous measurement application for the 2026 G question.
  ******************************************************************************/
 
 #ifndef USER_INCLUDE_G26_MEASUREMENT_APP_H_
@@ -46,7 +46,7 @@ int g26_measurement_poll_event(g26_measurement_event_t *event);
 int g26_measurement_snapshot(g26_measurement_output_t *destination,
                              u32 *generation);
 
-/** FreeRTOS task: KEY1 measures once; KEY2 clears and rearms KEY1. */
+/** FreeRTOS task: START requests are measured; KEY2 clears and stops the loop. */
 void g26_measurement_task(void *parameters);
 
 /** Legacy single-task accessor. Concurrent consumers use snapshot(). */

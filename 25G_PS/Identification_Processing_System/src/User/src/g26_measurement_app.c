@@ -301,7 +301,8 @@ static int g26_measure_once(XAxiDma *dma, int monitor_available,
     (void)xSemaphoreGive(g26_output_mutex);
 
     g26_print_result(&g26_staging_output.result);
-    xil_printf("[G26] HOLD: 1/3-period waveforms ready; press KEY2 to clear\r\n");
+    xil_printf("[G26] PUBLISHED: generation=%u, 1/3-period waveforms ready\r\n",
+               (unsigned int)generation);
     return XST_SUCCESS;
 }
 
@@ -406,16 +407,18 @@ void g26_measurement_task(void *parameters)
                (unsigned int)(APP_ANALYSIS_SAMPLE_RATE_HZ + 0.5f),
                (unsigned int)APP_RX_FRAME_BYTES);
     g26_print_fixed_3(APP_G26_INPUT_MV_PER_CODE);
-    xil_printf(" mV/code\r\n[G26] ARMED: KEY1=start KEY2=clear/rearm\r\n");
+    xil_printf(" mV/code\r\n[G26] ARMED: START=live measurement KEY2=stop/clear\r\n");
 
     for (;;) {
         g26_measurement_request_t request;
 
-        if (xQueueReceive(g26_request_queue, &request, 0U) == pdPASS) {
-            (void)g26_run_request(&dma, monitor_available, &request);
-        } else if (button_input_take_reset_press(&buttons)) {
+        if (button_input_take_reset_press(&buttons)) {
+            (void)xQueueReset(g26_request_queue);
             g26_clear_result(monitor_available);
             armed = 1;
+        } else if (xQueueReceive(
+                       g26_request_queue, &request, 0U) == pdPASS) {
+            (void)g26_run_request(&dma, monitor_available, &request);
         } else if (armed && button_input_take_start_press(&buttons)) {
             int status;
 

@@ -104,6 +104,27 @@ static int test_session_generation_gate(void)
     CHECK(!g26_hmi_session_is_pending(&session));
     CHECK(session.snapshot_valid == 1);
     CHECK(session.active_page == G26_HMI_PAGE_TIME_DOMAIN);
+
+    session.period_count = 3U;
+    session.show_time_parameters = 1;
+    session.show_amplitudes = 1;
+    g26_hmi_session_continue(
+        &session, 8U, G26_HMI_PAGE_TIME_DOMAIN);
+    CHECK(g26_hmi_session_is_pending(&session));
+    CHECK(g26_hmi_session_accept_event(
+        &session, 8U, G26_HMI_PAGE_TIME_DOMAIN));
+    CHECK(session.snapshot_valid == 1);
+    CHECK(session.period_count == 3U);
+    CHECK(session.show_time_parameters == 1);
+    CHECK(session.show_amplitudes == 1);
+
+    g26_hmi_session_publish_invalid(&session);
+    CHECK(!g26_hmi_session_is_pending(&session));
+    CHECK(session.snapshot_valid == 0);
+    CHECK(session.active_page == G26_HMI_PAGE_TIME_DOMAIN);
+    CHECK(session.period_count == 3U);
+    CHECK(session.show_time_parameters == 1);
+    CHECK(session.show_amplitudes == 1);
     g26_hmi_session_stop(&session);
     CHECK(session.snapshot_valid == 0);
     return 0;

@@ -27,6 +27,16 @@ void g26_hmi_session_start(g26_hmi_session_t *session, uint32_t generation,
     session->snapshot_valid = 0;
 }
 
+void g26_hmi_session_continue(g26_hmi_session_t *session,
+                              uint32_t generation, uint8_t source_page)
+{
+    if (session == 0) {
+        return;
+    }
+    session->pending_generation = generation;
+    session->source_page = source_page;
+}
+
 void g26_hmi_session_stop(g26_hmi_session_t *session)
 {
     if (session == 0) {
@@ -62,6 +72,16 @@ void g26_hmi_session_publish_snapshot(g26_hmi_session_t *session)
     session->pending_generation = 0U;
     session->source_page = 0U;
     session->snapshot_valid = 1;
+}
+
+void g26_hmi_session_publish_invalid(g26_hmi_session_t *session)
+{
+    if (session == 0) {
+        return;
+    }
+    session->pending_generation = 0U;
+    session->source_page = 0U;
+    session->snapshot_valid = 0;
 }
 
 static float g26_hmi_clamp(float value, float minimum, float maximum)
