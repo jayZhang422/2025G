@@ -164,13 +164,14 @@ module top (
         .pl_key_i             (pl_key_i),
         .rst_n_0              (i_rst)
     );
+
     ila_0 ila_debug (
-	.clk(fclk), // input wire clk
-	.probe0(fir_tlast), // input wire [0:0]  probe0  
-	.probe1(fir_tdata[11:0]), // input wire [11:0]  probe1 
-	.probe2(fir_tready), // input wire [0:0]  probe2 
-	.probe3(fir_tvalid), // input wire [0:0]  probe3 
-	.probe4(i_rst) // input wire [0:0]  probe4
-);
+        .clk    (iq_clk_adc),
+        .probe0 (i_ad_data),
+        .probe1 (iq_sample_valid),
+        .probe2 (i_rst),
+        .probe3 (1'b0),
+        .probe4 (1'b0)
+    );
 
 endmodule

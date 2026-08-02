@@ -24,10 +24,14 @@
   (`W19`) low to enable the output bus, and `o_ad_pdn` drives J10 pin 19
   (`U17`) low to keep the converter powered. OTR remains unexposed.
 
-### Deferred Board Work
+### Hardware Verification
 
-- The stable half-cycle corresponding to channel A and the ADC output coding
-  must be confirmed on hardware before implementation and bitstream sign-off.
+- Vivado ILA captured valid raw 14-bit data from both AD9248 A and B paths;
+  `sample_valid` and reset-release state were correct.
+- The active ILA uses the ADC phase clock and a 4096-sample buffer. A 1 MHz
+  JTAG clock is required because the Debug Hub clock is only 5.12006 MHz.
+- This confirms functional sampling and output coding. Converter- and
+  board-derived input-delay constraints remain required for setup/hold proof.
 
 ## 2026-07-31 - 2026 G Decimating FIR Active Contract And Board Validation
 

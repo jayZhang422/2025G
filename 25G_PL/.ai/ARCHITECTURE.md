@@ -27,7 +27,7 @@ The adjacent `25G_PS` workspace owns the active software. Hardware exposes the F
 | Acquisition | independent-clock FIFO, `adc_fir_axis`, 39-tap FIR /3, AXIS FIFO, SG AXI DMA S2MM, PS HP0 DDR |
 | DDS/DAC | Two 32-bit DDS states, four single-port ROM instances, 14-bit AD9767 A/B outputs; XSIM behavioral regression passed, hardware verification pending |
 | PS | PS7 DDR, FCLK0 100 MHz, M_AXI_GP0, S_AXI_HP0, UART1 MIO 48/49, three EMIO GPIO inputs |
-| Debug | `fifo_monitor_axi_0` publishes FIFO/AXIS snapshots to PS through AXI4-Lite; `ila_0` remains uninstantiated |
+| Debug | `fifo_monitor_axi_0` publishes FIFO/AXIS snapshots to PS; active `ila_debug` captures the raw 14-bit ADC bus in the ADC phase-clock domain |
 | Tooling | Vivado 2020.2, Questa is the selected target simulator |
 
 PL owns sampling, FIFO CDC, FIR filtering/decimation, post-FIR AXIS framing, retained DDS logic, ROM lookup, amplitude scaling, and DAC pins. PS owns SG DMA configuration, DDR, and the retained DDS control BRAM. DMA completion/error reaches PS through the fabric interrupt path.
@@ -46,6 +46,7 @@ top
 |  `- DDS_DAC u_dac_dds                         (local user IP)
 |- adc_fir_axis u_adc_fir
 |  `- fir_compiler_0                            (39 taps, decimation 3)
+|- ila_0 ila_debug                              (raw AD9248 bus/valid/reset)
 `- system_wrapper u_system                      (generated from system.bd)
    `- system system_i
       |- processing_system7_0                   (Zynq PS7)
@@ -59,7 +60,7 @@ top
       `- blk_PS_TO_PL                           (true dual-port BRAM)
 ```
 
-`ram.sv`, `top_tb.sv`, `blk_mem_gen_0.xci`, and `ila_0.xci` are AutoDisabled in `2023H.xpr`; they are retained project assets but are not active hierarchy.
+`ram.sv`, `top_tb.sv`, and `blk_mem_gen_0.xci` are AutoDisabled in `2023H.xpr`; they are retained project assets but are not active hierarchy. `ila_0.xci` is active and instantiated as `ila_debug`.
 
 ## 3. Data Flow
 
@@ -131,7 +132,10 @@ phase accumulators.
 
 The BD external AXIS port `ADC_STREAM_IN` is the 16-bit post-FIR input from `adc_fir_axis`; it has TREADY and TLAST, but no TKEEP/TSTRB/TID/TDEST/TUSER. DMA is SG S2MM only with no MM2S. Its stream width is 16 bits and memory AXI width is 64 bits. PS writes its AXI-Lite registers; the S2MM and descriptor masters reach DDR through HP0, and the completion/error interrupt reaches PS IRQ_F2P.
 
-`ila_0` is uninstantiated. Its saved configuration has six probes of widths 12, 1, 1, 12, 12, and 14; depth is 4096 with advanced trigger and storage qualification enabled.
+`ila_0` is instantiated as `ila_debug`, clocked by the 5.12006 MHz ADC phase
+clock. Its five probes observe `i_ad_data[13:0]`, `iq_sample_valid`, `i_rst`,
+and two constant-zero placeholders. Capture depth is 4096. Because the Debug
+Hub uses the same 5.12006 MHz clock, hardware access uses a 1 MHz JTAG clock.
 
 ## 4. Clock System and CDC
 
@@ -207,7 +211,7 @@ Configure source IPs through Vivado IP customization or BD editing, then regener
 | `blk_rom_sine.xci` | blk_mem_gen 8.4; single-port 4096x14 ROM | active, sine COE |
 | `blk_rom_triangle.xci` | blk_mem_gen 8.4; single-port 4096x14 ROM | active, triangle COE |
 | `blk_mem_gen_0.xci` | blk_mem_gen 8.4; simple dual-port 4096x16 RAM | disabled, `ram.sv` only |
-| `ila_0.xci` | ILA 6.2; six probes, depth 4096 | disabled/uninstantiated |
+| `ila_0.xci` | ILA 6.2; raw 14-bit ADC plus valid/reset, depth 4096 | active as `ila_debug` |
 | `system_processing_system7_0_0.xci` | processing_system7 5.5; FCLK0=100 MHz, GP0/HP0/UART1 enabled | active BD PS |
 | `system_proc_sys_reset_0_0.xci` | proc_sys_reset 5.0 | active reset fabric |
 | `system_clk_wiz_0_0.xci` | clk_wiz 6.0; 125 MHz output | active Pll_DA |
@@ -270,7 +274,7 @@ Both have 12-bit addresses through `phase_acc[31:20]`. XCI output products gener
 5. AXIS FIFO asynchronous configuration is redundant with its present common FCLK0 ports and should be explicitly justified or revised.
 6. PS fabric IRQ capability is enabled but DMA IRQ is not wired; software must poll unless the BD changes.
 7. Active simulation does not prove DMA/DDR, TLAST cadence, FIFO stress, or reset release across all clocks.
-8. Disabled RAM, ILA, and legacy testbench assets create maintenance ambiguity.
+8. Disabled RAM and legacy testbench assets create maintenance ambiguity.
 9. The dual DDS source passed XSIM behavioral simulation only. The test does not prove board-level DAC timing, analogue amplitude calibration, or PS AXI write ordering under real hardware load.
 
 ## 13. TODO
@@ -280,7 +284,7 @@ Both have 12-bit addresses through `phase_acc[31:20]`. XCI output products gener
 3. Decide whether BD AXIS FIFO must remain asynchronous.
 4. Wire DMA completion/error interrupt or document polling behavior.
 5. Add test coverage for 4096-beat TLAST, back-pressure, FIFO overflow, reset, stop/midscale, independent A/B waveform and amplitude, phase reload, phase-continuous tracking, triangle mode, and DMA/DDR integration.
-6. Decide whether disabled RAM, ILA, and legacy testbench are retained or removed after deliberate review.
+6. Decide whether disabled RAM and the legacy testbench are retained or removed after deliberate review.
 7. Integrate PS control software only after board-level verification of the dual-DDS outputs.
 
 ## Source Coverage Record
@@ -403,8 +407,9 @@ and `o_ad_clk` to J10 pin 4 (`W18`). Top-level constants hold AD9248 `OEB` low
 through `o_ad_oeb` on J10 pin 3 (`W19`) and `PDN` low through `o_ad_pdn` on J10
 pin 19 (`U17`); OTR on J10 pin 20 (`T16`) is intentionally not exposed or
 constrained. Legacy `AD9226.xdc` is retained but disabled in the `ad9248`
-branch. The selected-channel PLL capture phase still requires board validation
-before implementation/bitstream sign-off.
+branch. Hardware ILA capture confirmed valid raw data from both AD9248 A and B
+paths; converter-derived input-delay constraints are still required to prove
+setup/hold margin rather than only functional sampling.
 
 Current board evidence covers correct signed/Fs decoding, stable 8192-byte SG
 captures, 10..500 kHz amplitude calibration, and 1/1.5/2 MHz interference.

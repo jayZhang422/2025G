@@ -37,8 +37,9 @@ observation port stays 12-bit for BD compatibility. `AD9248.xdc` is the active
 converter constraint file in this branch; the legacy `AD9226.xdc` is retained
 but disabled. `top` holds `o_ad_oeb` (`W19`, J10 pin 3) and `o_ad_pdn` (`U17`,
 J10 pin 19) low directly; these controls do not pass through `H_top`. OTR is
-not exposed or constrained. PLL phase and ADC output coding still require board
-validation before generating the final bitstream.
+not exposed or constrained. ILA testing confirmed valid raw data on both
+AD9248 A and B paths and the expected output coding. Input-delay constraints
+are still required to prove capture setup/hold margin.
 
 Board tests currently pass 1/1.5/2 MHz interference. Remaining PL-adjacent risk
 is analog aliasing before ADC in the `4.62006..5.62006 MHz` window; once such a
