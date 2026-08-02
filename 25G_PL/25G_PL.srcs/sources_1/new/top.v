@@ -6,7 +6,7 @@ module top (
     input  wire [2:0]  pl_key_i,
     input  wire        i_hmi_uart_rx,
     output wire        o_hmi_uart_tx,
-    input  wire [11:0] i_ad_data,
+    input  wire [13:0] i_ad_data,
     output wire        o_ad_clk,
     inout  wire [14:0] DDR_addr,
     inout  wire [2:0]  DDR_ba,

@@ -4,13 +4,18 @@
 > `../../Doc/26G_当前架构与实测状态.md`. Earlier DDS/IQ sections describe
 > retained project capabilities, not the active G26 PS application.
 
+> `ad9248` branch override (2026-08-02): the active physical ADC input is one
+> phase-selected channel from the AD9248 multiplexed 14-bit bus. The module
+> straps DFS high, so the acquisition path treats samples as 14-bit two's
+> complement. FIFO, FIR, AXIS, TLAST, and DMA interfaces remain 16-bit.
+
 This is the baseline knowledge base for the 2023H Vivado project. Future changes must update this document incrementally and retain established facts.
 
 ## 1. Project Overview
 
 ### Purpose and Platform
 
-This is a Zynq-7020 PS+PL acquisition and waveform-output design targeting `xc7z020clg400-2`. For the active 2026 G path, PL samples a 12-bit AD9226 input, applies a 39-tap decimating FIR, and sends 4096-sample `signed16` frames to PS DDR through AXI Stream and SG AXI DMA. The retained hardware can also produce independently controlled A/B DDS waveforms for a 14-bit AD9767-style dual DAC.
+This is a Zynq-7020 PS+PL acquisition and waveform-output design targeting `xc7z020clg400-2`. For the active 2026 G path, PL captures one channel from a 14-bit AD9248 input, applies a 39-tap decimating FIR, and sends 4096-sample `signed16` frames to PS DDR through AXI Stream and SG AXI DMA. The retained hardware can also produce independently controlled A/B DDS waveforms for a 14-bit AD9767-style dual DAC.
 
 The adjacent `25G_PS` workspace owns the active software. Hardware exposes the FIR/DMA acquisition contract, FIFO diagnostics, retained IQ registers, and a ten-word BRAM control block for the retained DDS path.
 
@@ -18,7 +23,7 @@ The adjacent `25G_PS` workspace owns the active software. Hardware exposes the F
 
 | Area | Current implementation |
 | --- | --- |
-| ADC | AD9226, 12-bit parallel input, 5.12006 MHz sampling |
+| ADC | AD9248, one phase-selected 14-bit channel, 5.12006 MHz sampling |
 | Acquisition | independent-clock FIFO, `adc_fir_axis`, 39-tap FIR /3, AXIS FIFO, SG AXI DMA S2MM, PS HP0 DDR |
 | DDS/DAC | Two 32-bit DDS states, four single-port ROM instances, 14-bit AD9767 A/B outputs; XSIM behavioral regression passed, hardware verification pending |
 | PS | PS7 DDR, FCLK0 100 MHz, M_AXI_GP0, S_AXI_HP0, UART1 MIO 48/49, three EMIO GPIO inputs |
@@ -61,14 +66,14 @@ top
 ### ADC and FIFO
 
 ```text
-i_ad_data[11:0]
- -> ad9226 capture on clk_pll_deg (5.1208 MHz, about 181.891 degrees)
+i_ad_data[13:0]
+ -> legacy-named ad9226 register captures one AD9248 mux channel on clk_pll_deg
  -> stable/valid after PLL lock plus 64 sample-clock cycles
  -> fifo_generator_0 write port
- -> {ADC[11:0], 4'b0} as 16-bit data
+ -> {ADC[13:0], 2'b0} as 16-bit data
  -> FIFO read in FCLK0 domain
  -> H_top raw AXIS source
- -> adc_fir_axis: centered signed -> 39-tap FIR /3 -> signed16
+ -> adc_fir_axis: AD9248 two's-complement -> signed16 -> 39-tap FIR /3
  -> regenerated 4096-output TLAST
  -> ADC_STREAM_IN -> axis_data_fifo_0 -> axi_dma_adc S_AXIS_S2MM
  -> smartconnect_0 -> PS S_AXI_HP0 -> DDR
@@ -134,8 +139,8 @@ The BD external AXIS port `ADC_STREAM_IN` is the 16-bit post-FIR input from `adc
 | --- | --- | ---: | --- |
 | `i_clk_50m` | pin U18 | 50 MHz | `PLL_AD` input |
 | `clk_pll_out` | PLL_AD output 1 | 65 MHz | exported by `ad9226`, unused otherwise |
-| `clk_pll_ad` / `o_ad_clk` | PLL_AD output 2, 0 deg | 5.12006 MHz | physical ADC clock only |
-| `clk_pll_deg` | PLL_AD output 3, requested 181.8 deg | 5.12006 MHz | ADC capture and FIFO write |
+| `clk_pll_ad` / `o_ad_clk` | PLL_AD output 2, 0 deg | 5.12006 MHz | physical AD9248 clock only |
+| `clk_pll_deg` | PLL_AD output 3, requested 181.8 deg | 5.12006 MHz | phase-selected AD9248 capture and FIFO write; final channel/window requires board validation |
 | `FCLK_CLK0_0` / `clk_fpga_0` | PS7 | 100 MHz | FIFO read, AXIS, DMA, AXI control |
 | `clk_dac` | BD Pll_DA | 125 MHz | DDS, ROMs, DAC, BRAM Port B |
 
@@ -222,16 +227,16 @@ The workspace contains 101 physical XCI files: 17 source configurations, 49 cach
 | File / module | Role, state, dependencies, standalone simulation |
 | --- | --- |
 | `top.v` / `top` | synthesis top; instantiates `H_top`, `adc_fir_axis`, and generated wrapper; only the post-FIR AXIS reaches the BD |
-| `adc_fir_axis.v` / `adc_fir_axis` | centers raw ADC codes, wraps `fir_compiler_0`, rounds/saturates to signed16, and emits a 4096-output TLAST |
+| `adc_fir_axis.v` / `adc_fir_axis` | converts the left-aligned AD9248 two's-complement code to signed16, wraps `fir_compiler_0`, rounds/saturates to signed16, and emits a 4096-output TLAST |
 | `H_top.v` / `H_top` | raw ADC/FIFO integration, BRAM and retained `DDS_DAC` wiring; its raw AXIS feeds `adc_fir_axis` |
-| `ad9226.v` / `ad9226` | AD capture/clock wrapper; 7-bit 64-cycle stabilization counter and `stable` flag; depends on `PLL_AD` |
-| `fifo.v` / `fifo` | 5.12 MHz write to 100 MHz read wrapper; 4-bit reset counter; depends on `fifo_generator_0` |
+| `ad9226.v` / `ad9226` | legacy-named AD9248 capture register; 14-bit input/output, 7-bit 64-cycle stabilization counter and `stable` flag |
+| `fifo.v` / `fifo` | left-aligns 14-bit codes in 16-bit words, then crosses 5.12 MHz write to 100 MHz read; depends on `fifo_generator_0` |
 | `ad9767.sv` / `ad9767` | dual DDS/DAC driver; ten-word BRAM polling, A/B shadow/running registers, two phase accumulators, four ROM instances, and independent DAC registers; source is under review |
 | `ram.sv` / `ram` | disabled 16-bit ping-pong two-BRAM buffer; parameters `DATA_WIDTH=16`, `FFT_LENGTH=4096`; depends on `blk_mem_gen_0` |
 
 ## 9. Testbench
 
-`tb_H_top.v` is active. It generates 50/100/125 MHz clocks, reset, incrementing 12-bit ADC input, and permanently-ready AXIS sink. A ten-word array emulates synchronous BRAM Port B. It checks deterministic reset, uncommitted-shadow isolation, atomic A/B startup, continuous A/B phase advance, independent DAC values, uncommitted RUN isolation, tracking commits at the actual apply edge, 0 to 180 degree sine/sine phase reloads in 5 degree increments, and a stopped midscale output. The Vivado 2020.2 XSIM behavioral regression passed all five stages at 7385 ns. A full-time-axis view intentionally contains reload discontinuities during the phase sweep and ends at midscale after the final STOP commit; use the stage-two/three windows, not the whole TB run, to inspect steady waveform shape.
+`tb_H_top.v` is active. It generates 50/100/125 MHz clocks, reset, incrementing 14-bit ADC input, and permanently-ready AXIS sink. A ten-word array emulates synchronous BRAM Port B. It checks deterministic reset, uncommitted-shadow isolation, atomic A/B startup, continuous A/B phase advance, independent DAC values, uncommitted RUN isolation, tracking commits at the actual apply edge, 0 to 180 degree sine/sine phase reloads in 5 degree increments, and a stopped midscale output. Standalone regressions additionally check 14-to-16-bit FIFO packing and the four boundary values of AD9248 two's-complement conversion.
 
 It does not model PS7, AXI-Lite, DMA, DDR, FIFO back-pressure/full behavior, or a 4096-beat TLAST frame. `top_tb.sv` is disabled, uses only a subset of the current `H_top` ports, and is not a valid regression bench for the active interface.
 
@@ -257,7 +262,7 @@ Both have 12-bit addresses through `phase_acc[31:20]`. XCI output products gener
 1. AD9767 DA/DB now has source-synchronous output-delay constraints relative
    to the forwarded CLK and WRT ports. They use the 2 ns setup and 1.5 ns hold
    requirements with a matched-board-delay assumption; board trace skew and
-   AD9226 input timing remain unverified.
+   the AD9248 mux-channel capture window remain unverified.
 2. `i_rst` is asynchronously deasserted in several custom clock domains; `w_rst_safe` originates in ADC domain and resets the FIFO wrapper. Review reset deassertion when changing clocks or FIFO settings.
 3. The ten-word shadow/commit protocol passes the one-clock BRAM behavioral model, but it still needs hardware validation against the generated true-dual-port BRAM and PS AXI writes.
 4. FIFO/AXIS counters and sticky status are visible through Hardware Manager
@@ -322,8 +327,8 @@ detection, and the interactive `0` / `--keep` no-write path. `system.tcl`,
 The physically integrated IQ data path is:
 
 ```text
-AD9226 registered sample and stable valid
- -> ad_fifo_wrapper_0 adc_raw/sample_valid
+AD9248 registered sample and stable valid
+ -> upper 12 bits converted to legacy offset-binary adc_raw/sample_valid
  -> H_top IQ outputs
  -> top
  -> generated system_wrapper
@@ -359,10 +364,10 @@ not an IQ modulator. IP-specific use documents are maintained in
 The active contest input path is now:
 
 ```text
-AD9226 at 5,120,060 samples/s
+AD9248 selected channel at 5,120,060 samples/s
  -> H_top raw 16-bit AXIS
  -> adc_fir_axis at FCLK0
-      |- 12-bit offset-binary to centered signed
+      |- left-aligned 14-bit two's-complement to signed16
       |- fir_compiler_0, 39 taps, Q1.17, decimation 3
       |- symmetric right-shift rounding and signed16 saturation
       `- TLAST every 4096 accepted output samples
@@ -388,6 +393,13 @@ The FIR design contract is:
 `top.v` connects `H_top` to `adc_fir_axis`, then connects only the FIR output
 to `system_wrapper.ADC_STREAM_IN`. `ddc_tready` is held low. The IQ and DAC
 hardware remain in the project but are not used by `g26_measurement_task`.
+
+The retained `adc_raw[11:0]` IQ/DDC observation interface is intentionally not
+widened: it receives the upper 12 bits after two's-complement to offset-binary
+conversion. This keeps the BD interface stable while the active DMA path uses
+the full 14-bit sample. The current branch does not change PLL phase or XDC;
+both new data pins and the selected-channel capture window must be finalized on
+the board before implementation/bitstream sign-off.
 
 Current board evidence covers correct signed/Fs decoding, stable 8192-byte SG
 captures, 10..500 kHz amplitude calibration, and 1/1.5/2 MHz interference.

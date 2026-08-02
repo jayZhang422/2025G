@@ -1,5 +1,29 @@
 # Change Log
 
+## 2026-08-02 - AD9248 Single-Channel 14-Bit Acquisition
+
+### Changed
+
+- Widened the active ADC capture path from 12 to 14 bits through `top`, `H_top`,
+  the packaged `ad_fifo_wrapper_0`, its sampling register, and the FIFO write
+  port without changing existing interface names.
+- Left-aligned each raw sample as `{adc[13:0], 2'b00}` in the existing 16-bit
+  FIFO/AXIS word. FIR, TLAST, 4096-sample frame, and 8192-byte DMA contracts are
+  unchanged.
+- Decoded the AD9248 module's DFS-high output as 14-bit two's-complement before
+  the FIR. Kept the retained IQ/DDC observation port at 12-bit offset-binary by
+  dropping two LSBs and translating the sign bit, so the BD is unchanged.
+- Repackaged the custom IP as revision 3 and regenerated only
+  `ad_fifo_wrapper_0`; its XCI boundary now exposes `adc_din[13:0]`.
+- Updated the H_top stimulus and added standalone regressions for FIFO packing
+  and signed boundary-code conversion. Both regressions pass in XSIM 2020.2.
+
+### Deferred Board Work
+
+- No XDC pins or PLL phase were changed. The two new data pins and the stable
+  half-cycle corresponding to channel A must be confirmed on hardware before
+  implementation and bitstream sign-off.
+
 ## 2026-07-31 - 2026 G Decimating FIR Active Contract And Board Validation
 
 ### Current Architecture

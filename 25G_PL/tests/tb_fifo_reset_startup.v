@@ -13,7 +13,7 @@ module tb_fifo_reset_startup;
         .rst            (rst),
         .wr_clk         (wr_clk),
         .wr_en          (1'b1),
-        .din            (12'h123),
+        .din            (14'h2123),
         .rd_clk         (rd_clk),
         .rd_en          (1'b0),
         .dout           (dout),
@@ -47,6 +47,8 @@ module tb_fifo_reset_startup;
 
         repeat (30) @(posedge wr_clk);
         #1;
+        if (dut.ad_data_in !== {14'h2123, 2'b00})
+            $fatal(1, "14-bit ADC sample was not left-aligned in the FIFO word");
         if (dut.rst_fifo_n !== 1'b0)
             $fatal(1, "FIFO reset released before FCLK read clock started");
 
