@@ -42,10 +42,6 @@ module top (
     wire        fir_tvalid;
     wire        fir_tready;
     wire        fir_tlast;
-    wire [15:0] ddc_tdata;
-    wire        ddc_tvalid;
-    wire        ddc_tready;
-    wire        ddc_tlast;
     wire        iq_clk_adc;
     wire [11:0] iq_adc_raw;
     wire        iq_sample_valid;
@@ -61,7 +57,6 @@ module top (
 
     assign o_ad_oeb   = 1'b0;
     assign o_ad_pdn   = 1'b0;
-    assign ddc_tready = 1'b0;
 
     H_top u_h_top (
         .i_clk_50m     (i_clk_50m),
@@ -149,20 +144,11 @@ module top (
         .fifo_rd_rst_busy_0   (fifo_mon_rd_rst_busy),
         .fifo_wr_rst_busy_0   (fifo_mon_wr_rst_busy),
         .fifo_write_0         (fifo_mon_write),
-        .i_adc_raw_0          (iq_adc_raw),
-        .i_adc_raw_1          (iq_adc_raw),
-        .i_sample_valid_0     (iq_sample_valid),
-        .i_sample_valid_1     (iq_sample_valid),
-        .m_ddc_stream_axis_tdata (ddc_tdata),
-        .m_ddc_stream_axis_tlast (ddc_tlast),
-        .m_ddc_stream_axis_tready(ddc_tready),
-        .m_ddc_stream_axis_tvalid(ddc_tvalid),
         .sample_valid_0       (iq_sample_valid),
         .axis_tlast_0         (adc_tlast),
         .axis_tready_0        (adc_tready),
         .axis_tvalid_0        (adc_tvalid),
-        .pl_key_i             (pl_key_i),
-        .rst_n_0              (i_rst)
+        .pl_key_i             (pl_key_i)
     );
 
     ila_0 ila_debug (
