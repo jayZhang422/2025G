@@ -17,12 +17,14 @@
   `ad_fifo_wrapper_0`; its XCI boundary now exposes `adc_din[13:0]`.
 - Updated the H_top stimulus and added standalone regressions for FIFO packing
   and signed boundary-code conversion. Both regressions pass in XSIM 2020.2.
+- Split converter-specific pin assignments out of `23H.xdc`. The `ad9248`
+  branch enables `AD9248.xdc`, which maps the 14-bit bus to J10 pins 5 through
+  18 and the ADC clock to J10 pin 4; `AD9226.xdc` is retained but disabled.
 
 ### Deferred Board Work
 
-- No XDC pins or PLL phase were changed. The two new data pins and the stable
-  half-cycle corresponding to channel A must be confirmed on hardware before
-  implementation and bitstream sign-off.
+- The stable half-cycle corresponding to channel A and the ADC output coding
+  must be confirmed on hardware before implementation and bitstream sign-off.
 
 ## 2026-07-31 - 2026 G Decimating FIR Active Contract And Board Validation
 

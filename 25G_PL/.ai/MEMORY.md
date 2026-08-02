@@ -33,9 +33,10 @@ TLAST, DMA width, or sample rate in response to PS calibration data.
 
 The 14-bit code is stored as `{adc[13:0], 2'b00}` in the existing 16-bit FIFO
 word and restored to signed16 before the FIR. The retained `adc_raw[11:0]`
-observation port stays 12-bit for BD compatibility. PLL phase and the two new
-pin constraints are not part of this width-only branch change and require board
-validation before generating the final bitstream.
+observation port stays 12-bit for BD compatibility. `AD9248.xdc` is the active
+converter constraint file in this branch; the legacy `AD9226.xdc` is retained
+but disabled. PLL phase and ADC output coding still require board validation
+before generating the final bitstream.
 
 Board tests currently pass 1/1.5/2 MHz interference. Remaining PL-adjacent risk
 is analog aliasing before ADC in the `4.62006..5.62006 MHz` window; once such a

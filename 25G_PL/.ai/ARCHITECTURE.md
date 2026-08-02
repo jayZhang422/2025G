@@ -397,9 +397,11 @@ hardware remain in the project but are not used by `g26_measurement_task`.
 The retained `adc_raw[11:0]` IQ/DDC observation interface is intentionally not
 widened: it receives the upper 12 bits after two's-complement to offset-binary
 conversion. This keeps the BD interface stable while the active DMA path uses
-the full 14-bit sample. The current branch does not change PLL phase or XDC;
-both new data pins and the selected-channel capture window must be finalized on
-the board before implementation/bitstream sign-off.
+the full 14-bit sample. ADC pin constraints are split from the common
+`23H.xdc`: active `AD9248.xdc` maps `i_ad_data[13:0]` to J10 pins 5 through 18
+and `o_ad_clk` to J10 pin 4 (`W18`); legacy `AD9226.xdc` is retained but
+disabled in the `ad9248` branch. The selected-channel PLL capture phase still
+requires board validation before implementation/bitstream sign-off.
 
 Current board evidence covers correct signed/Fs decoding, stable 8192-byte SG
 captures, 10..500 kHz amplitude calibration, and 1/1.5/2 MHz interference.
