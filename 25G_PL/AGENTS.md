@@ -25,6 +25,15 @@
 - **禁止改名**：绝对不允许擅自修改现有的接口名称 (Interface names)。
 - **禁止改参**：绝对不允许擅自修改参数 (Parameter) 的默认值。
 
+**AD9248 当前基线与保护边界**
+- 当前物理 ADC 为 AD9248：输入是 14-bit 复用数据总线，DFS 置高，采集链按 14-bit 二进制补码解释；FIFO 继续输出 16-bit 字，打包格式固定为 `{adc[13:0], 2'b00}`。
+- `adc_fir_axis` 仅允许进行 ADC 输入格式适配。未经用户明确批准，不得修改 FIR 实例与系数、3 倍抽取、Q17 舍入/饱和、4096 点 `TLAST`、16-bit AXIS 或每帧 8192-byte DMA 合同。
+- 遗留 IQ/DDC 接口继续保持 12-bit offset-binary，适配格式固定为 `{~adc[13], adc[12:2]}`。未经用户明确批准，不得修改 `25G_PS`、BD/DMA、IQ/DDC、DDS/DAC、`system_wrapper` 或 FIR IP/COE。
+- 必须保留已有模块和接口名称，包括历史名称 `ad9226`；AD9248 适配不构成重命名或修改参数默认值的授权。
+- 当前 ILA 使用 ADC 相位时钟，被动观察原始 `i_ad_data[13:0]`、`sample_valid` 和复位；调试逻辑不得反馈或改变采集、FIR、AXIS、DMA 数据路径。
+- AD9248 A/B 硬件通道均已通过 ILA 观察到有效数据；该结果只证明功能采样，不替代基于器件与板级延迟的 setup/hold 时序约束验证。
+- Git 只能精确暂存本次明确修改的文件，禁止使用 `git add -A`。未经检查与明确需要，不得提交 Vivado 会话、BD/IP 自动刷新或其他生成文件。
+
 **知识库维护与自我学习 (Self-Learning Rules)**
 本项目根目录下的 `.ai` 文件夹是项目的知识外脑，包含以下核心文件：`architecture.md`, `CHANGELOG.md`, `coding_style.md`, `MEMORY.md`, `STYLE.md`。每次完成任务后，你必须主动复盘本次交互与修改。
 

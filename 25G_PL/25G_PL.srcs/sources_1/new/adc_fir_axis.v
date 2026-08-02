@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-// Converts the raw AD9226 stream to signed samples, applies the fixed
+// Converts the raw AD9248 stream to signed samples, applies the fixed
 // decimating FIR, and restores the 16-bit/4096-sample DMA frame contract.
 module adc_fir_axis (
     input  wire        aclk,
@@ -16,15 +16,16 @@ module adc_fir_axis (
     output wire        m_axis_tlast
 );
 
-    wire signed [12:0] adc_centered;
+    wire signed [13:0] adc_signed;
     wire        [15:0] fir_s_tdata;
     wire               fir_m_tvalid;
     wire        [39:0] fir_m_tdata;
     reg         [11:0] output_count;
 
-    assign adc_centered = 13'sd2048 -
-                          $signed({1'b0, s_axis_tdata[15:4]});
-    assign fir_s_tdata = {{3{adc_centered[12]}}, adc_centered};
+    // The AD9248 module straps DFS high, selecting 14-bit two's-complement
+    // output. The FIFO stores that code left-aligned in its 16-bit word.
+    assign adc_signed  = $signed(s_axis_tdata[15:2]);
+    assign fir_s_tdata = {{2{adc_signed[13]}}, adc_signed};
 
     fir_compiler_0 u_fir (
         .aresetn            (aresetn),

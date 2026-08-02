@@ -7,7 +7,7 @@ module H_top (
     input  wire        i_clk_100m,
     input  wire        i_clk_dac,
     input  wire        i_rst,
-    input  wire [11:0] i_ad_data,
+    input  wire [13:0] i_ad_data,
 
     output wire        o_ad_clk,
     output wire [13:0] o_da_data,
