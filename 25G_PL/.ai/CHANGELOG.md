@@ -20,6 +20,9 @@
 - Split converter-specific pin assignments out of `23H.xdc`. The `ad9248`
   branch enables `AD9248.xdc`, which maps the 14-bit bus to J10 pins 5 through
   18 and the ADC clock to J10 pin 4; `AD9226.xdc` is retained but disabled.
+- Added top-level active-low AD9248 controls: `o_ad_oeb` drives J10 pin 3
+  (`W19`) low to enable the output bus, and `o_ad_pdn` drives J10 pin 19
+  (`U17`) low to keep the converter powered. OTR remains unexposed.
 
 ### Deferred Board Work
 

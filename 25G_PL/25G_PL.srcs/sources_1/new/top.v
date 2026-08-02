@@ -8,6 +8,8 @@ module top (
     output wire        o_hmi_uart_tx,
     input  wire [13:0] i_ad_data,
     output wire        o_ad_clk,
+    output wire        o_ad_oeb,
+    output wire        o_ad_pdn,
     inout  wire [14:0] DDR_addr,
     inout  wire [2:0]  DDR_ba,
     inout  wire        DDR_cas_n,
@@ -57,6 +59,8 @@ module top (
     wire        bram_en;
     wire [3:0]  bram_we;
 
+    assign o_ad_oeb   = 1'b0;
+    assign o_ad_pdn   = 1'b0;
     assign ddc_tready = 1'b0;
 
     H_top u_h_top (
