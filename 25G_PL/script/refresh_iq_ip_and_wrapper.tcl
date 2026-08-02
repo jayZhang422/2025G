@@ -75,12 +75,12 @@ if {[lsearch -exact $argv "--check"] >= 0} {
 
 # Update the custom package checksum after its RTL port list changed.
 set ad_fifo_core [ipx::open_core $ad_fifo_component]
-ensure_clock_interface $ad_fifo_core clk_phase 5120060 rst_n
+ensure_clock_interface $ad_fifo_core clk_phase 65000000 rst_n
 ensure_clock_interface $ad_fifo_core rd_clk 100000000 rst_n
 ipx::update_checksums $ad_fifo_core
 ipx::save_core $ad_fifo_core
 set fifo_monitor_core [ipx::open_core $fifo_monitor_component]
-ensure_clock_interface $fifo_monitor_core adc_clk 5120060 ""
+ensure_clock_interface $fifo_monitor_core adc_clk 65000000 ""
 ipx::update_checksums $fifo_monitor_core
 ipx::save_core $fifo_monitor_core
 set fifo_monitor_vlnv [get_property VLNV $fifo_monitor_core]

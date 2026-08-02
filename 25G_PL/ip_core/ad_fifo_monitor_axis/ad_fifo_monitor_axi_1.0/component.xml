@@ -247,7 +247,7 @@
       <spirit:parameters>
         <spirit:parameter>
           <spirit:name>FREQ_HZ</spirit:name>
-          <spirit:value spirit:id="BUSIFPARAM_VALUE.ADC_CLK.FREQ_HZ">5120060</spirit:value>
+          <spirit:value spirit:id="BUSIFPARAM_VALUE.ADC_CLK.FREQ_HZ">65000000</spirit:value>
         </spirit:parameter>
         <spirit:parameter>
           <spirit:name>ASSOCIATED_RESET</spirit:name>
@@ -970,11 +970,11 @@
       </xilinx:taxonomies>
       <xilinx:displayName>AD FIFO Monitor AXI</xilinx:displayName>
       <xilinx:coreRevision>2</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2026-07-24T12:21:09Z</xilinx:coreCreationDateTime>
+      <xilinx:coreCreationDateTime>2026-08-02T19:59:50Z</xilinx:coreCreationDateTime>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
       <xilinx:xilinxVersion>2020.2</xilinx:xilinxVersion>
-      <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="99782e99"/>
+      <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="0b3d2d49"/>
       <xilinx:checksum xilinx:scope="memoryMaps" xilinx:value="8c8ae98c"/>
       <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="05807066"/>
       <xilinx:checksum xilinx:scope="ports" xilinx:value="fc27024d"/>

@@ -18,7 +18,7 @@ ADC -> independent-clock FIFO -> H_top AXIS -> BD axis_data_fifo_0 -> AXI DMA
 
 ## 2. 时钟与复位
 
-- `adc_clk`：ADC/FIFO 写时钟，当前约 5.12006 MHz。
+- `adc_clk`：ADC/FIFO 写时钟，当前为 65 MHz。
 - `ad_fifo_monitor_axi_aclk`：AXI4-Lite 和 AXIS 观察时钟，当前为 PS FCLK0 100 MHz。
 - `ad_fifo_monitor_axi_aresetn`：外设低有效复位。核心在两个时钟域内分别进行异步置位、同步释放。
 

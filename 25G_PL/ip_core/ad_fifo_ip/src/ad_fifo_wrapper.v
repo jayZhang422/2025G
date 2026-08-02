@@ -2,7 +2,7 @@ module ad_fifo_wrapper(
     input  wire        rst_n,        // 系统异步复位 (低电平有效)
 
     // ===== 采样与写入时钟 (外部 PLL 输入) =====
-    input  wire        clk_phase,    // 带相移的采样/写时钟 (5.12MHz 181.8deg)
+    input  wire        clk_phase,    // 带相移的采样/写时钟 (65MHz 181.8deg)
 
     // ===== AD9248 单通道物理数据接口 =====
     input  wire [13:0] adc_din,      // AD9248 14-bit 复用数据总线

@@ -3,8 +3,8 @@
 // Module Name : ad9226 (legacy interface name retained)
 // Revision    : 2026.8.2
 // Description : AD9248 single-channel sampling register
-//               fs = 5.12MHz, N = 4096, df = 1250Hz
-//               clk_ad    : 5.12MHz 0deg -> AD9248 CLK pins
+//               fs = 65MHz, N = 4096, df = 15.87kHz
+//               clk_ad    : 65MHz 0deg -> AD9248 CLK pins
 //               clk_phase : phase-selected clock -> captures one mux channel
 //////////////////////////////////////////////////////////////////////////////////
 module ad9226 (

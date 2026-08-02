@@ -4,14 +4,14 @@
 // Description: Dual-clock FIFO wrapper for 14-bit ADC to 16-bit data transfer.
 //              Includes safe reset timing and read/write interlocking.
 //              Clock domains are determined by the instantiating module (H_top.v):
-//                wr_clk = 5.12MHz (ADC sampling phase clock, clk_ad_deg)
+//                wr_clk = 65MHz (ADC sampling phase clock, clk_ad_deg)
 //                rd_clk = 100MHz  (PS FCLK_CLK0, shared with AXI Stream domain)
 //////////////////////////////////////////////////////////////////////////////////
 
 module fifo(
     input  wire        rst,         // Active-low asynchronous system reset
 
-    // Write Domain (5.12MHz, ADC sampling phase clock)
+    // Write Domain (65MHz, ADC sampling phase clock)
     input  wire        wr_clk,      // ADC sampling clock (clk_ad_deg)
     input  wire        wr_en,       // ADC data valid signal (ad_out_valid)
     input  wire [13:0] din,         // 14-bit raw ADC data input

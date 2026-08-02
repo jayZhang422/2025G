@@ -75,10 +75,12 @@ typedef struct {
 /* Unity baseline for the replacement analog filter; update after its sweep. */
 static const g26_gain_calibration_t g26_gain_calibration[] = {
     { 10000.0f, 1.049817f},
+    {150000.0f, 1.044076f},
     {200000.0f, 1.019856f},
     {250000.0f, 1.013588f},
-    {300000.0f, 0.989776f},
-    {400000.0f, 0.952547f},
+    {300000.0f, 1.000351f},
+    {400000.0f, 0.966652f},
+    {420000.0f, 0.960670f},
     {500000.0f, 0.962268f}
 };
 
