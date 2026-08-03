@@ -28,6 +28,12 @@
 - **禁止篡改 BSP**：除非明确要求，绝对不允许擅自修改自动生成的底层驱动库文件 (如 `x<peripheral>_g.c` 等)。
 - **禁止脱离实际接口**：绝对不允许使用未在 `PLagriculture.md` 中定义的硬件模块或外设接口。
 
+**AD9248/FIR 当前软硬件合同**
+- PL 原始采样率固定为 65 MHz，FIR 固定 38 倍抽取，PS 分析采样率为 `65 MHz / 38 = 1.710526315 MHz`；所有频率轴和 FFT bin 宽度必须引用 `APP_ANALYSIS_SAMPLE_RATE_HZ`，不得引用原始 ADC 采样率。
+- DMA/FFT 合同保持不变：每帧 4096 个 `s16` 样点、8192 bytes、4096 点 FFT；不得因 65 MHz 升级扩大 PS 缓冲区或改动现有 SG DMA 帧结构。
+- AD9248 数据为 14-bit 二进制补码并左对齐到 16-bit DMA 字。当前名义换算为 `0.6103515625 mV/code`（10 V/16384），仅是上板前基线；更换 ADC 和移除模拟滤波后，旧幅值/相位标定全部失效，必须实测后再更新校准表。
+- 谐波相位自检必须比较相对相位 `phase_h - h * phase_1`，不得把任意 DMA 帧起点造成的公共基波相位当作算法错误。
+
 **知识库维护与自我学习 (Self-Learning Rules)**
 本项目根目录下的 `.ai` 文件夹是项目的知识外脑，包含以下核心文件：`architecture.md`, `CHANGELOG.md`, `coding_style.md`, `MEMORY.md`, `STYLE.md`。每次完成任务后，你必须主动复盘本次交互与修改。
 
