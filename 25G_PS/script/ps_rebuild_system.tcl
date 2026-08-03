@@ -42,6 +42,8 @@ if {[lsearch -exact $argv "--check"] >= 0} {
 
 ps_automation::remember
 
+progress "checking platform build products"
+ps_automation::ensure_platform_products $workspace $platform_name
 progress "checking application BSP link"
 ps_automation::ensure_bsp_link $workspace $platform_name $app_debug_dir
 if {![file isfile [file join $app_debug_dir src subdir.mk]]} {

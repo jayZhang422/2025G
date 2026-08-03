@@ -118,13 +118,36 @@ proc ps_automation::platform_hardware_file {workspace platform_name pattern desc
         [glob -nocomplain -types f [file join $platform_dir hw $pattern]] $description]
 }
 
+proc ps_automation::workspace_has_project {workspace project_name} {
+    return [file isdirectory [file join $workspace .metadata .plugins org.eclipse.core.resources .projects $project_name]]
+}
+
 proc ps_automation::activate_platform {workspace platform_name} {
     set platform_dir [platform_directory $workspace $platform_name]
-    set automation_workspace [file join $workspace .Xil ps_automation_workspace]
+    set automation_workspace [file join $workspace .Xil ps_automation_runtime]
     file mkdir $automation_workspace
-    setws $automation_workspace
-    platform read [file join $platform_dir platform.spr]
+    setws -switch $automation_workspace
+    if {![workspace_has_project $automation_workspace $platform_name]} {
+        platform read [file join $platform_dir platform.spr]
+    }
     platform active $platform_name
+}
+
+proc ps_automation::ensure_platform_products {workspace platform_name} {
+    set platform_dir [platform_directory $workspace $platform_name]
+    set products [list \
+        [glob -nocomplain -types f [file join $platform_dir hw *.bit]] \
+        [glob -nocomplain -types f [file join $platform_dir hw *.xsa]] \
+        [glob -nocomplain -types f [file join $platform_dir hw ps7_init.tcl]] \
+        [glob -nocomplain -types f [file join $platform_dir * * bsp * include xil_types.h]] \
+        [glob -nocomplain -types f [file join $platform_dir export $platform_name sw $platform_name boot fsbl.elf]]]
+    foreach product $products {
+        if {[llength $product] != 1} {
+            activate_platform $workspace $platform_name
+            platform generate
+            return
+        }
+    }
 }
 
 proc ps_automation::ensure_application_makefiles {workspace platform_name app_dir build_dir} {
@@ -132,9 +155,17 @@ proc ps_automation::ensure_application_makefiles {workspace platform_name app_di
 
     # Refresh the managed project even when an old makefile exists so newly
     # added source directories are discovered without editing Debug/*.mk.
-    setws $workspace
+    setws -switch $workspace
+    set platform_dir [platform_directory $workspace $platform_name]
+    set app_name [project_name $app_dir]
+    if {![workspace_has_project $workspace $platform_name]} {
+        importprojects $platform_dir
+    }
+    if {![workspace_has_project $workspace $app_name]} {
+        importprojects $app_dir
+    }
     platform active $platform_name
-    app build -name [project_name $app_dir]
+    app build -name $app_name
     # Managed build may recreate Debug/_sdk while refreshing the source tree.
     ensure_bsp_link $workspace $platform_name $build_dir
 
