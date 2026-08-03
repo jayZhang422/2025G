@@ -275,7 +275,7 @@ size_t g26_hmi_waveform_resample(const float *source, size_t source_count,
         float fraction = (float)remainder / (float)denominator;
         float value = source[left] +
             (source[right] - source[left]) * fraction;
-        float scaled = G26_HMI_WAVEFORM_CENTER_CODE +
+        float scaled = G26_HMI_WAVEFORM_CENTER_CODE -
             G26_HMI_WAVEFORM_HALF_RANGE_CODE *
             g26_hmi_clamp(value / maximum_absolute, -1.0f, 1.0f);
 

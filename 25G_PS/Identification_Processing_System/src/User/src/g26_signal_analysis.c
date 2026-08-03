@@ -75,10 +75,12 @@ typedef struct {
 /* Unity baseline for the replacement analog filter; update after its sweep. */
 static const g26_gain_calibration_t g26_gain_calibration[] = {
     { 10000.0f, 1.049817f},
+    {150000.0f, 1.044076f},
     {200000.0f, 1.019856f},
     {250000.0f, 1.013588f},
-    {300000.0f, 0.989776f},
-    {400000.0f, 0.952547f},
+    {300000.0f, 1.000351f},
+    {400000.0f, 0.966652f},
+    {420000.0f, 0.960670f},
     {500000.0f, 0.962268f}
 };
 
@@ -805,7 +807,7 @@ int g26_signal_apply_amplitude_calibration(g26_signal_result_t *result)
 {
     u32 component;
 
-    if (result == NULL || result->component_count < 2U ||
+    if (result == NULL || result->component_count < 1U ||
         result->component_count > G26_SIGNAL_MAX_COMPONENTS) {
         return G26_SIGNAL_ERROR_INPUT;
     }
@@ -844,16 +846,21 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
 {
     g26_candidate_t candidates[G26_PEAK_CAPACITY];
     float32_t base_hypotheses[G26_BASE_HYPOTHESIS_CAPACITY];
+    g26_signal_result_t best_single;
     g26_signal_result_t best_pair;
     g26_signal_result_t best_triple;
     g26_signal_result_t best;
+    float32_t single_bic = 1.0e30f;
     float32_t pair_bic = 1.0e30f;
     float32_t triple_bic = 1.0e30f;
+    float32_t best_bic = 1.0e30f;
+    float32_t second_bic = 1.0e30f;
     float32_t window_sum;
     float32_t bin_width_hz;
     int candidate_count;
     int hypothesis_count;
     int hypothesis;
+    int single_found = 0;
     int pair_found = 0;
     int triple_found = 0;
 
@@ -874,6 +881,13 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
     candidate_count = g26_find_candidates(sample_rate_hz, candidates);
     if (candidate_count < 1) {
         return G26_SIGNAL_ERROR_NO_CANDIDATE;
+    }
+
+    {
+        float32_t single[1] = {candidates[0].frequency_hz};
+
+        g26_consider_model(single, 1U, sample_rate_hz, &best_single,
+                           &single_bic, &single_found);
     }
 
     bin_width_hz = sample_rate_hz / (float32_t)G26_SIGNAL_SAMPLE_COUNT;
@@ -914,8 +928,16 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
             }
         }
     }
-    if (!pair_found && !triple_found) {
+    if (!single_found && !pair_found && !triple_found) {
         return G26_SIGNAL_ERROR_NO_MODEL;
+    }
+    if (single_found) {
+        g26_refine_model_frequency(sample_rate_hz, &best_single);
+        if (g26_fundamental_is_significant(&best_single)) {
+            single_bic = best_single.model_bic;
+        } else {
+            single_found = 0;
+        }
     }
     if (pair_found) {
         g26_refine_model_frequency(sample_rate_hz, &best_pair);
@@ -933,16 +955,30 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
             triple_found = 0;
         }
     }
-    if (!pair_found && !triple_found) {
+    if (!single_found && !pair_found && !triple_found) {
         return G26_SIGNAL_ERROR_NO_MODEL;
     }
-    if (!triple_found || (pair_found && pair_bic <= triple_bic)) {
-        best = best_pair;
-        best.delta_bic = triple_found ? triple_bic - pair_bic : 1.0e30f;
-    } else {
-        best = best_triple;
-        best.delta_bic = pair_found ? pair_bic - triple_bic : 1.0e30f;
+
+    if (single_found) {
+        best = best_single;
+        best_bic = single_bic;
     }
+    if (pair_found && pair_bic < best_bic) {
+        second_bic = best_bic;
+        best = best_pair;
+        best_bic = pair_bic;
+    } else if (pair_found && pair_bic < second_bic) {
+        second_bic = pair_bic;
+    }
+    if (triple_found && triple_bic < best_bic) {
+        second_bic = best_bic;
+        best = best_triple;
+        best_bic = triple_bic;
+    } else if (triple_found && triple_bic < second_bic) {
+        second_bic = triple_bic;
+    }
+    best.delta_bic = (second_bic < 1.0e30f) ?
+        second_bic - best_bic : 1.0e30f;
     g26_compute_model_metrics(&best);
     *result = best;
     return G26_SIGNAL_OK;
@@ -959,7 +995,7 @@ int g26_signal_generate_waveform(const g26_signal_result_t *result,
 
     if (result == 0 || output_mv == 0 || output_count < 2U ||
         (period_count != 1U && period_count != 3U) ||
-        result->component_count < 2U ||
+        result->component_count < 1U ||
         result->component_count > G26_SIGNAL_MAX_COMPONENTS) {
         return G26_SIGNAL_ERROR;
     }
@@ -1182,6 +1218,12 @@ int g26_signal_analysis_self_test(void)
             5120060.0f / 3.0f, 0.25f, 250000.0f, 0.0f, 2U, 2U,
             {{1U, 125.0f, 0.20f},
              {2U, 62.5f, -0.75f},
+             {0U, 0.0f, 0.0f}}
+        },
+        {
+            5120060.0f / 3.0f, 0.25f, 75000.0f, 1.5f, 1U, 1U,
+            {{1U, 30.0f, -0.40f},
+             {0U, 0.0f, 0.0f},
              {0U, 0.0f, 0.0f}}
         }
     };

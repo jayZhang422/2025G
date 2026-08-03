@@ -1,7 +1,7 @@
 /******************************************************************************
  * g26_signal_analysis.h
  *
- * 4096-sample harmonic analysis for the 2026 G-question signal path.
+ * 4096-sample single-tone/harmonic analysis for the 2026 G-question path.
  ******************************************************************************/
 
 #ifndef USER_INCLUDE_G26_SIGNAL_ANALYSIS_H_

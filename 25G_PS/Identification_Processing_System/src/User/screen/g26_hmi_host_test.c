@@ -152,8 +152,8 @@ static int test_render_mapping(void)
     count = g26_hmi_waveform_resample(
         source, 640U, destination, sizeof(destination), 601U);
     CHECK(count == 601U);
-    CHECK(destination[0] == 24U);
-    CHECK(destination[count - 1U] == 254U);
+    CHECK(destination[0] == 254U);
+    CHECK(destination[count - 1U] == 24U);
     CHECK(destination[count / 2U] == 139U);
     return 0;
 }

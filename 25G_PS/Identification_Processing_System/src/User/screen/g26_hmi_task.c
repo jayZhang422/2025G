@@ -399,7 +399,7 @@ static int g26_hmi_draw_spectrum_lines(g26_hmi_state_t *state)
         g26_hmi_maximum_component_amplitude(result);
     u32 component;
 
-    if (result->component_count < 2U ||
+    if (result->component_count < 1U ||
         result->component_count > G26_SIGNAL_MAX_COMPONENTS) {
         return XST_FAILURE;
     }
@@ -435,7 +435,7 @@ static int g26_hmi_render_page3(g26_hmi_state_t *state)
     const g26_signal_result_t *result = &g26_hmi_snapshot.result;
     u32 component;
 
-    if (result->component_count < 2U ||
+    if (result->component_count < 1U ||
         result->component_count > G26_SIGNAL_MAX_COMPONENTS ||
         g26_hmi_send_format(
             &state->uart, "ref %s", G26_HMI_PAGE3_PLOT_OBJECT) !=
@@ -490,7 +490,7 @@ static int g26_hmi_show_page3_amplitudes(g26_hmi_state_t *state)
     const g26_signal_result_t *result = &g26_hmi_snapshot.result;
     u32 component;
 
-    if (result->component_count < 2U ||
+    if (result->component_count < 1U ||
         result->component_count > G26_SIGNAL_MAX_COMPONENTS) {
         return XST_FAILURE;
     }
