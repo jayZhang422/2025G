@@ -231,7 +231,7 @@ proc create_root_design { parentCell } {
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {ADC_STREAM_IN:m_ddc_stream_axis} \
  ] $FCLK_CLK0_0
-  set adc_clk_0 [ create_bd_port -dir I -type clk -freq_hz 5120060 adc_clk_0 ]
+  set adc_clk_0 [ create_bd_port -dir I -type clk -freq_hz 65000000 adc_clk_0 ]
   set axis_tlast_0 [ create_bd_port -dir I axis_tlast_0 ]
   set axis_tready_0 [ create_bd_port -dir I axis_tready_0 ]
   set axis_tvalid_0 [ create_bd_port -dir I axis_tvalid_0 ]

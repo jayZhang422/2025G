@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x6B13DAEA3055A4B7",
+      "boundary_crc": "0x6B13DAEA691929F5",
       "device": "xc7z020clg400-2",
       "gen_directory": "../../../../25G_PL.gen/sources_1/bd/system",
       "name": "system",
@@ -358,7 +358,7 @@
             "value_src": "default"
           },
           "FREQ_HZ": {
-            "value": "5120060"
+            "value": "65000000"
           },
           "FREQ_TOLERANCE_HZ": {
             "value": "0",

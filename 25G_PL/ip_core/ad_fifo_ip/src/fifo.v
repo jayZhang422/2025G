@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Module Name: fifo
-// Description: Dual-clock FIFO wrapper for 12-bit ADC to 16-bit data transfer.
+// Description: Dual-clock FIFO wrapper for 14-bit ADC to 16-bit data transfer.
 //              Includes safe reset timing and read/write interlocking.
 //              Clock domains are determined by the instantiating module (H_top.v):
 //                wr_clk = 5.12MHz (ADC sampling phase clock, clk_ad_deg)
@@ -14,7 +14,7 @@ module fifo(
     // Write Domain (5.12MHz, ADC sampling phase clock)
     input  wire        wr_clk,      // ADC sampling clock (clk_ad_deg)
     input  wire        wr_en,       // ADC data valid signal (ad_out_valid)
-    input  wire [11:0] din,         // 12-bit raw ADC data input
+    input  wire [13:0] din,         // 14-bit raw ADC data input
 
     // Read Domain (100MHz, PS FCLK_CLK0)
     input  wire        rd_clk,      // Read side clock
@@ -98,8 +98,8 @@ module fifo(
         end
     end
 
-    // Bit Width Conversion: Zero-pad lower 4 bits (12-bit to 16-bit)
-    assign ad_data_in = {din, 4'b0000};
+    // Left-align the 14-bit raw code in the existing 16-bit FIFO word.
+    assign ad_data_in = {din, 2'b00};
 
     // Xilinx FIFO Generator Core Instantiation
     fifo_generator_0 my_fifo_ip (

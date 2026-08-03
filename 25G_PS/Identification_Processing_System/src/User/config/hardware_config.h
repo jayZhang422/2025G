@@ -11,10 +11,10 @@
 #include "xil_types.h"
 #include "xparameters.h"
 
-/* The DMA frame is the PL FIR /3 output, not the high-aligned raw ADC stream. */
+/* The DMA frame is the PL FIR /38 output, not the high-aligned raw ADC stream. */
 #define APP_ADC_FRAME_SAMPLES       4096U
-#define APP_ADC_SAMPLE_RATE_HZ      5120060.0f
-#define APP_FIR_DECIMATION          3.0f
+#define APP_ADC_SAMPLE_RATE_HZ      65000000.0f
+#define APP_FIR_DECIMATION          38.0f
 #define APP_ANALYSIS_SAMPLE_RATE_HZ \
     (APP_ADC_SAMPLE_RATE_HZ / APP_FIR_DECIMATION)
 #define APP_RX_FRAME_BYTES          (APP_ADC_FRAME_SAMPLES * sizeof(s16))

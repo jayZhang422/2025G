@@ -21,7 +21,7 @@ module tb_H_top;
     reg         i_clk_100m;
     reg         i_clk_dac;
     reg         i_rst;
-    reg  [11:0] i_ad_data;
+    reg  [13:0] i_ad_data;
     reg         m_axis_tready;
 
     wire        o_ad_clk;
@@ -120,7 +120,7 @@ module tb_H_top;
 
     // ADC Dummy Data Generator
     always @(posedge i_clk_50m or negedge i_rst) begin
-        if (!i_rst) i_ad_data <= 12'd0;
+        if (!i_rst) i_ad_data <= 14'd0;
         else        i_ad_data <= i_ad_data + 1'b1;
     end
 
@@ -172,7 +172,7 @@ module tb_H_top;
     initial begin
         // 0. Initialization
         i_rst = 1'b0;
-        i_ad_data = 12'd0;
+        i_ad_data = 14'd0;
         m_axis_tready = 1'b1;
         bram_dout = 32'd0;
         dac_timing_sample_valid = 1'b0;

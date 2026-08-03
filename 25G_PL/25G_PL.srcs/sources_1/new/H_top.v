@@ -7,7 +7,7 @@ module H_top (
     input  wire        i_clk_100m,
     input  wire        i_clk_dac,
     input  wire        i_rst,
-    input  wire [11:0] i_ad_data,
+    input  wire [13:0] i_ad_data,
 
     output wire        o_ad_clk,
     output wire [13:0] o_da_data,
@@ -40,6 +40,9 @@ module H_top (
 
     wire        w_ad_clk;
     wire        w_ad_phase;
+    wire        w_ad_locked;
+    wire        w_ad_async_resetn;
+    wire        w_ad_resetn;
     wire        w_fifo_empty;
     wire        w_fifo_rd_en;
     wire [15:0] w_fifo_data;
@@ -56,9 +59,21 @@ module H_top (
     wire [13:0] w_triangle_data_a;
     wire [13:0] w_triangle_data_b;
     reg  [11:0] w_tlast_cnt;
+    (* ASYNC_REG = "TRUE" *) reg [1:0] w_ad_reset_sync;
 
     assign o_ad_clk = w_ad_clk;
     assign iq_clk_adc = w_ad_phase;
+    assign w_ad_async_resetn = i_rst & w_ad_locked;
+    assign w_ad_resetn = w_ad_reset_sync[1];
+
+    // Assert immediately if reset is active or the MMCM loses lock, then
+    // release only after two valid capture-clock edges.
+    always @(posedge w_ad_phase or negedge w_ad_async_resetn) begin
+        if (!w_ad_async_resetn)
+            w_ad_reset_sync <= 2'b00;
+        else
+            w_ad_reset_sync <= {w_ad_reset_sync[0], 1'b1};
+    end
 
     // Forward CLK and WRT through ODDR output resources so their pin delay
     // matches the falling-edge DAC data registers.
@@ -90,12 +105,12 @@ module H_top (
         .clk_pll_ad    (w_ad_clk),
         .clk_pll_phase (w_ad_phase),
         .resetn        (i_rst),
-        .locked        (),
+        .locked        (w_ad_locked),
         .clk_sys       (i_clk_50m)
     );
 
     ad_fifo_wrapper_0 u_ad_fifo (
-        .rst_n     (i_rst),
+        .rst_n     (w_ad_resetn),
         .clk_phase (w_ad_phase),
         .adc_din   (i_ad_data),
         .rd_clk    (i_clk_100m),
