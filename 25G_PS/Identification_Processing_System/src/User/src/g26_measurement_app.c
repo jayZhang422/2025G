@@ -250,8 +250,15 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
         (const s16 *)(const void *)g_adc_raw_buffer,
         APP_ANALYSIS_SAMPLE_RATE_HZ, APP_G26_INPUT_MV_PER_CODE, result);
     if (analysis_status != G26_SIGNAL_OK) {
-        xil_printf("[G26] ERROR: analysis failed status=%d\r\n",
-                   analysis_status);
+        if (analysis_status == G26_SIGNAL_ERROR_NO_SIGNAL ||
+            analysis_status == G26_SIGNAL_ERROR_NO_CANDIDATE ||
+            analysis_status == G26_SIGNAL_ERROR_NO_MODEL) {
+            xil_printf("[G26] NO_SIGNAL: analysis rejected frame status=%d\r\n",
+                       analysis_status);
+        } else {
+            xil_printf("[G26] ERROR: analysis failed status=%d\r\n",
+                       analysis_status);
+        }
         return XST_FAILURE;
     }
     if (g26_signal_apply_amplitude_calibration(result) != G26_SIGNAL_OK) {
@@ -259,9 +266,8 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
         return XST_FAILURE;
     }
     if (result->upp_mv < APP_G26_MIN_VALID_UPP_MV ||
-        (result->component_count == 1U &&
-         result->normalized_residual >
-             APP_G26_SINGLE_MAX_NORMALIZED_RESIDUAL)) {
+        result->normalized_residual >
+            APP_G26_MAX_NORMALIZED_RESIDUAL) {
         xil_printf("[G26] NO_SIGNAL: Upp=");
         g26_print_fixed_3(result->upp_mv);
         xil_printf(" mV residual_ppm=%u components=%u\r\n",

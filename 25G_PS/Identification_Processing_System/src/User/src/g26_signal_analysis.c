@@ -19,13 +19,12 @@
 #define G26_MIN_FREQUENCY_HZ           10000.0f
 #define G26_MAX_FREQUENCY_HZ           500000.0f
 #define G26_PEAK_CAPACITY              16
-#define G26_BASE_ANCHOR_CAPACITY       6
-#define G26_BASE_HYPOTHESIS_CAPACITY   320
 #define G26_HARMONIC_ORDER_CAPACITY    16
 #define G26_MAX_LS_COLUMNS             7
 #define G26_MIN_CANDIDATE_MV           0.5f
+#define G26_MIN_PEAK_TO_MEAN_RATIO     6.0f
+#define G26_MIN_COMPONENT_SSE_REDUCTION 0.005f
 #define G26_HARMONIC_MATCH_BINS        1.0f
-#define G26_BASE_MERGE_BINS            0.1f
 #define G26_EDGE_TOLERANCE_BINS         0.5f
 #define G26_FREQUENCY_REFINEMENT_STEPS 5
 #define G26_FREQUENCY_REFINEMENT_ROUNDS 4
@@ -156,27 +155,38 @@ static float32_t g26_wrap_phase(float32_t phase_rad)
 }
 
 static void g26_prepare_fft(const s16 *samples, float32_t mv_per_code,
-                            float32_t *window_sum)
+                            float32_t *window_sum,
+                            float32_t *frame_upp_mv,
+                            float32_t *frame_ac_rms_mv)
 {
     float32_t sum = 0.0f;
+    float32_t minimum = 1.0e30f;
+    float32_t maximum = -1.0e30f;
+    float32_t ac_energy = 0.0f;
     float32_t mean;
     u32 index;
 
     for (index = 0U; index < G26_SIGNAL_SAMPLE_COUNT; index++) {
         g_time_domain_buffer[index] = (float32_t)samples[index] * mv_per_code;
         sum += g_time_domain_buffer[index];
+        minimum = fminf(minimum, g_time_domain_buffer[index]);
+        maximum = fmaxf(maximum, g_time_domain_buffer[index]);
     }
     mean = sum / (float32_t)G26_SIGNAL_SAMPLE_COUNT;
+    *frame_upp_mv = maximum - minimum;
     *window_sum = 0.0f;
     for (index = 0U; index < G26_SIGNAL_SAMPLE_COUNT; index++) {
+        float32_t centered = g_time_domain_buffer[index] - mean;
         float32_t window = 0.5f - 0.5f * cosf(
             G26_TWO_PI * (float32_t)index /
             (float32_t)(G26_SIGNAL_SAMPLE_COUNT - 1U));
 
+        ac_energy += centered * centered;
         *window_sum += window;
-        g_fft_input_buffer[index] =
-            (g_time_domain_buffer[index] - mean) * window;
+        g_fft_input_buffer[index] = centered * window;
     }
+    *frame_ac_rms_mv = sqrtf(
+        ac_energy / (float32_t)G26_SIGNAL_SAMPLE_COUNT);
 }
 
 static void g26_compute_magnitudes(float32_t window_sum)
@@ -273,6 +283,8 @@ static int g26_find_candidates(float32_t sample_rate_hz,
     float32_t edge_tolerance_hz = G26_EDGE_TOLERANCE_BINS * bin_width_hz;
     int first_bin = (int)floorf(G26_MIN_FREQUENCY_HZ / bin_width_hz);
     int last_bin = (int)ceilf(max_frequency_hz / bin_width_hz);
+    float32_t spectrum_sum = 0.0f;
+    float32_t minimum_amplitude_mv;
     int candidate_count = 0;
     int bin;
 
@@ -282,10 +294,20 @@ static int g26_find_candidates(float32_t sample_rate_hz,
     if (last_bin > (int)APP_SPEC_LEN - 2) {
         last_bin = (int)APP_SPEC_LEN - 2;
     }
+    if (last_bin < first_bin) {
+        return 0;
+    }
+    for (bin = first_bin; bin <= last_bin; bin++) {
+        spectrum_sum += g_fft_magnitude_buffer[bin];
+    }
+    minimum_amplitude_mv = fmaxf(
+        G26_MIN_CANDIDATE_MV,
+        G26_MIN_PEAK_TO_MEAN_RATIO * spectrum_sum /
+            (float32_t)(last_bin - first_bin + 1));
     for (bin = first_bin; bin <= last_bin; bin++) {
         float32_t amplitude_mv = g_fft_magnitude_buffer[bin];
 
-        if (amplitude_mv < G26_MIN_CANDIDATE_MV ||
+        if (amplitude_mv < minimum_amplitude_mv ||
             amplitude_mv <= g_fft_magnitude_buffer[bin - 1] ||
             amplitude_mv < g_fft_magnitude_buffer[bin + 1]) {
             continue;
@@ -518,7 +540,44 @@ static float32_t g26_model_bic(const g26_signal_result_t *result)
            parameter_count * logf(sample_count);
 }
 
-static int g26_fundamental_is_significant(
+static int g26_model_materially_improves(
+    const g26_signal_result_t *simpler,
+    const g26_signal_result_t *complex)
+{
+    return complex->residual_sse < simpler->residual_sse &&
+        (simpler->residual_sse - complex->residual_sse) /
+            fmaxf(simpler->residual_sse, G26_EPSILON) >=
+                G26_MIN_COMPONENT_SSE_REDUCTION;
+}
+
+static int g26_model_contains(const g26_signal_result_t *simpler,
+                              const g26_signal_result_t *complex,
+                              float32_t tolerance_hz)
+{
+    u32 simpler_component;
+
+    for (simpler_component = 0U;
+         simpler_component < simpler->component_count;
+         simpler_component++) {
+        u32 complex_component;
+
+        for (complex_component = 0U;
+             complex_component < complex->component_count;
+             complex_component++) {
+            if (fabsf(simpler->components[simpler_component].frequency_hz -
+                      complex->components[complex_component].frequency_hz) <=
+                    tolerance_hz) {
+                break;
+            }
+        }
+        if (complex_component == complex->component_count) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int g26_components_are_significant(
     const g26_signal_result_t *result)
 {
     float32_t sample_count = (float32_t)G26_SIGNAL_SAMPLE_COUNT;
@@ -527,9 +586,16 @@ static int g26_fundamental_is_significant(
     float32_t amplitude_sigma = sqrtf(
         2.0f * fmaxf(result->residual_sse, G26_EPSILON) /
         (sample_count * degrees_of_freedom));
+    float32_t minimum_amplitude = fmaxf(
+        3.0f * amplitude_sigma, G26_MIN_CANDIDATE_MV);
+    u32 component;
 
-    return result->components[0].amplitude_mv >=
-           fmaxf(3.0f * amplitude_sigma, G26_MIN_CANDIDATE_MV);
+    for (component = 0U; component < result->component_count; component++) {
+        if (result->components[component].amplitude_mv < minimum_amplitude) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 static void g26_consider_model(const float32_t *frequencies_hz,
@@ -542,8 +608,9 @@ static void g26_consider_model(const float32_t *frequencies_hz,
     g26_signal_result_t candidate;
 
     if (g26_fit_model(frequencies_hz, component_count, sample_rate_hz,
-                      &candidate) != G26_SIGNAL_OK ||
-        !g26_model_is_usable(&candidate)) {
+                       &candidate) != G26_SIGNAL_OK ||
+        !g26_model_is_usable(&candidate) ||
+        !g26_components_are_significant(&candidate)) {
         return;
     }
     candidate.model_bic = g26_model_bic(&candidate);
@@ -552,59 +619,6 @@ static void g26_consider_model(const float32_t *frequencies_hz,
         *best_bic = candidate.model_bic;
         *found = 1;
     }
-}
-
-static void g26_add_base_hypothesis(float32_t *hypotheses,
-                                    int *hypothesis_count,
-                                    float32_t base_hz,
-                                    float32_t merge_hz)
-{
-    int index;
-
-    if (base_hz < G26_MIN_FREQUENCY_HZ) {
-        if (G26_MIN_FREQUENCY_HZ - base_hz > merge_hz) {
-            return;
-        }
-        base_hz = G26_MIN_FREQUENCY_HZ;
-    }
-    if (base_hz > G26_MAX_FREQUENCY_HZ) {
-        return;
-    }
-    for (index = 0; index < *hypothesis_count; index++) {
-        if (fabsf(hypotheses[index] - base_hz) <= merge_hz) {
-            return;
-        }
-    }
-    if (*hypothesis_count < G26_BASE_HYPOTHESIS_CAPACITY) {
-        hypotheses[(*hypothesis_count)++] = base_hz;
-    }
-}
-
-static int g26_build_base_hypotheses(const g26_candidate_t *candidates,
-                                     int candidate_count,
-                                     float32_t bin_width_hz,
-                                     float32_t *hypotheses)
-{
-    int anchor_count = candidate_count;
-    int hypothesis_count = 0;
-    int anchor;
-
-    if (anchor_count > G26_BASE_ANCHOR_CAPACITY) {
-        anchor_count = G26_BASE_ANCHOR_CAPACITY;
-    }
-    for (anchor = 0; anchor < anchor_count; anchor++) {
-        int max_order = (int)ceilf(candidates[anchor].frequency_hz /
-                                   G26_MIN_FREQUENCY_HZ);
-        int order;
-
-        for (order = 1; order <= max_order; order++) {
-            g26_add_base_hypothesis(
-                hypotheses, &hypothesis_count,
-                candidates[anchor].frequency_hz / (float32_t)order,
-                G26_BASE_MERGE_BINS * bin_width_hz);
-        }
-    }
-    return hypothesis_count;
 }
 
 static int g26_collect_harmonic_orders(float32_t base_hz,
@@ -845,7 +859,6 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
                        g26_signal_result_t *result)
 {
     g26_candidate_t candidates[G26_PEAK_CAPACITY];
-    float32_t base_hypotheses[G26_BASE_HYPOTHESIS_CAPACITY];
     g26_signal_result_t best_single;
     g26_signal_result_t best_pair;
     g26_signal_result_t best_triple;
@@ -854,11 +867,11 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
     float32_t pair_bic = 1.0e30f;
     float32_t triple_bic = 1.0e30f;
     float32_t best_bic = 1.0e30f;
-    float32_t second_bic = 1.0e30f;
     float32_t window_sum;
+    float32_t frame_upp_mv;
+    float32_t frame_ac_rms_mv;
     float32_t bin_width_hz;
     int candidate_count;
-    int hypothesis_count;
     int hypothesis;
     int single_found = 0;
     int pair_found = 0;
@@ -874,7 +887,12 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
         return G26_SIGNAL_ERROR_FFT;
     }
 
-    g26_prepare_fft(samples, mv_per_code, &window_sum);
+    g26_prepare_fft(samples, mv_per_code, &window_sum,
+                    &frame_upp_mv, &frame_ac_rms_mv);
+    if (frame_upp_mv < APP_G26_MIN_VALID_UPP_MV ||
+        frame_ac_rms_mv < APP_G26_MIN_FRAME_AC_RMS_MV) {
+        return G26_SIGNAL_ERROR_NO_SIGNAL;
+    }
     arm_rfft_fast_f32(&g26_fft, g_fft_input_buffer,
                       g_fft_spectrum_buffer, 0);
     g26_compute_magnitudes(window_sum);
@@ -891,11 +909,9 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
     }
 
     bin_width_hz = sample_rate_hz / (float32_t)G26_SIGNAL_SAMPLE_COUNT;
-    hypothesis_count = g26_build_base_hypotheses(
-        candidates, candidate_count, bin_width_hz, base_hypotheses);
-    for (hypothesis = 0; hypothesis < hypothesis_count; hypothesis++) {
+    for (hypothesis = 0; hypothesis < candidate_count; hypothesis++) {
         u16 orders[G26_HARMONIC_ORDER_CAPACITY];
-        float32_t base_hz = base_hypotheses[hypothesis];
+        float32_t base_hz = candidates[hypothesis].frequency_hz;
         int order_count = g26_collect_harmonic_orders(
             base_hz, candidates, candidate_count,
             G26_HARMONIC_MATCH_BINS * bin_width_hz, orders);
@@ -928,20 +944,17 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
             }
         }
     }
-    if (!single_found && !pair_found && !triple_found) {
+    if (!single_found) {
         return G26_SIGNAL_ERROR_NO_MODEL;
     }
-    if (single_found) {
-        g26_refine_model_frequency(sample_rate_hz, &best_single);
-        if (g26_fundamental_is_significant(&best_single)) {
-            single_bic = best_single.model_bic;
-        } else {
-            single_found = 0;
-        }
+    g26_refine_model_frequency(sample_rate_hz, &best_single);
+    if (!g26_components_are_significant(&best_single)) {
+        return G26_SIGNAL_ERROR_NO_MODEL;
     }
+    single_bic = best_single.model_bic;
     if (pair_found) {
         g26_refine_model_frequency(sample_rate_hz, &best_pair);
-        if (g26_fundamental_is_significant(&best_pair)) {
+        if (g26_components_are_significant(&best_pair)) {
             pair_bic = best_pair.model_bic;
         } else {
             pair_found = 0;
@@ -949,36 +962,32 @@ int g26_signal_analyze(const s16 samples[G26_SIGNAL_SAMPLE_COUNT],
     }
     if (triple_found) {
         g26_refine_model_frequency(sample_rate_hz, &best_triple);
-        if (g26_fundamental_is_significant(&best_triple)) {
+        if (g26_components_are_significant(&best_triple)) {
             triple_bic = best_triple.model_bic;
         } else {
             triple_found = 0;
         }
     }
-    if (!single_found && !pair_found && !triple_found) {
-        return G26_SIGNAL_ERROR_NO_MODEL;
-    }
-
-    if (single_found) {
-        best = best_single;
-        best_bic = single_bic;
-    }
-    if (pair_found && pair_bic < best_bic) {
-        second_bic = best_bic;
+    best = best_single;
+    best_bic = single_bic;
+    best.delta_bic = 1.0e30f;
+    if (pair_found && pair_bic < best_bic &&
+        g26_model_contains(&best_single, &best_pair, bin_width_hz) &&
+        g26_model_materially_improves(&best_single, &best_pair)) {
         best = best_pair;
         best_bic = pair_bic;
-    } else if (pair_found && pair_bic < second_bic) {
-        second_bic = pair_bic;
+        best.delta_bic = single_bic - pair_bic;
     }
-    if (triple_found && triple_bic < best_bic) {
-        second_bic = best_bic;
+    if (triple_found && best.component_count == 2U &&
+        triple_bic < best_bic &&
+        triple_bic < pair_bic &&
+        g26_model_contains(&best_pair, &best_triple, bin_width_hz) &&
+        g26_model_materially_improves(&best_pair, &best_triple)) {
         best = best_triple;
         best_bic = triple_bic;
-    } else if (triple_found && triple_bic < second_bic) {
-        second_bic = triple_bic;
+        best.delta_bic = pair_bic - triple_bic;
     }
-    best.delta_bic = (second_bic < 1.0e30f) ?
-        second_bic - best_bic : 1.0e30f;
+    best.model_bic = best_bic;
     g26_compute_model_metrics(&best);
     *result = best;
     return G26_SIGNAL_OK;
@@ -1233,15 +1242,38 @@ int g26_signal_analysis_self_test(void)
         return -100;
     }
     {
+        const g26_test_case_t no_input_spur = {
+            5120060.0f / 3.0f, 0.25f, 469000.0f, 0.0f, 1U, 1U,
+            {{1U, 12.0f, 0.0f},
+             {0U, 0.0f, 0.0f},
+             {0U, 0.0f, 0.0f}}
+        };
+        s16 *samples = (s16 *)(void *)g_adc_raw_buffer;
+        g26_signal_result_t result;
+
+        g26_synthesize_case(&no_input_spur, samples);
+        if (g26_signal_analyze(samples, no_input_spur.sample_rate_hz,
+                               no_input_spur.mv_per_code, &result) !=
+                G26_SIGNAL_ERROR_NO_SIGNAL) {
+            return -92;
+        }
+    }
+    {
         g26_signal_result_t result = {0};
 
         result.component_count = 3U;
         result.components[0].amplitude_mv = 0.106f;
-        if (g26_fundamental_is_significant(&result)) {
+        result.components[1].amplitude_mv = 5.0f;
+        result.components[2].amplitude_mv = 5.0f;
+        if (g26_components_are_significant(&result)) {
             return -91;
         }
         result.components[0].amplitude_mv = 5.0f;
-        if (!g26_fundamental_is_significant(&result)) {
+        if (!g26_components_are_significant(&result)) {
+            return -91;
+        }
+        result.components[2].amplitude_mv = 0.106f;
+        if (g26_components_are_significant(&result)) {
             return -91;
         }
     }

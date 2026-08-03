@@ -18,6 +18,7 @@
 #define G26_SIGNAL_ERROR_FFT          (-2)
 #define G26_SIGNAL_ERROR_NO_CANDIDATE (-3)
 #define G26_SIGNAL_ERROR_NO_MODEL     (-4)
+#define G26_SIGNAL_ERROR_NO_SIGNAL    (-5)
 #define G26_SIGNAL_ERROR              G26_SIGNAL_ERROR_INPUT
 
 

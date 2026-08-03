@@ -52,11 +52,13 @@ typedef struct {
     pl_hmi_uart_t uart;
     g26_hmi_session_t session;
     g26_hmi_measurement_signature_t last_sent_signature;
+    g26_hmi_measurement_signature_t confirmation_signature;
     u32 next_generation;
     u32 request_tick;
     u8 navigation_lock_page;
     u8 observed_page;
     u8 invalid_generation_count;
+    u8 confirmation_count;
     int last_sent_valid;
 } g26_hmi_state_t;
 
@@ -115,6 +117,7 @@ static void g26_hmi_reset_display_tracking(g26_hmi_state_t *state)
 {
     state->last_sent_valid = 0;
     state->invalid_generation_count = 0U;
+    state->confirmation_count = 0U;
 }
 
 static int g26_hmi_send_format(pl_hmi_uart_t *uart,
@@ -789,6 +792,7 @@ static int g26_hmi_process_completion(
             &g26_hmi_snapshot, &generation) != XST_SUCCESS ||
         generation != event->generation) {
         g26_hmi_session_publish_invalid(&state->session);
+        state->confirmation_count = 0U;
         if (state->invalid_generation_count < 0xFFU) {
             state->invalid_generation_count++;
         }
@@ -825,9 +829,28 @@ static int g26_hmi_process_completion(
         return status;
     }
 
-    state->invalid_generation_count = 0U;
     g26_hmi_build_signature(
         &g26_hmi_snapshot.result, &current_signature);
+    if (!state->last_sent_valid &&
+        (state->confirmation_count == 0U ||
+         g26_hmi_signature_changed(
+             &state->confirmation_signature, &current_signature))) {
+        state->confirmation_signature = current_signature;
+        state->confirmation_count = 1U;
+        g26_hmi_session_publish_invalid(&state->session);
+        if (g26_hmi_unlock_navigation(state) != XST_SUCCESS) {
+            status = XST_FAILURE;
+        }
+        xil_printf("[HMI] VALID_PENDING generation=%u; waiting for matching frame\r\n",
+                   (unsigned int)event->generation);
+        state->request_tick = 0U;
+        if (g26_hmi_continue_measurement(state) != XST_SUCCESS) {
+            status = XST_FAILURE;
+        }
+        return status;
+    }
+    state->confirmation_count = 0U;
+    state->invalid_generation_count = 0U;
     g26_hmi_session_publish_snapshot(&state->session);
     page_status = g26_hmi_sync_active_result_page(
         state, &page, &page_changed);

@@ -30,8 +30,9 @@
 #define APP_G26_WAVEFORM_POINTS     640U
 
 /* The specified input starts at 50 mVpp; keep margin for measurement error. */
-#define APP_G26_MIN_VALID_UPP_MV                40.0f
-#define APP_G26_SINGLE_MAX_NORMALIZED_RESIDUAL  0.25f
+#define APP_G26_MIN_VALID_UPP_MV             40.0f
+#define APP_G26_MIN_FRAME_AC_RMS_MV           8.0f
+#define APP_G26_MAX_NORMALIZED_RESIDUAL        0.25f
 
 /* Select the actual front end, then replace its nominal value by calibration. */
 #define APP_G26_DIRECT_MV_PER_CODE    2.3096181f
