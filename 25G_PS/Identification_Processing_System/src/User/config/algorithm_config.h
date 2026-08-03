@@ -16,7 +16,7 @@
 /* The FFT currently consumes exactly one hardware DMA frame. */
 #define APP_FFT_LEN                 APP_ADC_FRAME_SAMPLES
 #define APP_SPEC_LEN                (APP_FFT_LEN / 2U)
-#define APP_BIN_WIDTH_HZ            (APP_SAMPLE_RATE_HZ / APP_FFT_LEN)
+#define APP_BIN_WIDTH_HZ            (APP_ANALYSIS_SAMPLE_RATE_HZ / APP_FFT_LEN)
 #define APP_FFT_WINDOW_HANN         1U
 #define APP_FFT_WINDOW              APP_FFT_WINDOW_HANN
 
@@ -29,9 +29,9 @@
 #define APP_G26_WARMUP_FRAMES       3U
 #define APP_G26_WAVEFORM_POINTS     640U
 
-/* Select the actual front end, then replace its nominal value by calibration. */
-#define APP_G26_DIRECT_MV_PER_CODE    2.3096181f
-#define APP_G26_AMPLIFIED_MV_PER_CODE 0.1645f
+/* AD9248 module nominal input span is 10 V across 14-bit signed codes. */
+#define APP_G26_DIRECT_MV_PER_CODE    0.6103515625f
+#define APP_G26_AMPLIFIED_MV_PER_CODE APP_G26_DIRECT_MV_PER_CODE
 #define APP_G26_INPUT_MV_PER_CODE     APP_G26_DIRECT_MV_PER_CODE
 #define APP_IQ_WINDOW_SAMPLES       APP_ADC_FRAME_SAMPLES
 #define APP_IQ_RESULT_TIMEOUT_MS    100U

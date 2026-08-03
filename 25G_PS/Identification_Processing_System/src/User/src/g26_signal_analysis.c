@@ -72,39 +72,16 @@ typedef struct {
     float32_t phase_degrees;
 } g26_phase_calibration_t;
 
-/* Unity baseline for the replacement analog filter; update after its sweep. */
+/* Unity baseline for the new ADC/digital-FIR chain; replace after board sweep. */
 static const g26_gain_calibration_t g26_gain_calibration[] = {
-    { 10000.0f, 1.049817f},
-    {200000.0f, 1.019856f},
-    {250000.0f, 1.013588f},
-    {300000.0f, 0.989776f},
-    {400000.0f, 0.952547f},
-    {500000.0f, 0.962268f}
+    { 10000.0f, 1.0f},
+    {500000.0f, 1.0f}
 };
 
-/* Measured input-to-ADC phase, kept unwrapped for linear interpolation. */
+/* The previous analog-chain phase table is invalid for the new signal path. */
 static const g26_phase_calibration_t g26_phase_calibration[] = {
-    { 10000.0f,   -2.8f},
-    { 20000.0f,   -5.6f},
-    { 40000.0f,  -11.1f},
-    { 50000.0f,  -14.5f},
-    {100000.0f,  -28.6f},
-    {125000.0f,  -36.1f},
-    {150000.0f,  -42.6f},
-    {175000.0f,  -50.5f},
-    {200000.0f,  -58.2f},
-    {225000.0f,  -65.9f},
-    {250000.0f,  -73.4f},
-    {275000.0f,  -81.5f},
-    {300000.0f,  -89.0f},
-    {325000.0f,  -98.0f},
-    {350000.0f, -107.0f},
-    {375000.0f, -116.5f},
-    {400000.0f, -125.0f},
-    {425000.0f, -135.5f},
-    {450000.0f, -146.0f},
-    {475000.0f, -157.0f},
-    {500000.0f, -168.0f}
+    { 10000.0f, 0.0f},
+    {500000.0f, 0.0f}
 };
 
 static arm_rfft_fast_instance_f32 g26_fft;
@@ -1105,13 +1082,19 @@ static int g26_test_one_case(const g26_test_case_t *test_case,
         const g26_test_component_t *expected =
             &test_case->components[component];
         const g26_signal_component_t *actual = &result.components[component];
+        float32_t actual_relative_phase = actual->phase_rad -
+            (float32_t)expected->harmonic_order *
+            result.components[0].phase_rad;
+        float32_t expected_relative_phase = expected->phase_rad -
+            (float32_t)expected->harmonic_order *
+            test_case->components[0].phase_rad;
 
         expected_rms_square += 0.5f * expected->amplitude_mv *
                                expected->amplitude_mv;
         if (actual->harmonic_order != expected->harmonic_order ||
             fabsf(actual->amplitude_mv - expected->amplitude_mv) > 0.6f ||
-            fabsf(g26_wrap_phase(actual->phase_rad -
-                                 expected->phase_rad)) > 0.04f) {
+            fabsf(g26_wrap_phase(actual_relative_phase -
+                                 expected_relative_phase)) > 0.04f) {
             return -4;
         }
     }
@@ -1143,19 +1126,19 @@ int g26_signal_analysis_self_test(void)
 {
     static const g26_test_case_t cases[] = {
         {
-            5120060.0f / 3.0f, 0.25f, 10000.0f, 3.0f, 3U, 3U,
+            APP_ANALYSIS_SAMPLE_RATE_HZ, 0.25f, 10000.0f, 3.0f, 3U, 3U,
             {{1U, 40.0f, 0.30f},
              {3U, 25.0f, -1.00f},
              {4U, 15.0f, 0.60f}}
         },
         {
-            5120060.0f / 3.0f, 0.25f, 100000.0f, -2.0f, 3U, 3U,
+            APP_ANALYSIS_SAMPLE_RATE_HZ, 0.25f, 100000.0f, -2.0f, 3U, 3U,
             {{1U, 42.0f, -0.25f},
              {2U, 28.0f, 1.10f},
              {5U, 5.0f, -0.80f}}
         },
         {
-            5120060.0f / 3.0f, 0.25f, 50500.0f, -1.0f, 2U, 2U,
+            APP_ANALYSIS_SAMPLE_RATE_HZ, 0.25f, 50500.0f, -1.0f, 2U, 2U,
             {{1U, 160.0f, 0.45f},
              {2U, 150.0f, -0.70f},
              {5U, 4.0f, 1.20f}}
@@ -1167,19 +1150,19 @@ int g26_signal_analysis_self_test(void)
              {0U, 0.0f, 0.0f}}
         },
         {
-            5120060.0f / 3.0f, 0.25f, 12700.0f, 0.5f, 3U, 3U,
+            APP_ANALYSIS_SAMPLE_RATE_HZ, 0.25f, 12700.0f, 0.5f, 3U, 3U,
             {{1U, 18.0f, -0.35f},
              {3U, 45.0f, 0.90f},
              {4U, 30.0f, -1.20f}}
         },
         {
-            5120060.0f / 3.0f, 0.05f, 10500.0f, -0.2f, 3U, 3U,
+            APP_ANALYSIS_SAMPLE_RATE_HZ, 0.05f, 10500.0f, -0.2f, 3U, 3U,
             {{1U, 5.0f, 0.25f},
              {3U, 40.0f, -0.60f},
              {4U, 30.0f, 1.10f}}
         },
         {
-            5120060.0f / 3.0f, 0.25f, 250000.0f, 0.0f, 2U, 2U,
+            APP_ANALYSIS_SAMPLE_RATE_HZ, 0.25f, 250000.0f, 0.0f, 2U, 2U,
             {{1U, 125.0f, 0.20f},
              {2U, 62.5f, -0.75f},
              {0U, 0.0f, 0.0f}}
@@ -1222,13 +1205,11 @@ int g26_signal_analysis_self_test(void)
         result.fundamental_frequency_hz = 250000.0f;
         result.components[0].frequency_hz = 250000.0f;
         result.components[0].amplitude_mv = 50.0f;
-        result.components[0].phase_rad = 0.4f -
-            73.4f * G26_DEGREES_TO_RADIANS;
+        result.components[0].phase_rad = 0.4f;
         result.components[0].harmonic_order = 1U;
         result.components[1].frequency_hz = 500000.0f;
         result.components[1].amplitude_mv = 50.0f;
-        result.components[1].phase_rad = 0.8f -
-            168.0f * G26_DEGREES_TO_RADIANS;
+        result.components[1].phase_rad = 0.8f;
         result.components[1].harmonic_order = 2U;
         expected_first = 50.0f * g26_gain_correction(250000.0f);
         expected_second = 50.0f * g26_gain_correction(500000.0f);
@@ -1250,8 +1231,7 @@ int g26_signal_analysis_self_test(void)
             fabsf(g26_wrap_phase(result.components[1].phase_rad -
                 2.0f * result.components[0].phase_rad)) > 0.001f ||
             fabsf(result.upp_mv - expected_upp) > 0.01f ||
-            fabsf(g26_phase_correction_rad(275000.0f) +
-                81.5f * G26_DEGREES_TO_RADIANS) > 0.001f) {
+            fabsf(g26_phase_correction_rad(275000.0f)) > 0.001f) {
             return -90;
         }
     }

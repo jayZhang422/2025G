@@ -6,17 +6,17 @@ import numpy as np
 from scipy.signal import freqz, remez
 
 
-FS_HZ = 5_120_060.0
+FS_HZ = 65_000_000.0
 PASSBAND_HZ = 500_000.0
 STOPBAND_HZ = 1_000_000.0
-DECIMATION = 3
+DECIMATION = 38
 COEFFICIENT_BITS = 18
 MAX_PASSBAND_ERROR_DB = 0.01
-MIN_STOPBAND_ATTENUATION_DB = 60.0
-MIN_TAPS = 31
-MAX_TAPS = 255
+MIN_STOPBAND_ATTENUATION_DB = 70.0
+MIN_TAPS = 521
+MAX_TAPS = 521
 FREQ_RESPONSE_POINTS = 1 << 18
-OUTPUT_PATH = Path(__file__).with_name("fir_26g_decim3_q17.coe")
+OUTPUT_PATH = Path(__file__).resolve().parents[1] / "25G_PL.srcs/sources_1/imports/coeDoc/fir_26g_decim38_q17.coe"
 
 
 def quantize_q17(coefficients):

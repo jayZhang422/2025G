@@ -54,6 +54,7 @@ module top (
     wire        fifo_mon_full;
     wire        fifo_mon_wr_rst_busy;
     wire        fifo_mon_rd_rst_busy;
+    wire        adc_path_aresetn;
     wire [31:0] bram_addr;
     wire [31:0] bram_dout;
     wire        bram_en;
@@ -62,6 +63,7 @@ module top (
     assign o_ad_oeb   = 1'b0;
     assign o_ad_pdn   = 1'b0;
     assign ddc_tready = 1'b0;
+    assign adc_path_aresetn = i_rst & ~fifo_mon_rd_rst_busy;
 
     H_top u_h_top (
         .i_clk_50m     (i_clk_50m),
@@ -96,7 +98,7 @@ module top (
 
     adc_fir_axis u_adc_fir (
         .aclk          (fclk),
-        .aresetn       (i_rst),
+        .aresetn       (adc_path_aresetn),
         .s_axis_tdata  (adc_tdata),
         .s_axis_tvalid (adc_tvalid),
         .s_axis_tready (adc_tready),
@@ -167,7 +169,7 @@ module top (
 
     ila_0 ila_debug (
         .clk    (iq_clk_adc),
-        .probe0 (i_ad_data),
+        .probe0 ({iq_adc_raw, 2'b00}),
         .probe1 (iq_sample_valid),
         .probe2 (i_rst),
         .probe3 (1'b0),
