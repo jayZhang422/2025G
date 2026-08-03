@@ -258,6 +258,18 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
         xil_printf("[G26] ERROR: amplitude calibration failed\r\n");
         return XST_FAILURE;
     }
+    if (result->upp_mv < APP_G26_MIN_VALID_UPP_MV ||
+        (result->component_count == 1U &&
+         result->normalized_residual >
+             APP_G26_SINGLE_MAX_NORMALIZED_RESIDUAL)) {
+        xil_printf("[G26] NO_SIGNAL: Upp=");
+        g26_print_fixed_3(result->upp_mv);
+        xil_printf(" mV residual_ppm=%u components=%u\r\n",
+                   (unsigned int)(result->normalized_residual * 1000000.0f +
+                                  0.5f),
+                   (unsigned int)result->component_count);
+        return XST_FAILURE;
+    }
     return XST_SUCCESS;
 }
 
