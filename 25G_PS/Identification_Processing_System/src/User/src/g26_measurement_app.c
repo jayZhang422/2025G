@@ -267,7 +267,9 @@ static int g26_capture_measurement(XAxiDma *dma, int monitor_available,
     }
     if (result->upp_mv < APP_G26_MIN_VALID_UPP_MV ||
         result->normalized_residual >
-            APP_G26_MAX_NORMALIZED_RESIDUAL) {
+            ((result->component_count == 1U) ?
+                APP_G26_MAX_SINGLE_NORMALIZED_RESIDUAL :
+                APP_G26_MAX_NORMALIZED_RESIDUAL)) {
         xil_printf("[G26] NO_SIGNAL: Upp=");
         g26_print_fixed_3(result->upp_mv);
         xil_printf(" mV residual_ppm=%u components=%u\r\n",

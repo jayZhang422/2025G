@@ -71,16 +71,29 @@ typedef struct {
     float32_t phase_degrees;
 } g26_phase_calibration_t;
 
-/* Unity baseline for the replacement analog filter; update after its sweep. */
+/* Measured 100 mVpp single-tone fit; interpolate between frequency nodes. */
 static const g26_gain_calibration_t g26_gain_calibration[] = {
-    { 10000.0f, 1.049817f},
-    {150000.0f, 1.044076f},
-    {200000.0f, 1.019856f},
-    {250000.0f, 1.013588f},
-    {300000.0f, 1.000351f},
-    {400000.0f, 0.966652f},
-    {420000.0f, 0.960670f},
-    {500000.0f, 0.962268f}
+    { 10000.0f, 1.059013f},
+    { 25000.0f, 1.061129f},
+    { 50000.0f, 1.060371f},
+    { 75000.0f, 1.060411f},
+    {100000.0f, 1.048392f},
+    {125000.0f, 1.056828f},
+    {150000.0f, 1.041780f},
+    {175000.0f, 1.051430f},
+    {200000.0f, 1.0287665f},
+    {225000.0f, 1.041728f},
+    {250000.0f, 1.0181213f},
+    {275000.0f, 1.028973f},
+    {300000.0f, 0.9954273f},
+    {325000.0f, 1.014260f},
+    {350000.0f, 1.006284f},
+    {375000.0f, 0.999255f},
+    {400000.0f, 0.959614f},
+    {425000.0f, 0.989966f},
+    {450000.0f, 0.989107f},
+    {475000.0f, 0.996684f},
+    {500000.0f, 0.979654f}
 };
 
 /* Measured input-to-ADC phase, kept unwrapped for linear interpolation. */
